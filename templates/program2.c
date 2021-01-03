@@ -14,12 +14,14 @@ enum Type {
   INTEGER,
   LIST,
   STRING,
+  STRUCTURE,
   SYMBOL
 };
 
 enum Builtin;
 typedef enum Builtin Builtin;
 enum Builtin {
+  __FIELD__,
   NIL,
   POW,
   PRINT
@@ -42,6 +44,9 @@ struct Closure {
 struct List;
 typedef struct List List;
 
+struct Structure;
+typedef struct Structure Structure;
+
 union Value;
 typedef union Value Value;
 union Value {
@@ -51,6 +56,7 @@ union Value {
   int32_t integer;
   List* list;
   char* string;
+  Structure* structure;
   char* symbol;
 };
 
@@ -62,6 +68,12 @@ struct Object {
 struct List {
   Object head;
   List* tail;
+};
+
+struct Structure {
+  char* key;
+  Object value;
+  Structure* next;
 };
 
 #define BUILTIN_NIL (Object) { BUILTIN, (Value)(Builtin)NIL }
@@ -113,6 +125,28 @@ union Argument {
   int32_t integer;
   char* symbol;
 };
+
+void callBuiltinField(Thread* thread, size_t argumentCount) {
+  assert(argumentCount == 2);
+
+  assert(!Stack_isEmpty(&(thread->stack)));
+  Object key = Stack_pop(&(thread->stack));
+  assert(key.type == STRING); // TODO Make this a symbol
+
+  assert(!Stack_isEmpty(&(thread->stack)));
+  Object structure = Stack_pop(&(thread->stack));
+  assert(structure.type == STRUCTURE);
+
+  while(structure.value.structure != NULL) {
+    if(strcmp(structure.value.structure->key, key.value.string) == 0) {
+      Stack_push(&(thread->stack), structure.value.structure->value);
+      return;
+    }
+    structure.value.structure = structure.value.structure->next;
+  }
+
+  assert(false); // Symbol wasn't found in structure
+}
 
 void callBuiltinPow(Thread* thread, size_t argumentCount) {
   assert(argumentCount == 2);
@@ -175,9 +209,14 @@ void callBuiltinPrint(Thread* thread, size_t argumentCount) {
 
 void callBuiltin(Thread* thread, Builtin b, size_t argumentCount) {
   switch(b) {
+    case __FIELD__:
+      callBuiltinField(thread, argumentCount);
+      break;
+
     case POW:
       callBuiltinPow(thread, argumentCount);
       break;
+
     case PRINT:
       callBuiltinPrint(thread, argumentCount);
       break;
@@ -188,7 +227,7 @@ void callBuiltin(Thread* thread, Builtin b, size_t argumentCount) {
 }
 
 void callClosure(Thread* thread, Closure closure, size_t argumentCount) {
-  assert(argumentCount == 0);
+  // TODO Find a way to assert the argument count
 
   Frame* returnFrame = malloc(sizeof(Frame));
   *returnFrame = thread->frame;
@@ -270,14 +309,14 @@ void inst_end(Thread* thread, Argument argument) {
 
 void inst_get(Thread* thread, Argument argument) {
   assert(!Stack_isEmpty(&(thread->stack)));
-  Object listObject = Stack_pop(&(thread->stack));
-  assert(listObject.type == LIST);
-  List* list = listObject.value.list;
-
-  assert(!Stack_isEmpty(&(thread->stack)));
   Object indexObject = Stack_pop(&(thread->stack));
   assert(indexObject.type == INTEGER);
   int32_t index = indexObject.value.integer;
+
+  assert(!Stack_isEmpty(&(thread->stack)));
+  Object listObject = Stack_pop(&(thread->stack));
+  assert(listObject.type == LIST);
+  List* list = listObject.value.list;
 
   while(index > 0) {
     assert(list != NULL);
@@ -320,7 +359,9 @@ void inst_list(Thread* thread, Argument argument) {
   result.type = LIST;
   result.value.list = NULL;
 
-  while(argument.integer > 0) {
+  int32_t count = argument.integer;
+
+  while(count > 0) {
     assert(!Stack_isEmpty(&(thread->stack)));
     Object item = Stack_pop(&(thread->stack));
 
@@ -329,6 +370,7 @@ void inst_list(Thread* thread, Argument argument) {
     node->tail = result.value.list;
 
     result.value.list = node;
+    count--;
   }
 
   Stack_push(&(thread->stack), result);
@@ -383,9 +425,15 @@ void inst_pop(Thread* thread, Argument argument) {
 void inst_push(Thread* thread, Argument argument) {
   char* argumentString = argument.string;
 
-  if(strcmp(argumentString, "false") == 0) {
+  if(strcmp(argumentString, "__field__") == 0) {
+    // TODO Make this an instruction
+    Object result;
+    result.type = BUILTIN;
+    result.value.builtin = __FIELD__;
+    Stack_push(&(thread->stack), result);
+  } else if(strcmp(argumentString, "false") == 0) {
     Stack_push(&(thread->stack), (Object){ BOOLEAN, false });
-  }else if(strcmp(argumentString, "pow") == 0) {
+  } else if(strcmp(argumentString, "pow") == 0) {
     Object result;
     result.type = BUILTIN;
     result.value.builtin = POW;
@@ -432,6 +480,8 @@ void inst_push_symbol(Thread* thread, Argument argument) {
   Object result;
   result.type = SYMBOL;
   result.value.symbol = argument.symbol;
+
+  Stack_push(&(thread->stack), result);
 }
 
 {% with name='sub', operation='-' %}
@@ -454,7 +504,30 @@ void inst_return(Thread* thread, Argument argument) {
 }
 
 void inst_structure(Thread* thread, Argument argument) {
-  assert(false);
+  Object result;
+  result.type = STRUCTURE;
+  result.value.structure = NULL;
+
+  int32_t count = argument.integer;
+
+  while(count > 0) {
+    assert(!Stack_isEmpty(&(thread->stack)));
+    Object key = Stack_pop(&(thread->stack));
+    assert(key.type == SYMBOL);
+
+    assert(!Stack_isEmpty(&(thread->stack)));
+    Object value = Stack_pop(&(thread->stack));
+
+    Structure* node = malloc(sizeof(Structure));
+    node->key = key.value.string;
+    node->value = value;
+    node->next = result.value.structure;
+
+    result.value.structure = node;
+    count--;
+  }
+
+  Stack_push(&(thread->stack), result);
 }
 
 struct Instruction;
