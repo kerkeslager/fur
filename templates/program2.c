@@ -12,7 +12,9 @@ enum Type {
   BUILTIN,
   CLOSURE,
   INTEGER,
-  STRING
+  LIST,
+  STRING,
+  SYMBOL
 };
 
 enum Builtin;
@@ -37,19 +39,29 @@ struct Closure {
   size_t entry;
 };
 
+struct List;
+typedef struct List List;
+
 union Value;
 typedef union Value Value;
 union Value {
   Builtin builtin;
-  Closure closure;
   bool boolean;
-  char* string;
+  Closure closure;
   int32_t integer;
+  List* list;
+  char* string;
+  char* symbol;
 };
 
 struct Object {
   Type type;
   Value value;
+};
+
+struct List {
+  Object head;
+  List* tail;
 };
 
 #define BUILTIN_NIL (Object) { BUILTIN, (Value)(Builtin)NIL }
@@ -99,6 +111,7 @@ union Argument {
   void* pointer;
   char* string;
   int32_t integer;
+  char* symbol;
 };
 
 void callBuiltinPow(Thread* thread, size_t argumentCount) {
@@ -206,6 +219,29 @@ void inst_call(Thread* thread, Argument argument) {
   }
 }
 
+void inst_concat(Thread* thread, Argument argument) {
+  assert(!Stack_isEmpty(&(thread->stack)));
+  Object left = Stack_pop(&(thread->stack));
+  assert(!Stack_isEmpty(&(thread->stack)));
+  Object right = Stack_pop(&(thread->stack));
+
+  assert(left.type == STRING);
+  assert(right.type == STRING);
+
+  char* resultString = malloc(strlen(left.value.string) + strlen(right.value.string) + 1);
+  resultString[0] = '\0';
+
+  strcat(resultString, left.value.string);
+  strcat(resultString, right.value.string);
+
+  Object resultObject = (Object) {
+    STRING,
+    (Value)resultString
+  };
+
+  Stack_push(&(thread->stack), resultObject);
+}
+
 {% with name='add', operation='+' %}
   {% include "arithmetic_instruction.c" %}
 {% endwith %}
@@ -232,6 +268,27 @@ void inst_end(Thread* thread, Argument argument) {
   {% include "comparison_instruction.c" %}
 {% endwith %}
 
+void inst_get(Thread* thread, Argument argument) {
+  assert(!Stack_isEmpty(&(thread->stack)));
+  Object listObject = Stack_pop(&(thread->stack));
+  assert(listObject.type == LIST);
+  List* list = listObject.value.list;
+
+  assert(!Stack_isEmpty(&(thread->stack)));
+  Object indexObject = Stack_pop(&(thread->stack));
+  assert(indexObject.type == INTEGER);
+  int32_t index = indexObject.value.integer;
+
+  while(index > 0) {
+    assert(list != NULL);
+    list = list->tail;
+    index--;
+  }
+
+  assert(list != NULL);
+  Stack_push(&(thread->stack), list->head);
+}
+
 {% with name='gt', operation='>' %}
   {% include "comparison_instruction.c" %}
 {% endwith %}
@@ -256,6 +313,25 @@ void inst_jump_if_false(Thread* thread, Argument argument) {
   if(!(result.value.boolean)) {
     inst_jump(thread, argument);
   }
+}
+
+void inst_list(Thread* thread, Argument argument) {
+  Object result;
+  result.type = LIST;
+  result.value.list = NULL;
+
+  while(argument.integer > 0) {
+    assert(!Stack_isEmpty(&(thread->stack)));
+    Object item = Stack_pop(&(thread->stack));
+
+    List* node = malloc(sizeof(List));
+    node->head = item;
+    node->tail = result.value.list;
+
+    result.value.list = node;
+  }
+
+  Stack_push(&(thread->stack), result);
 }
 
 {% with name='lt', operation='<' %}
@@ -350,6 +426,14 @@ void inst_push_string(Thread* thread, Argument argument) {
   Stack_push(&(thread->stack), result);
 }
 
+void inst_push_symbol(Thread* thread, Argument argument) {
+  // TODO Store symbols in a symbol table so they can be looked up by reference
+  // without string comparison
+  Object result;
+  result.type = SYMBOL;
+  result.value.symbol = argument.symbol;
+}
+
 {% with name='sub', operation='-' %}
   {% include "arithmetic_instruction.c" %}
 {% endwith %}
@@ -367,6 +451,10 @@ void inst_return(Thread* thread, Argument argument) {
   );
 
   free(returnFrame);
+}
+
+void inst_structure(Thread* thread, Argument argument) {
+  assert(false);
 }
 
 struct Instruction;

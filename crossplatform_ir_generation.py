@@ -39,6 +39,10 @@ def generate_symbol_literal(symbol):
 def generate_instruction_name_from_builtin(builtin):
     try:
         return {
+            # Environment operations
+            '__get__': 'get',
+
+            # Integer operations
             '__add__': 'add',
             '__integer_divide__': 'idiv',
             '__modular_divide__': 'mod',
@@ -46,12 +50,16 @@ def generate_instruction_name_from_builtin(builtin):
             '__negate__': 'neg',
             '__subtract__': 'sub',
 
+            # Boolean operations
             '__eq__': 'eq',
             '__neq__': 'neq',
             '__lt__': 'lt',
             '__lte__': 'lte',
             '__gt__': 'gt',
             '__gte__': 'gte',
+
+            # String operations
+            '__concat__': 'concat',
         }[builtin]
 
     except KeyError:

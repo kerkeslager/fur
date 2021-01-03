@@ -41,7 +41,7 @@ def generate_size_t_argument(argument):
     return '(size_t){}'.format(argument)
 
 def generate_string_argument(argument):
-    return argument
+    return argument[0] + ''.join('\\"' if ch == '"' else ch for ch in argument[1:-1]) + argument[-1]
 
 def generate_symbol_argument(argument):
     assert argument.startswith('sym(') and argument.endswith(')')
@@ -53,14 +53,17 @@ def generate_argument(instruction):
             'add': generate_null_argument_from(2),
             'call': generate_size_t_argument,
             'close': generate_label_argument,
+            'concat': generate_integer_argument,
             'drop': generate_null_argument,
             'end': generate_null_argument,
             'eq': generate_null_argument_from(2),
+            'get': generate_null_argument_from(2),
             'gt': generate_null_argument_from(2),
             'gte': generate_null_argument_from(2),
             'idiv': generate_null_argument_from(2),
             'jump': generate_label_argument,
             'jump_if_false': generate_label_argument,
+            'list': generate_integer_argument,
             'lt': generate_null_argument_from(2),
             'lte': generate_null_argument_from(2),
             'mod': generate_null_argument_from(2),
@@ -71,7 +74,9 @@ def generate_argument(instruction):
             'push': generate_symbol_argument,
             'push_integer': generate_integer_argument,
             'push_string': generate_string_argument,
+            'push_symbol': generate_symbol_argument,
             'return': generate_null_argument,
+            'structure': generate_integer_argument,
             'sub': generate_null_argument_from(2),
         }[instruction.instruction](instruction.argument)
 
