@@ -168,7 +168,7 @@ def desugar_infix_expression(expression):
     if expression.operator == '.':
         return DesugaredFunctionCallExpression(
             metadata=expression.metadata,
-            function=DesugaredSymbolExpression(
+            function=DesugaredBuiltinExpression(
                 metadata=expression.metadata,
                 symbol='__field__',
             ),

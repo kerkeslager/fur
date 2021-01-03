@@ -57,6 +57,7 @@ def generate_argument(instruction):
             'drop': generate_null_argument,
             'end': generate_null_argument,
             'eq': generate_null_argument_from(2),
+            'field': generate_null_argument_from(2),
             'get': generate_null_argument_from(2),
             'gt': generate_null_argument_from(2),
             'gte': generate_null_argument_from(2),

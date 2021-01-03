@@ -60,6 +60,9 @@ def generate_instruction_name_from_builtin(builtin):
 
             # String operations
             '__concat__': 'concat',
+
+            # Structure operations
+            '__field__': 'field',
         }[builtin]
 
     except KeyError:

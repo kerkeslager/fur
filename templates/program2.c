@@ -21,7 +21,6 @@ enum Type {
 enum Builtin;
 typedef enum Builtin Builtin;
 enum Builtin {
-  __FIELD__,
   NIL,
   POW,
   PRINT
@@ -126,28 +125,6 @@ union Argument {
   char* symbol;
 };
 
-void callBuiltinField(Thread* thread, size_t argumentCount) {
-  assert(argumentCount == 2);
-
-  assert(!Stack_isEmpty(&(thread->stack)));
-  Object key = Stack_pop(&(thread->stack));
-  assert(key.type == SYMBOL);
-
-  assert(!Stack_isEmpty(&(thread->stack)));
-  Object structure = Stack_pop(&(thread->stack));
-  assert(structure.type == STRUCTURE);
-
-  while(structure.value.structure != NULL) {
-    if(strcmp(structure.value.structure->key, key.value.string) == 0) {
-      Stack_push(&(thread->stack), structure.value.structure->value);
-      return;
-    }
-    structure.value.structure = structure.value.structure->next;
-  }
-
-  assert(false); // Symbol wasn't found in structure
-}
-
 void callBuiltinPow(Thread* thread, size_t argumentCount) {
   assert(argumentCount == 2);
   assert(!Stack_isEmpty(&(thread->stack)));
@@ -209,10 +186,6 @@ void callBuiltinPrint(Thread* thread, size_t argumentCount) {
 
 void callBuiltin(Thread* thread, Builtin b, size_t argumentCount) {
   switch(b) {
-    case __FIELD__:
-      callBuiltinField(thread, argumentCount);
-      break;
-
     case POW:
       callBuiltinPow(thread, argumentCount);
       break;
@@ -306,6 +279,26 @@ void inst_end(Thread* thread, Argument argument) {
 {% with name='eq', operation='==' %}
   {% include "comparison_instruction.c" %}
 {% endwith %}
+
+void inst_field(Thread* thread, Argument argument) {
+  assert(!Stack_isEmpty(&(thread->stack)));
+  Object key = Stack_pop(&(thread->stack));
+  assert(key.type == SYMBOL);
+
+  assert(!Stack_isEmpty(&(thread->stack)));
+  Object structure = Stack_pop(&(thread->stack));
+  assert(structure.type == STRUCTURE);
+
+  while(structure.value.structure != NULL) {
+    if(strcmp(structure.value.structure->key, key.value.string) == 0) {
+      Stack_push(&(thread->stack), structure.value.structure->value);
+      return;
+    }
+    structure.value.structure = structure.value.structure->next;
+  }
+
+  assert(false); // Symbol wasn't found in structure
+}
 
 void inst_get(Thread* thread, Argument argument) {
   assert(!Stack_isEmpty(&(thread->stack)));
@@ -425,13 +418,7 @@ void inst_pop(Thread* thread, Argument argument) {
 void inst_push(Thread* thread, Argument argument) {
   char* argumentString = argument.string;
 
-  if(strcmp(argumentString, "__field__") == 0) {
-    // TODO Make this an instruction
-    Object result;
-    result.type = BUILTIN;
-    result.value.builtin = __FIELD__;
-    Stack_push(&(thread->stack), result);
-  } else if(strcmp(argumentString, "false") == 0) {
+  if(strcmp(argumentString, "false") == 0) {
     Stack_push(&(thread->stack), (Object){ BOOLEAN, false });
   } else if(strcmp(argumentString, "pow") == 0) {
     Object result;
