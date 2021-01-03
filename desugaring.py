@@ -88,6 +88,14 @@ DesugaredSymbolExpression = collections.namedtuple(
     ),
 )
 
+DesugaredSymbolLiteralExpression = collections.namedtuple(
+    'DesugaredSymbolLiteralExpression',
+    (
+        'metadata',
+        'symbol',
+    ),
+)
+
 DesugaredAssignmentStatement = collections.namedtuple(
     'DesugaredAssignmentStatement',
     (
@@ -166,7 +174,7 @@ def desugar_infix_expression(expression):
             ),
             argument_list=(
                 desugar_expression(expression.left),
-                DesugaredStringLiteralExpression(string=expression.right.symbol),
+                desugar_symbol_literal_expression(expression.right),
             ),
         )
 
@@ -255,6 +263,12 @@ def desugar_structure_literal_expression(expression):
 
 def desugar_symbol_expression(expression):
     return DesugaredSymbolExpression(
+        metadata=expression.metadata,
+        symbol=expression.symbol,
+    )
+
+def desugar_symbol_literal_expression(expression):
+    return DesugaredSymbolLiteralExpression(
         metadata=expression.metadata,
         symbol=expression.symbol,
     )

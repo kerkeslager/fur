@@ -131,7 +131,7 @@ void callBuiltinField(Thread* thread, size_t argumentCount) {
 
   assert(!Stack_isEmpty(&(thread->stack)));
   Object key = Stack_pop(&(thread->stack));
-  assert(key.type == STRING); // TODO Make this a symbol
+  assert(key.type == SYMBOL);
 
   assert(!Stack_isEmpty(&(thread->stack)));
   Object structure = Stack_pop(&(thread->stack));

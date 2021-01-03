@@ -231,6 +231,13 @@ def normalize_symbol_expression(counter, expression):
         NormalSymbolExpression(symbol=expression.symbol),
     )
 
+def normalize_symbol_literal_expression(counter, expression):
+    return (
+        counter,
+        (),
+        NormalSymbolLiteralExpression(symbol=expression.symbol),
+    )
+
 def normalize_function_call_expression(counter, expression):
     prestatements = []
 
@@ -300,6 +307,7 @@ def normalize_expression(counter, expression):
         desugaring.DesugaredStringLiteralExpression: normalize_string_literal_expression,
         desugaring.DesugaredStructureLiteralExpression: normalize_structure_literal_expression,
         desugaring.DesugaredSymbolExpression: normalize_symbol_expression,
+        desugaring.DesugaredSymbolLiteralExpression: normalize_symbol_literal_expression,
     }[type(expression)](counter, expression)
 
 def normalize_expression_statement(counter, statement):
