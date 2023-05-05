@@ -6,11 +6,18 @@ TEST_OBJS := $(TEST_SRCS:.c=_test.o)
 %.o : %.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
-%_test.o : %.c
+%_test.o : %.c unittest.c
 	$(CC) -c -DTEST $(CFLAGS) $< -o $@
 
 fur: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o fur
 
+unittest.c :
+	./unittest.c.sh > unittest.c
+
 unittest: $(TEST_OBJS)
-	$(CC) $(CFLAGS) $(TEST_OBJS) -o unittest
+	$(CC) -DTEST $(CFLAGS) $(TEST_OBJS) -o unittest
+
+.PHONY: clean
+clean:
+	rm *.o fur unittest unittest.c

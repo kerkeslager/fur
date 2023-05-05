@@ -1,2 +1,4 @@
 *.o
 fur
+unittest
+unittest.c
