@@ -1,4 +1,5 @@
 *.o
+*.generated_c
+*.generated_co
 fur
-unittest
-unittest.c
+unit_test

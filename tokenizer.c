@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <stdlib.h>
 
 #include "tokenizer.h"
@@ -50,6 +49,9 @@ Token Tokenizer_getToken(Tokenizer* self) {
 
 #ifdef TEST
 
+#include <assert.h>
+#include <string.h>
+
 void test_eof() {
   const char* source = "";
   Tokenizer tokenizer;
@@ -60,6 +62,20 @@ void test_eof() {
   assert(token.type == TOKEN_EOF);
   assert(token.lexeme == source);
   assert(token.length == 0);
+  assert(token.line == 1);
+}
+
+void test_unexpected_character() {
+  // There is currently no plan to use the backtick character for anything
+  const char* source = "`";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Token token = Tokenizer_getToken(&tokenizer);
+
+  assert(token.type == TOKEN_ERROR);
+  assert(strcmp(token.lexeme, "Unexpected character") == 0);
+  assert(token.length == strlen("Unexpected character"));
   assert(token.line == 1);
 }
 
