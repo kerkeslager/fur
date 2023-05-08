@@ -14,6 +14,9 @@ Token Tokenizer_getToken(Tokenizer* self);
 
 void test_eof();
 void test_unexpected_character();
+void test_integer();
+void test_ignore_whitespace();
+void test_linebreaks_increment_line();
 
 #endif
 
