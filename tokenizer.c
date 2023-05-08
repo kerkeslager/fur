@@ -38,7 +38,7 @@ Token Token_create(TokenType type, const char* lexeme, size_t length, size_t lin
   return result;
 }
 
-Token Tokenizer_getToken(Tokenizer* self) {
+inline static void Tokenizer_handleWhitespace(Tokenizer* self) {
   for(;;) {
     switch(*(self->current)) {
       case '\n':
@@ -52,11 +52,13 @@ Token Tokenizer_getToken(Tokenizer* self) {
         break;
 
       default:
-        goto after_whitespace;
+        return;
     }
   }
+}
 
-  after_whitespace:
+Token Tokenizer_getToken(Tokenizer* self) {
+  Tokenizer_handleWhitespace(self);
 
   switch(*(self->current)) {
     case '\0':
