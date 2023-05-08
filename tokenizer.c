@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "tokenizer.h"
 
@@ -43,14 +44,13 @@ Token Tokenizer_getToken(Tokenizer* self) {
       return Token_create(TOKEN_EOF, self->current, 0, self->line);
 
     default:
-      return Token_create(TOKEN_ERROR, self->current, 0, self->line);
+      return Token_create(TOKEN_ERROR, "Unexpected character", strlen("Unexpected character"), self->line);
   }
 }
 
 #ifdef TEST
 
 #include <assert.h>
-#include <string.h>
 
 void test_eof() {
   const char* source = "";

@@ -13,6 +13,7 @@ Token Tokenizer_getToken(Tokenizer* self);
 #ifdef TEST
 
 void test_eof();
+void test_unexpected_character();
 
 #endif
 
