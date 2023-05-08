@@ -1,5 +1,6 @@
 CFLAGS = -Wall -Wextra
 SRCS := $(shell find . -name '*.c')
+HEADERS := $(shell find . -name '*.h')
 OBJS := $(SRCS:.c=.o)
 TEST_SRCS := $(shell find . -name '*.c' -not -name main.c)
 TEST_OBJS := $(TEST_SRCS:.c=_test.o)
@@ -13,7 +14,7 @@ TEST_OBJS := $(TEST_SRCS:.c=_test.o)
 fur: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o fur
 
-unit_test.generated_c :
+unit_test.generated_c : $(HEADERS)
 	./unit_test.c.sh > unit_test.generated_c
 
 unit_test.generated_co: unit_test.generated_c
