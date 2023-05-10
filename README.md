@@ -200,3 +200,31 @@ But then we're in an odd spot with the most common case:
 }
 9? nil?
 ```
+
+### Provers
+We can have a proof system based around provers:
+
+* A theorem is a statement which may be true or false.
+* An *axiom* is a theorem which we assume to be true.
+* Axioms could be stated as something like `axiom() x != 0;` which would be added
+  to the axioms for the current context.
+* An assert would not be assumed to be true, but rather checked at runtime.
+  However, under some circumstances we might be able to add it to the axioms
+  for the remainder of the context, after which point the runtime check will
+  have run and we can assume the checked theorem holds true.
+* A prove statement (like `prove() x != 0;`) would fail at compile time if a)
+  it can't be proven, or b) it is proven false.
+
+This system becomes more useful if it comes with a bunch of prepackaged axioms,
+for example `axiom(a,b) a + b = b + a;`
+
+This should be easily able to check all properties of a type system, but it's
+more powerful.
+
+I would like the type system to be unobtrusive, i.e. the user should be able
+to write code that looks like a dynamically typed language, and have it compile
+and run. As such, we might want to include prove statements which only fail
+compilation if we can prove they fail, for example if we can prove that the
+denominator is 0 in division, like `prove() not is_provable(_ / 0);`.
+
+Under certain circumstances, might we be able to treat functions as axioms?
