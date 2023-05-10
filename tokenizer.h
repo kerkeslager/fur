@@ -17,6 +17,7 @@ void test_unexpected_character();
 void test_integer();
 void test_ignore_whitespace();
 void test_linebreaks_increment_line();
+void test_integer_math_operators();
 
 #endif
 

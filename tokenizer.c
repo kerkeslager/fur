@@ -18,6 +18,11 @@ void Tokenizer_init(Tokenizer* self, const char* source) {
 typedef enum {
   TOKEN_INTEGER_LITERAL,
 
+  TOKEN_PLUS,
+  TOKEN_MINUS,
+  TOKEN_ASTERISK,
+  TOKEN_SLASH_SLASH,
+
   TOKEN_ERROR,
   TOKEN_EOF,
 } TokenType;
@@ -29,13 +34,25 @@ struct Token {
   size_t line;
 };
 
-Token Token_create(TokenType type, const char* lexeme, size_t length, size_t line) {
+inline static Token Token_create(TokenType type, const char* lexeme, size_t length, size_t line) {
   Token result;
   result.type = type;
   result.lexeme = lexeme;
   result.length = length;
   result.line = line;
   return result;
+}
+
+Token Tokenizer_consume(Tokenizer* self, TokenType type, size_t length) {
+  const char* lexeme = self->current;
+  self->current += length;
+
+  /*
+   * TODO
+   * This won't work if we have line changes inside a token, but we'll cross
+   * that bridge when we come to it.
+   */
+  return Token_create(type, lexeme, length, self->line);
 }
 
 inline static void Tokenizer_handleWhitespace(Tokenizer* self) {
@@ -62,7 +79,23 @@ Token Tokenizer_getToken(Tokenizer* self) {
 
   switch(*(self->current)) {
     case '\0':
-      return Token_create(TOKEN_EOF, self->current, 0, self->line);
+      return Tokenizer_consume(self, TOKEN_EOF, 0);
+
+    case '+':
+      return Tokenizer_consume(self, TOKEN_PLUS, 1);
+    case '-':
+      return Tokenizer_consume(self, TOKEN_MINUS, 1);
+    case '*':
+      return Tokenizer_consume(self, TOKEN_ASTERISK, 1);
+    case '/':
+      {
+        if(self->current[1] == '/') {
+          return Tokenizer_consume(self, TOKEN_SLASH_SLASH, 2);
+        } else {
+          break;
+        }
+      }
+
 
     case '0':
     case '1':
@@ -98,8 +131,10 @@ Token Tokenizer_getToken(Tokenizer* self) {
       }
 
     default:
-      return Token_create(TOKEN_ERROR, "Unexpected character", strlen("Unexpected character"), self->line);
+      break;
   }
+
+  return Token_create(TOKEN_ERROR, "Unexpected character", strlen("Unexpected character"), self->line);
 }
 
 #ifdef TEST
@@ -173,5 +208,38 @@ void test_linebreaks_increment_line() {
   assert(token.lexeme == source + 1);
   assert(token.length == 2);
   assert(token.line == 2);
+}
+
+void test_integer_math_operators() {
+  const char* source = "+ - * //";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Token token;
+
+  token = Tokenizer_getToken(&tokenizer);
+  assert(token.type == TOKEN_PLUS);
+  assert(token.lexeme == source);
+  assert(token.length == 1);
+  assert(token.line == 1);
+
+  token = Tokenizer_getToken(&tokenizer);
+  assert(token.type == TOKEN_MINUS);
+  assert(token.lexeme == source + 2);
+  assert(token.length == 1);
+  assert(token.line == 1);
+
+  token = Tokenizer_getToken(&tokenizer);
+  assert(token.type == TOKEN_ASTERISK);
+  assert(token.lexeme == source + 4);
+  assert(token.length == 1);
+  assert(token.line == 1);
+
+  token = Tokenizer_getToken(&tokenizer);
+  assert(token.type == TOKEN_SLASH_SLASH);
+  assert(token.lexeme == source + 6);
+  assert(token.length == 2);
+  assert(token.line == 1);
 }
 #endif
