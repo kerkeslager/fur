@@ -12,12 +12,12 @@ Token Tokenizer_getToken(Tokenizer* self);
 
 #ifdef TEST
 
-void test_eof();
-void test_unexpected_character();
-void test_integer();
-void test_ignore_whitespace();
-void test_linebreaks_increment_line();
-void test_integer_math_operators();
+void test_Tokenizer_getToken_eof();
+void test_Tokenizer_getToken_unexpected_character();
+void test_Tokenizer_getToken_integer();
+void test_Tokenizer_getToken_ignore_whitespace();
+void test_Tokenizer_getToken_linebreaks_increment_line();
+void test_Tokenizer_getToken_integer_math_operators();
 
 #endif
 
