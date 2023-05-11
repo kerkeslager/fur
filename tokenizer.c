@@ -3,36 +3,11 @@
 
 #include "tokenizer.h"
 
-struct Tokenizer {
-  const char* source;
-  const char* current;
-  size_t line;
-};
-
 void Tokenizer_init(Tokenizer* self, const char* source) {
   self->source = source;
   self->current = source;
   self->line = 1;
 }
-
-typedef enum {
-  TOKEN_INTEGER_LITERAL,
-
-  TOKEN_PLUS,
-  TOKEN_MINUS,
-  TOKEN_ASTERISK,
-  TOKEN_SLASH_SLASH,
-
-  TOKEN_ERROR,
-  TOKEN_EOF,
-} TokenType;
-
-struct Token {
-  TokenType type;
-  const char* lexeme;
-  size_t length;
-  size_t line;
-};
 
 inline static Token Token_create(TokenType type, const char* lexeme, size_t length, size_t line) {
   Token result;

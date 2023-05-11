@@ -1,11 +1,30 @@
 #ifndef TOKENIZER_H
 #define TOKENIZER_H
 
-struct Token;
-typedef struct Token Token;
+typedef enum {
+  TOKEN_INTEGER_LITERAL,
 
-struct Tokenizer;
-typedef struct Tokenizer Tokenizer;
+  TOKEN_PLUS,
+  TOKEN_MINUS,
+  TOKEN_ASTERISK,
+  TOKEN_SLASH_SLASH,
+
+  TOKEN_ERROR,
+  TOKEN_EOF,
+} TokenType;
+
+typedef struct {
+  TokenType type;
+  const char* lexeme;
+  size_t length;
+  size_t line;
+} Token;
+
+typedef struct {
+  const char* source;
+  const char* current;
+  size_t line;
+} Tokenizer;
 
 void Tokenizer_init(Tokenizer* self, const char* source);
 Token Tokenizer_getToken(Tokenizer* self);

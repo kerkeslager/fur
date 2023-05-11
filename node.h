@@ -1,6 +1,8 @@
 #ifndef NODE_H
 #define NODE_H
 
+#include <stdlib.h>
+
 typedef enum {
   // Atom Nodes
   NODE_INTEGER_LITERAL,
