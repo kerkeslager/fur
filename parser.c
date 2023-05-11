@@ -3,8 +3,8 @@
 #include "assert.h"
 #include "parser.h"
 
-Node* parseExpression(Tokenizer* tokenizer) {
-  Token token = Tokenizer_getToken(tokenizer);
+Node* parseAtom(Tokenizer* tokenizer) {
+  Token token = Tokenizer_scan(tokenizer);
 
   switch(token.type) {
     case TOKEN_INTEGER_LITERAL:
@@ -14,6 +14,10 @@ Node* parseExpression(Tokenizer* tokenizer) {
       // TODO Handle this
       assert(false);
   }
+}
+
+Node* parseExpression(Tokenizer* tokenizer) {
+  return parseAtom(tokenizer);
 }
 
 #ifdef TEST

@@ -27,16 +27,16 @@ typedef struct {
 } Tokenizer;
 
 void Tokenizer_init(Tokenizer* self, const char* source);
-Token Tokenizer_getToken(Tokenizer* self);
+Token Tokenizer_scan(Tokenizer* self);
 
 #ifdef TEST
 
-void test_Tokenizer_getToken_eof();
-void test_Tokenizer_getToken_unexpected_character();
-void test_Tokenizer_getToken_integer();
-void test_Tokenizer_getToken_ignore_whitespace();
-void test_Tokenizer_getToken_linebreaks_increment_line();
-void test_Tokenizer_getToken_integer_math_operators();
+void test_Tokenizer_scan_eof();
+void test_Tokenizer_scan_unexpected_character();
+void test_Tokenizer_scan_integer();
+void test_Tokenizer_scan_ignore_whitespace();
+void test_Tokenizer_scan_linebreaks_increment_line();
+void test_Tokenizer_scan_integer_math_operators();
 
 #endif
 

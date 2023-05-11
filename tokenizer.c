@@ -49,7 +49,7 @@ inline static void Tokenizer_handleWhitespace(Tokenizer* self) {
   }
 }
 
-Token Tokenizer_getToken(Tokenizer* self) {
+Token Tokenizer_scan(Tokenizer* self) {
   Tokenizer_handleWhitespace(self);
 
   switch(*(self->current)) {
@@ -116,12 +116,12 @@ Token Tokenizer_getToken(Tokenizer* self) {
 
 #include <assert.h>
 
-void test_Tokenizer_getToken_eof() {
+void test_Tokenizer_scan_eof() {
   const char* source = "";
   Tokenizer tokenizer;
   Tokenizer_init(&tokenizer, source);
 
-  Token token = Tokenizer_getToken(&tokenizer);
+  Token token = Tokenizer_scan(&tokenizer);
 
   assert(token.type == TOKEN_EOF);
   assert(token.lexeme == source);
@@ -129,13 +129,13 @@ void test_Tokenizer_getToken_eof() {
   assert(token.line == 1);
 }
 
-void test_Tokenizer_getToken_unexpected_character() {
+void test_Tokenizer_scan_unexpected_character() {
   // There is currently no plan to use the backtick character for anything
   const char* source = "`";
   Tokenizer tokenizer;
   Tokenizer_init(&tokenizer, source);
 
-  Token token = Tokenizer_getToken(&tokenizer);
+  Token token = Tokenizer_scan(&tokenizer);
 
   assert(token.type == TOKEN_ERROR);
   assert(strcmp(token.lexeme, "Unexpected character") == 0);
@@ -143,13 +143,13 @@ void test_Tokenizer_getToken_unexpected_character() {
   assert(token.line == 1);
 }
 
-void test_Tokenizer_getToken_integer() {
+void test_Tokenizer_scan_integer() {
   const char* source = "42";
 
   Tokenizer tokenizer;
   Tokenizer_init(&tokenizer, source);
 
-  Token token = Tokenizer_getToken(&tokenizer);
+  Token token = Tokenizer_scan(&tokenizer);
 
   assert(token.type == TOKEN_INTEGER_LITERAL);
   assert(token.lexeme == source);
@@ -157,13 +157,13 @@ void test_Tokenizer_getToken_integer() {
   assert(token.line == 1);
 }
 
-void test_Tokenizer_getToken_ignore_whitespace() {
+void test_Tokenizer_scan_ignore_whitespace() {
   const char* source = " \t\r42";
 
   Tokenizer tokenizer;
   Tokenizer_init(&tokenizer, source);
 
-  Token token = Tokenizer_getToken(&tokenizer);
+  Token token = Tokenizer_scan(&tokenizer);
 
   assert(token.type == TOKEN_INTEGER_LITERAL);
   assert(token.lexeme == source + 3);
@@ -171,13 +171,13 @@ void test_Tokenizer_getToken_ignore_whitespace() {
   assert(token.line == 1);
 }
 
-void test_Tokenizer_getToken_linebreaks_increment_line() {
+void test_Tokenizer_scan_linebreaks_increment_line() {
   const char* source = "\n42";
 
   Tokenizer tokenizer;
   Tokenizer_init(&tokenizer, source);
 
-  Token token = Tokenizer_getToken(&tokenizer);
+  Token token = Tokenizer_scan(&tokenizer);
 
   assert(token.type == TOKEN_INTEGER_LITERAL);
   assert(token.lexeme == source + 1);
@@ -185,7 +185,7 @@ void test_Tokenizer_getToken_linebreaks_increment_line() {
   assert(token.line == 2);
 }
 
-void test_Tokenizer_getToken_integer_math_operators() {
+void test_Tokenizer_scan_integer_math_operators() {
   const char* source = "+ - * //";
 
   Tokenizer tokenizer;
@@ -193,25 +193,25 @@ void test_Tokenizer_getToken_integer_math_operators() {
 
   Token token;
 
-  token = Tokenizer_getToken(&tokenizer);
+  token = Tokenizer_scan(&tokenizer);
   assert(token.type == TOKEN_PLUS);
   assert(token.lexeme == source);
   assert(token.length == 1);
   assert(token.line == 1);
 
-  token = Tokenizer_getToken(&tokenizer);
+  token = Tokenizer_scan(&tokenizer);
   assert(token.type == TOKEN_MINUS);
   assert(token.lexeme == source + 2);
   assert(token.length == 1);
   assert(token.line == 1);
 
-  token = Tokenizer_getToken(&tokenizer);
+  token = Tokenizer_scan(&tokenizer);
   assert(token.type == TOKEN_ASTERISK);
   assert(token.lexeme == source + 4);
   assert(token.length == 1);
   assert(token.line == 1);
 
-  token = Tokenizer_getToken(&tokenizer);
+  token = Tokenizer_scan(&tokenizer);
   assert(token.type == TOKEN_SLASH_SLASH);
   assert(token.lexeme == source + 6);
   assert(token.length == 2);
