@@ -8,14 +8,14 @@ inline static void Node_init(Node* self, NodeType type, size_t line) {
   self->line = line;
 }
 
-inline static void AtomNode_init(AtomNode* self, NodeType type, size_t line, char* text, size_t length) {
+inline static void AtomNode_init(AtomNode* self, NodeType type, size_t line, const char* text, size_t length) {
   assert(type == NODE_INTEGER_LITERAL);
   Node_init(&(self->node), type, line);
   self->text = text;
   self->length = length;
 }
 
-Node* AtomNode_new(NodeType type, size_t line, char* text, size_t length) {
+Node* AtomNode_new(NodeType type, size_t line, const char* text, size_t length) {
   AtomNode* node = malloc(sizeof(AtomNode));
   AtomNode_init(node, type, line, text, length);
   return (Node*)node;

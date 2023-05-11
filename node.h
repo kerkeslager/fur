@@ -24,11 +24,11 @@ typedef struct {
 
 typedef struct {
   Node node;
-  char* text;
+  const char* text;
   size_t length;
 } AtomNode;
 
-Node* AtomNode_new(NodeType type, size_t line, char* text, size_t length);
+Node* AtomNode_new(NodeType type, size_t line, const char* text, size_t length);
 
 typedef struct {
   Node node;
