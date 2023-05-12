@@ -15,6 +15,8 @@ typedef enum {
   NODE_SUBTRACT,
   NODE_MULTIPLY,
   NODE_INTEGER_DIVIDE,
+
+  NODE_ERROR,
 } NodeType;
 
 typedef struct {

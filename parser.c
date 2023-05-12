@@ -1,6 +1,6 @@
 #include <stdbool.h>
 
-#include "assert.h"
+#include <assert.h>
 #include "parser.h"
 
 Node* parseAtom(Tokenizer* tokenizer) {
@@ -16,8 +16,42 @@ Node* parseAtom(Tokenizer* tokenizer) {
   }
 }
 
+inline static bool Token_isInfixOperator(Token self) {
+  switch(self.type) {
+    case TOKEN_PLUS:
+    case TOKEN_MINUS:
+    case TOKEN_ASTERISK:
+    case TOKEN_SLASH_SLASH:
+      return true;
+
+    default:
+      return false;
+  }
+}
+
+inline static NodeType mapInfix(Token token) {
+  switch(token.type) {
+    case TOKEN_PLUS: return NODE_ADD;
+    case TOKEN_MINUS: return NODE_SUBTRACT;
+    case TOKEN_ASTERISK: return NODE_MULTIPLY;
+    case TOKEN_SLASH_SLASH: return NODE_INTEGER_DIVIDE;
+    default: assert(false);
+  }
+  return NODE_ERROR;
+}
+
 Node* parseExpression(Tokenizer* tokenizer) {
-  return parseAtom(tokenizer);
+  Node* left = parseAtom(tokenizer);
+
+  Token operator = Tokenizer_peek(tokenizer);
+
+  if(Token_isInfixOperator(operator)) {
+    Tokenizer_scan(tokenizer);
+    Node* right = parseAtom(tokenizer);
+    return BinaryNode_new(mapInfix(operator), left->line, left, right);
+  }
+
+  return left;
 }
 
 #ifdef TEST
@@ -35,6 +69,98 @@ void test_parseExpression_parseIntegerLiteral() {
   AtomNode* ilExpression = (AtomNode*)expression;
   assert(ilExpression->text == source);
   assert(ilExpression->length == 2);
+}
+
+void test_parseExpression_addition() {
+  const char* source = "1 + 2";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Node* expression = parseExpression(&tokenizer);
+  assert(expression->type == NODE_ADD);
+  assert(expression->line == 1);
+
+  BinaryNode* bNode = (BinaryNode*)expression;
+  assert(bNode->arg0->type == NODE_INTEGER_LITERAL);
+  assert(bNode->arg0->line == 1);
+  assert(bNode->arg1->type == NODE_INTEGER_LITERAL);
+  assert(bNode->arg1->line == 1);
+
+  AtomNode* arg0 = (AtomNode*)(bNode->arg0);
+  assert(arg0->text == source);
+  assert(arg0->length == 1);
+  AtomNode* arg1 = (AtomNode*)(bNode->arg1);
+  assert(arg1->text == source + 4);
+  assert(arg1->length == 1);
+}
+
+void test_parseExpression_subtraction() {
+  const char* source = "3 - 2";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Node* expression = parseExpression(&tokenizer);
+  assert(expression->type == NODE_SUBTRACT);
+  assert(expression->line == 1);
+
+  BinaryNode* bNode = (BinaryNode*)expression;
+  assert(bNode->arg0->type == NODE_INTEGER_LITERAL);
+  assert(bNode->arg0->line == 1);
+  assert(bNode->arg1->type == NODE_INTEGER_LITERAL);
+  assert(bNode->arg1->line == 1);
+
+  AtomNode* arg0 = (AtomNode*)(bNode->arg0);
+  assert(arg0->text == source);
+  assert(arg0->length == 1);
+  AtomNode* arg1 = (AtomNode*)(bNode->arg1);
+  assert(arg1->text == source + 4);
+  assert(arg1->length == 1);
+}
+
+void test_parseExpression_multiplication() {
+  const char* source = "2 * 3";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Node* expression = parseExpression(&tokenizer);
+  assert(expression->type == NODE_MULTIPLY);
+  assert(expression->line == 1);
+
+  BinaryNode* bNode = (BinaryNode*)expression;
+  assert(bNode->arg0->type == NODE_INTEGER_LITERAL);
+  assert(bNode->arg0->line == 1);
+  assert(bNode->arg1->type == NODE_INTEGER_LITERAL);
+  assert(bNode->arg1->line == 1);
+
+  AtomNode* arg0 = (AtomNode*)(bNode->arg0);
+  assert(arg0->text == source);
+  assert(arg0->length == 1);
+  AtomNode* arg1 = (AtomNode*)(bNode->arg1);
+  assert(arg1->text == source + 4);
+  assert(arg1->length == 1);
+}
+
+void test_parseExpression_integerDivision() {
+  const char* source = "6 // 2";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Node* expression = parseExpression(&tokenizer);
+  assert(expression->type == NODE_INTEGER_DIVIDE);
+  assert(expression->line == 1);
+
+  BinaryNode* bNode = (BinaryNode*)expression;
+  assert(bNode->arg0->type == NODE_INTEGER_LITERAL);
+  assert(bNode->arg0->line == 1);
+  assert(bNode->arg1->type == NODE_INTEGER_LITERAL);
+  assert(bNode->arg1->line == 1);
+
+  AtomNode* arg0 = (AtomNode*)(bNode->arg0);
+  assert(arg0->text == source);
+  assert(arg0->length == 1);
+  AtomNode* arg1 = (AtomNode*)(bNode->arg1);
+  assert(arg1->text == source + 5);
+  assert(arg1->length == 1);
 }
 
 #endif
