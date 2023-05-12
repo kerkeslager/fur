@@ -43,15 +43,17 @@ inline static NodeType mapInfix(Token token) {
 Node* parseExpression(Tokenizer* tokenizer) {
   Node* left = parseAtom(tokenizer);
 
-  Token operator = Tokenizer_peek(tokenizer);
+  for(;;) {
+    Token operator = Tokenizer_peek(tokenizer);
 
-  if(Token_isInfixOperator(operator)) {
+    if(!Token_isInfixOperator(operator)) {
+      return left;
+    }
+
     Tokenizer_scan(tokenizer);
     Node* right = parseAtom(tokenizer);
-    return BinaryNode_new(mapInfix(operator), left->line, left, right);
+    left = BinaryNode_new(mapInfix(operator), left->line, left, right);
   }
-
-  return left;
 }
 
 #ifdef TEST
@@ -69,6 +71,8 @@ void test_parseExpression_parseIntegerLiteral() {
   AtomNode* ilExpression = (AtomNode*)expression;
   assert(ilExpression->text == source);
   assert(ilExpression->length == 2);
+
+  Node_free(expression);
 }
 
 void test_parseExpression_addition() {
@@ -92,6 +96,8 @@ void test_parseExpression_addition() {
   AtomNode* arg1 = (AtomNode*)(bNode->arg1);
   assert(arg1->text == source + 4);
   assert(arg1->length == 1);
+
+  Node_free(expression);
 }
 
 void test_parseExpression_subtraction() {
@@ -115,6 +121,8 @@ void test_parseExpression_subtraction() {
   AtomNode* arg1 = (AtomNode*)(bNode->arg1);
   assert(arg1->text == source + 4);
   assert(arg1->length == 1);
+
+  Node_free(expression);
 }
 
 void test_parseExpression_multiplication() {
@@ -138,6 +146,8 @@ void test_parseExpression_multiplication() {
   AtomNode* arg1 = (AtomNode*)(bNode->arg1);
   assert(arg1->text == source + 4);
   assert(arg1->length == 1);
+
+  Node_free(expression);
 }
 
 void test_parseExpression_integerDivision() {
@@ -161,6 +171,60 @@ void test_parseExpression_integerDivision() {
   AtomNode* arg1 = (AtomNode*)(bNode->arg1);
   assert(arg1->text == source + 5);
   assert(arg1->length == 1);
+
+  Node_free(expression);
+}
+
+void test_parseExpression_additionLeftAssociative() {
+  const char* source = "1 + 2 + 3";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  BinaryNode* expression = (BinaryNode*)parseExpression(&tokenizer);
+  assert(expression->node.type == NODE_ADD);
+  assert(expression->arg0->type == NODE_ADD);
+  assert(expression->arg1->type == NODE_INTEGER_LITERAL);
+
+  Node_free((Node*)expression);
+}
+
+void test_parseExpression_subtractionLeftAssociative() {
+  const char* source = "3 - 2 - 1";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  BinaryNode* expression = (BinaryNode*)parseExpression(&tokenizer);
+  assert(expression->node.type == NODE_SUBTRACT);
+  assert(expression->arg0->type == NODE_SUBTRACT);
+  assert(expression->arg1->type == NODE_INTEGER_LITERAL);
+
+  Node_free((Node*)expression);
+}
+
+void test_parseExpression_multiplicationLeftAssociative() {
+  const char* source = "2 * 3 * 5";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  BinaryNode* expression = (BinaryNode*)parseExpression(&tokenizer);
+  assert(expression->node.type == NODE_MULTIPLY);
+  assert(expression->arg0->type == NODE_MULTIPLY);
+  assert(expression->arg1->type == NODE_INTEGER_LITERAL);
+
+  Node_free((Node*)expression);
+}
+
+void test_parseExpression_integerDivisionLeftAssociative() {
+  const char* source = "12 // 3 // 2";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  BinaryNode* expression = (BinaryNode*)parseExpression(&tokenizer);
+  assert(expression->node.type == NODE_INTEGER_DIVIDE);
+  assert(expression->arg0->type == NODE_INTEGER_DIVIDE);
+  assert(expression->arg1->type == NODE_INTEGER_LITERAL);
+
+  Node_free((Node*)expression);
 }
 
 #endif

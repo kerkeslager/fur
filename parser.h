@@ -15,6 +15,11 @@ void test_parseExpression_subtraction();
 void test_parseExpression_multiplication();
 void test_parseExpression_integerDivision();
 
+void test_parseExpression_additionLeftAssociative();
+void test_parseExpression_subtractionLeftAssociative();
+void test_parseExpression_multiplicationLeftAssociative();
+void test_parseExpression_integerDivisionLeftAssociative();
+
 #endif
 
 #endif

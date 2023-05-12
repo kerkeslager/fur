@@ -1,8 +1,6 @@
 #ifndef TOKENIZER_H
 #define TOKENIZER_H
 
-#include <stdlib.h>
-
 typedef enum {
   TOKEN_INTEGER_LITERAL,
 
