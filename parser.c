@@ -16,6 +16,11 @@ Node* parseAtom(Tokenizer* tokenizer) {
   }
 }
 
+/*
+ * TODO Currently tests pass, but it seems like left associative operations,
+ * such as addition, should have a *higher* left precedence, rather than a
+ * lower left precedence. Figure out why.
+ */
 typedef enum {
   PREC_NONE,
   PREC_ANY,
