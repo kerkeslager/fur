@@ -20,6 +20,11 @@ void test_parseExpression_subtractionLeftAssociative();
 void test_parseExpression_multiplicationLeftAssociative();
 void test_parseExpression_integerDivisionLeftAssociative();
 
+void test_parseExpression_multiplicationBeforeAddition();
+void test_parseExpression_multiplicationBeforeSubtraction();
+void test_parseExpression_integerDivisionBeforeAddition();
+void test_parseExpression_integerDivisionBeforeSubtraction();
+
 #endif
 
 #endif

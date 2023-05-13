@@ -16,17 +16,33 @@ Node* parseAtom(Tokenizer* tokenizer) {
   }
 }
 
-inline static bool Token_isInfixOperator(Token self) {
-  switch(self.type) {
-    case TOKEN_PLUS:
-    case TOKEN_MINUS:
-    case TOKEN_ASTERISK:
-    case TOKEN_SLASH_SLASH:
-      return true;
+typedef enum {
+  PREC_NONE,
+  PREC_ANY,
+  PREC_TERM_LEFT,
+  PREC_TERM_RIGHT,
+  PREC_FACTOR_LEFT,
+  PREC_FACTOR_RIGHT,
+} Precedence;
 
-    default:
-      return false;
-  }
+typedef struct {
+  Precedence infixLeft;
+  Precedence infixRight;
+} PrecedenceRule;
+
+const PrecedenceRule PRECEDENCE[] = {
+  [TOKEN_INTEGER_LITERAL] = { PREC_NONE,        PREC_NONE },
+  [TOKEN_PLUS] =            { PREC_TERM_LEFT,   PREC_TERM_RIGHT },
+  [TOKEN_MINUS] =           { PREC_TERM_LEFT,   PREC_TERM_RIGHT },
+  [TOKEN_ASTERISK] =        { PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT },
+  [TOKEN_SLASH_SLASH] =     { PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT },
+};
+
+inline static Precedence Token_infixLeftPrecedence(Token self) {
+  return PRECEDENCE[self.type].infixLeft;
+}
+inline static Precedence Token_infixRightPrecedence(Token self) {
+  return PRECEDENCE[self.type].infixRight;
 }
 
 inline static NodeType mapInfix(Token token) {
@@ -40,20 +56,28 @@ inline static NodeType mapInfix(Token token) {
   return NODE_ERROR;
 }
 
-Node* parseExpression(Tokenizer* tokenizer) {
+Node* parseExpressionWithPrecedence(Tokenizer* tokenizer, Precedence minPrecedence) {
   Node* left = parseAtom(tokenizer);
 
   for(;;) {
     Token operator = Tokenizer_peek(tokenizer);
 
-    if(!Token_isInfixOperator(operator)) {
+    if(Token_infixLeftPrecedence(operator) < minPrecedence) {
       return left;
     }
 
     Tokenizer_scan(tokenizer);
-    Node* right = parseAtom(tokenizer);
+
+    Node* right = parseExpressionWithPrecedence(
+        tokenizer,
+        Token_infixRightPrecedence(operator));
+
     left = BinaryNode_new(mapInfix(operator), left->line, left, right);
   }
+}
+
+Node* parseExpression(Tokenizer* tokenizer) {
+  return parseExpressionWithPrecedence(tokenizer, PREC_ANY);
 }
 
 #ifdef TEST
@@ -223,6 +247,58 @@ void test_parseExpression_integerDivisionLeftAssociative() {
   assert(expression->node.type == NODE_INTEGER_DIVIDE);
   assert(expression->arg0->type == NODE_INTEGER_DIVIDE);
   assert(expression->arg1->type == NODE_INTEGER_LITERAL);
+
+  Node_free((Node*)expression);
+}
+
+void test_parseExpression_multiplicationBeforeAddition() {
+  const char* source = "1 + 3 * 2";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  BinaryNode* expression = (BinaryNode*)parseExpression(&tokenizer);
+  assert(expression->node.type == NODE_ADD);
+  assert(expression->arg0->type == NODE_INTEGER_LITERAL);
+  assert(expression->arg1->type == NODE_MULTIPLY);
+
+  Node_free((Node*)expression);
+}
+
+void test_parseExpression_multiplicationBeforeSubtraction() {
+  const char* source = "1 - 3 * 2";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  BinaryNode* expression = (BinaryNode*)parseExpression(&tokenizer);
+  assert(expression->node.type == NODE_SUBTRACT);
+  assert(expression->arg0->type == NODE_INTEGER_LITERAL);
+  assert(expression->arg1->type == NODE_MULTIPLY);
+
+  Node_free((Node*)expression);
+}
+
+void test_parseExpression_integerDivisionBeforeAddition() {
+  const char* source = "1 + 6 // 2";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  BinaryNode* expression = (BinaryNode*)parseExpression(&tokenizer);
+  assert(expression->node.type == NODE_ADD);
+  assert(expression->arg0->type == NODE_INTEGER_LITERAL);
+  assert(expression->arg1->type == NODE_INTEGER_DIVIDE);
+
+  Node_free((Node*)expression);
+}
+
+void test_parseExpression_integerDivisionBeforeSubtraction() {
+  const char* source = "1 - 6 // 2";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  BinaryNode* expression = (BinaryNode*)parseExpression(&tokenizer);
+  assert(expression->node.type == NODE_SUBTRACT);
+  assert(expression->arg0->type == NODE_INTEGER_LITERAL);
+  assert(expression->arg1->type == NODE_INTEGER_DIVIDE);
 
   Node_free((Node*)expression);
 }

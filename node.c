@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include "node.h"
@@ -80,6 +81,9 @@ void Node_free(Node* self) {
     case NODE_INTEGER_DIVIDE:
       BinaryNode_free((BinaryNode*)self);
       return;
+
+    case NODE_ERROR:
+      assert(false);
   }
 }
 
