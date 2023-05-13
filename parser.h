@@ -25,6 +25,8 @@ void test_parseExpression_multiplicationBeforeSubtraction();
 void test_parseExpression_integerDivisionBeforeAddition();
 void test_parseExpression_integerDivisionBeforeSubtraction();
 
+void test_parseExpression_negation();
+
 #endif
 
 #endif

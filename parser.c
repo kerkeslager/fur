@@ -24,23 +24,29 @@ typedef enum {
   PREC_TERM_LEFT,
   PREC_FACTOR_RIGHT,
   PREC_FACTOR_LEFT,
+  PREC_NEGATE,
 } Precedence;
 
 typedef struct {
+  Precedence prefix;
   Precedence infixLeft;
   Precedence infixRight;
 } PrecedenceRule;
 
 const PrecedenceRule PRECEDENCE[] = {
-  [TOKEN_INTEGER_LITERAL] = { PREC_NONE,        PREC_NONE },
-  [TOKEN_PLUS] =            { PREC_TERM_LEFT,   PREC_TERM_RIGHT },
-  [TOKEN_MINUS] =           { PREC_TERM_LEFT,   PREC_TERM_RIGHT },
-  [TOKEN_ASTERISK] =        { PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT },
-  [TOKEN_SLASH_SLASH] =     { PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT },
+  [TOKEN_INTEGER_LITERAL] = { PREC_NONE,    PREC_NONE,        PREC_NONE },
+  [TOKEN_PLUS] =            { PREC_NONE,    PREC_TERM_LEFT,   PREC_TERM_RIGHT },
+  [TOKEN_MINUS] =           { PREC_NEGATE,  PREC_TERM_LEFT,   PREC_TERM_RIGHT },
+  [TOKEN_ASTERISK] =        { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT },
+  [TOKEN_SLASH_SLASH] =     { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT },
 
-  [TOKEN_EOF] =             { PREC_NONE,        PREC_NONE },
-  [TOKEN_ERROR] =           { PREC_NONE,        PREC_NONE },
+  [TOKEN_EOF] =             { PREC_NONE,    PREC_NONE,        PREC_NONE },
+  [TOKEN_ERROR] =           { PREC_NONE,    PREC_NONE,        PREC_NONE },
 };
+
+inline static Precedence Token_prefixPrecedence(Token self) {
+  return PRECEDENCE[self.type].prefix;
+}
 
 inline static Precedence Token_infixLeftPrecedence(Token self) {
   return PRECEDENCE[self.type].infixLeft;
@@ -60,8 +66,34 @@ inline static NodeType mapInfix(Token token) {
   return NODE_ERROR;
 }
 
+inline static NodeType mapPrefix(Token token) {
+  switch(token.type) {
+    case TOKEN_MINUS: return NODE_NEGATE;
+    default: assert(false);
+  }
+  return NODE_ERROR;
+}
+
+Node* parseExpressionWithPrecedence(Tokenizer* tokenizer, Precedence minPrecedence);
+
+Node* parseUnary(Tokenizer* tokenizer, Precedence minPrecedence) {
+  Token token = Tokenizer_peek(tokenizer);
+  Precedence prefixPrecedence = Token_prefixPrecedence(token);
+
+  if(prefixPrecedence < minPrecedence) {
+    // TODO Handle postfix
+    return parseAtom(tokenizer);
+  }
+
+  Tokenizer_scan(tokenizer);
+  Node* inner = parseExpressionWithPrecedence(tokenizer, prefixPrecedence);
+
+  // TODO Handle postfix
+  return UnaryNode_new(mapPrefix(token), token.line, inner);
+}
+
 Node* parseExpressionWithPrecedence(Tokenizer* tokenizer, Precedence minPrecedence) {
-  Node* left = parseAtom(tokenizer);
+  Node* left = parseUnary(tokenizer, minPrecedence);
 
   for(;;) {
     Token operator = Tokenizer_peek(tokenizer);
@@ -305,6 +337,26 @@ void test_parseExpression_integerDivisionBeforeSubtraction() {
   assert(expression->arg1->type == NODE_INTEGER_DIVIDE);
 
   Node_free((Node*)expression);
+}
+
+void test_parseExpression_negation() {
+  const char* source = "-42";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Node* expression = parseExpression(&tokenizer);
+  assert(expression->type == NODE_NEGATE);
+  assert(expression->line == 1);
+
+  UnaryNode* uNode = (UnaryNode*)expression;
+  assert(uNode->arg0->type == NODE_INTEGER_LITERAL);
+  assert(uNode->arg0->line == 1);
+
+  AtomNode* arg0 = (AtomNode*)(uNode->arg0);
+  assert(arg0->text == source + 1);
+  assert(arg0->length == 2);
+
+  Node_free(expression);
 }
 
 #endif
