@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include "parser.h"
+#include <stdio.h>
 
 Node* parseAtom(Tokenizer* tokenizer) {
   Token token = Tokenizer_scan(tokenizer);
@@ -16,18 +17,13 @@ Node* parseAtom(Tokenizer* tokenizer) {
   }
 }
 
-/*
- * TODO Currently tests pass, but it seems like left associative operations,
- * such as addition, should have a *higher* left precedence, rather than a
- * lower left precedence. Figure out why.
- */
 typedef enum {
   PREC_NONE,
   PREC_ANY,
-  PREC_TERM_LEFT,
   PREC_TERM_RIGHT,
-  PREC_FACTOR_LEFT,
+  PREC_TERM_LEFT,
   PREC_FACTOR_RIGHT,
+  PREC_FACTOR_LEFT,
 } Precedence;
 
 typedef struct {
@@ -41,6 +37,9 @@ const PrecedenceRule PRECEDENCE[] = {
   [TOKEN_MINUS] =           { PREC_TERM_LEFT,   PREC_TERM_RIGHT },
   [TOKEN_ASTERISK] =        { PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT },
   [TOKEN_SLASH_SLASH] =     { PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT },
+
+  [TOKEN_EOF] =             { PREC_NONE,        PREC_NONE },
+  [TOKEN_ERROR] =           { PREC_NONE,        PREC_NONE },
 };
 
 inline static Precedence Token_infixLeftPrecedence(Token self) {
@@ -67,7 +66,7 @@ Node* parseExpressionWithPrecedence(Tokenizer* tokenizer, Precedence minPreceden
   for(;;) {
     Token operator = Tokenizer_peek(tokenizer);
 
-    if(Token_infixLeftPrecedence(operator) < minPrecedence) {
+    if(Token_infixRightPrecedence(operator) < minPrecedence) {
       return left;
     }
 
@@ -75,7 +74,7 @@ Node* parseExpressionWithPrecedence(Tokenizer* tokenizer, Precedence minPreceden
 
     Node* right = parseExpressionWithPrecedence(
         tokenizer,
-        Token_infixRightPrecedence(operator));
+        Token_infixLeftPrecedence(operator));
 
     left = BinaryNode_new(mapInfix(operator), left->line, left, right);
   }
