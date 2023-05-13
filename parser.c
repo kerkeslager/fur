@@ -35,6 +35,7 @@ typedef struct {
 
 const PrecedenceRule PRECEDENCE[] = {
   [TOKEN_INTEGER_LITERAL] = { PREC_NONE,    PREC_NONE,        PREC_NONE },
+
   [TOKEN_PLUS] =            { PREC_NONE,    PREC_TERM_LEFT,   PREC_TERM_RIGHT },
   [TOKEN_MINUS] =           { PREC_NEGATE,  PREC_TERM_LEFT,   PREC_TERM_RIGHT },
   [TOKEN_ASTERISK] =        { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT },
@@ -357,6 +358,106 @@ void test_parseExpression_negation() {
   assert(arg0->length == 2);
 
   Node_free(expression);
+}
+
+void test_parseExpression_nestedNegation() {
+  const char* source = "--42";
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Node* expression = parseExpression(&tokenizer);
+  assert(expression->type == NODE_NEGATE);
+  assert(expression->line == 1);
+
+  UnaryNode* uNode = (UnaryNode*)expression;
+  assert(uNode->arg0->type == NODE_NEGATE);
+  assert(uNode->arg0->line == 1);
+
+  uNode = (UnaryNode*)(uNode->arg0);
+  assert(uNode->arg0->type == NODE_INTEGER_LITERAL);
+  assert(uNode->arg0->line == 1);
+
+  AtomNode* arg0 = (AtomNode*)(uNode->arg0);
+  assert(arg0->text == source + 2);
+  assert(arg0->length == 2);
+
+  Node_free(expression);
+}
+
+void test_parseExpression_negationLeft() {
+  const char* source;
+  Tokenizer tokenizer;
+  Node* node;
+
+  source = "-42 + 1";
+  Tokenizer_init(&tokenizer, source);
+  node = parseExpression(&tokenizer);
+  assert(node->type == NODE_ADD);
+  assert(((BinaryNode*)node)->arg0->type == NODE_NEGATE);
+  assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
+  Node_free(node);
+
+  source = "-42 - 1";
+  Tokenizer_init(&tokenizer, source);
+  node = parseExpression(&tokenizer);
+  assert(node->type == NODE_SUBTRACT);
+  assert(((BinaryNode*)node)->arg0->type == NODE_NEGATE);
+  assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
+  Node_free(node);
+
+  source = "-42 * 1";
+  Tokenizer_init(&tokenizer, source);
+  node = parseExpression(&tokenizer);
+  assert(node->type == NODE_MULTIPLY);
+  assert(((BinaryNode*)node)->arg0->type == NODE_NEGATE);
+  assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
+  Node_free(node);
+
+  source = "-42 // 1";
+  Tokenizer_init(&tokenizer, source);
+  node = parseExpression(&tokenizer);
+  assert(node->type == NODE_INTEGER_DIVIDE);
+  assert(((BinaryNode*)node)->arg0->type == NODE_NEGATE);
+  assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
+  Node_free(node);
+}
+
+void test_parseExpression_negationRight() {
+  const char* source;
+  Tokenizer tokenizer;
+  Node* node;
+
+  source = "42 + -1";
+  Tokenizer_init(&tokenizer, source);
+  node = parseExpression(&tokenizer);
+  assert(node->type == NODE_ADD);
+  assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
+  assert(((BinaryNode*)node)->arg1->type == NODE_NEGATE);
+  Node_free(node);
+
+  source = "42 - -1";
+  Tokenizer_init(&tokenizer, source);
+  node = parseExpression(&tokenizer);
+  assert(node->type == NODE_SUBTRACT);
+  assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
+  assert(((BinaryNode*)node)->arg1->type == NODE_NEGATE);
+  Node_free(node);
+
+  source = "42 * -1";
+  Tokenizer_init(&tokenizer, source);
+  node = parseExpression(&tokenizer);
+  assert(node->type == NODE_MULTIPLY);
+  assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
+  assert(((BinaryNode*)node)->arg1->type == NODE_NEGATE);
+  Node_free(node);
+
+  source = "42 // -1";
+  Tokenizer_init(&tokenizer, source);
+  node = parseExpression(&tokenizer);
+  assert(node->type == NODE_INTEGER_DIVIDE);
+  assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
+  assert(((BinaryNode*)node)->arg1->type == NODE_NEGATE);
+  Node_free(node);
 }
 
 #endif

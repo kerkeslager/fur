@@ -26,6 +26,9 @@ void test_parseExpression_integerDivisionBeforeAddition();
 void test_parseExpression_integerDivisionBeforeSubtraction();
 
 void test_parseExpression_negation();
+void test_parseExpression_nestedNegation();
+void test_parseExpression_negationLeft();
+void test_parseExpression_negationRight();
 
 #endif
 
