@@ -30,7 +30,8 @@ inline static void InstructionList_grow(InstructionList* self) {
 #undef GROWTH_FACTOR
 }
 
-inline void InstructionList_append(InstructionList* self, uint8_t item) {
+// TODO Can we inline this?
+void InstructionList_append(InstructionList* self, uint8_t item) {
   if(InstructionList_canInsert(self, sizeof(uint8_t))) {
     InstructionList_grow(self);
   }

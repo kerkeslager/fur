@@ -6,6 +6,7 @@
 
 typedef enum {
   OP_INTEGER,
+  OP_NEGATE,
   OP_RETURN,
 } Instruction;
 
@@ -17,7 +18,7 @@ typedef struct {
 
 void InstructionList_init(InstructionList*);
 void InstructionList_free(InstructionList*);
-inline void InstructionList_append(InstructionList*, uint8_t);
+void InstructionList_append(InstructionList*, uint8_t);
 void InstructionList_appendInt32(InstructionList*, int32_t);
 
 #ifdef TEST

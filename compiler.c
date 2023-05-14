@@ -35,7 +35,8 @@ void Compiler_emitNode(Node* node, InstructionList* out) {
       return Compiler_emitInteger(node, out);
 
     case NODE_NEGATE:
-      assert(false);
+      Compiler_emitNode(((UnaryNode*)node)->arg0, out);
+      return Compiler_emitOp(out, OP_NEGATE);
 
     case NODE_ADD:
     case NODE_SUBTRACT:
@@ -70,6 +71,27 @@ void test_Compiler_emitNode_emitsIntegerLiteral() {
   assert(out.count == 5);
   assert(out.items[0] == OP_INTEGER);
   assert(*(int32_t*)(out.items + 1) == 42);
+
+  Node_free(node);
+  InstructionList_free(&out);
+}
+
+void test_Compiler_emitNode_emitsNegate() {
+  const char* text = "42";
+  Node* node = UnaryNode_new(
+      NODE_NEGATE,
+      1,
+      AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 2)
+  );
+  InstructionList out;
+  InstructionList_init(&out);
+
+  Compiler_emitNode(node, &out);
+
+  assert(out.count == 6);
+  assert(out.items[0] == OP_INTEGER);
+  assert(*(int32_t*)(out.items + 1) == 42);
+  assert(out.items[5] == OP_NEGATE);
 
   Node_free(node);
   InstructionList_free(&out);
