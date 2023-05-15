@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Wextra
+CFLAGS = -Wall -Wextra -lreadline
 SRCS := $(shell find . -name '*.c')
 HEADERS := $(shell find . -name '*.h')
 OBJS := $(SRCS:.c=.o)
