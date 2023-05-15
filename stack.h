@@ -38,6 +38,16 @@ inline static Value Stack_peek(Stack* self) {
   return self->items[self->top - 1];
 }
 
+inline static void Stack_unary(Stack* self, Value (*apply)(Value)) {
+  assert(self->top >= 1);
+  self->items[self->top - 1] = apply(self->items[self->top - 1]);
+}
+
+inline static void Stack_binary(Stack* self, Value (*apply)(Value, Value)) {
+  assert(self->top >= 2);
+  self->items[self->top - 2] = apply(self->items[self->top - 2], self->items[self->top - 1]);
+}
+
 #ifdef TEST
 
 void test_Stack_startsEmpty();
