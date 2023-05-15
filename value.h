@@ -1,8 +1,10 @@
 #ifndef VALUE_H
 #define VALUE_H
 
+#include <stdint.h>
+
 typedef enum {
-  V_INTEGER
+  VALUE_INTEGER
 } ValueType;
 
 typedef struct {
