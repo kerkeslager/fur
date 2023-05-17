@@ -1,6 +1,7 @@
+#include <stdio.h>
 #include "thread.h"
 
-void Thread_init(Thread* self, Instruction* pc) {
+void Thread_init(Thread* self, uint8_t* pc) {
   self->pc = pc;
   Stack_init(&(self->stack));
 }
@@ -28,36 +29,44 @@ inline static Value opIDivide(Value a, Value b) {
 
 void Thread_run(Thread* self) {
   // TODO Consider copying the pc into a register
-  for(;;) switch(*(self->pc++)) {
-    case OP_INTEGER:
-      {
-        Stack_push(&(self->stack), Value_fromInteger(*((int32_t*)(self->pc))));
-        self->pc += sizeof(int32_t);
-      }
-      break;
+  for(;;) {
+    Instruction instruction = *(self->pc);
+    self->pc++;
 
-    case OP_NEGATE:
-      Stack_unary(&(self->stack), opNegate);
-      break;
+    switch(instruction) {
+      case OP_INTEGER:
+        {
+          Stack_push(&(self->stack), Value_fromInteger(*((int32_t*)(self->pc))));
+          self->pc += sizeof(int32_t);
+        }
+        break;
 
-    case OP_ADD:
-      Stack_binary(&(self->stack), opAdd);
-      break;
+      case OP_NEGATE:
+        Stack_unary(&(self->stack), opNegate);
+        break;
 
-    case OP_SUBTRACT:
-      Stack_binary(&(self->stack), opSubtract);
-      break;
+      case OP_ADD:
+        Stack_binary(&(self->stack), opAdd);
+        break;
 
-    case OP_MULTIPLY:
-      Stack_binary(&(self->stack), opMultiply);
-      break;
+      case OP_SUBTRACT:
+        Stack_binary(&(self->stack), opSubtract);
+        break;
 
-    case OP_IDIVIDE:
-      Stack_binary(&(self->stack), opIDivide);
-      break;
+      case OP_MULTIPLY:
+        Stack_binary(&(self->stack), opMultiply);
+        break;
 
-    case OP_RETURN:
-      return;
+      case OP_IDIVIDE:
+        Stack_binary(&(self->stack), opIDivide);
+        break;
+
+      case OP_RETURN:
+        return;
+
+      default:
+        assert(false);
+    }
   }
 }
 

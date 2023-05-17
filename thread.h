@@ -5,11 +5,11 @@
 #include "stack.h"
 
 typedef struct {
-  Instruction* pc;
+  uint8_t* pc;
   Stack stack;
 } Thread;
 
-void Thread_init(Thread*, Instruction*);
+void Thread_init(Thread*, uint8_t*);
 void Thread_free(Thread*);
 
 void Thread_run(Thread*);

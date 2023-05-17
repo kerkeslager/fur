@@ -23,6 +23,7 @@ inline static void Stack_push(Stack* self, Value value) {
   if(self->top == self->capacity) {
     self->capacity *= 2;
     self->items = realloc(self->items, sizeof(Value) * self->capacity);
+    assert(self->items != NULL);
   }
 
   self->items[self->top++] = value;
@@ -45,13 +46,17 @@ inline static void Stack_unary(Stack* self, Value (*apply)(Value)) {
 
 inline static void Stack_binary(Stack* self, Value (*apply)(Value, Value)) {
   assert(self->top >= 2);
-  self->items[self->top - 2] = apply(self->items[self->top - 2], self->items[self->top - 1]);
+  self->top--;
+  self->items[self->top - 1] = apply(self->items[self->top - 1], self->items[self->top]);
 }
 
 #ifdef TEST
 
 void test_Stack_startsEmpty();
 void test_Stack_pushPop();
+void test_Stack_peek();
+void test_Stack_unary();
+void test_Stack_binary();
 
 #endif
 
