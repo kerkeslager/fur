@@ -78,6 +78,10 @@ Token Tokenizer_scan(Tokenizer* self) {
         }
       }
 
+    case '(':
+      return Tokenizer_consume(self, TOKEN_OPEN_PAREN, 1);
+    case ')':
+      return Tokenizer_consume(self, TOKEN_CLOSE_PAREN, 1);
 
     case '0':
     case '1':
@@ -307,6 +311,27 @@ void test_Tokenizer_scan_after_Tokenizer_peek() {
   token = Tokenizer_scan(&tokenizer);
   assert(token.type == TOKEN_MINUS);
   assert(token.lexeme == source + 2);
+  assert(token.length == 1);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scanParentheses() {
+  const char* source = "()";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Token token;
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_OPEN_PAREN);
+  assert(token.lexeme == source);
+  assert(token.length == 1);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_CLOSE_PAREN);
+  assert(token.lexeme == source + 1);
   assert(token.length == 1);
   assert(token.line == 1);
 }

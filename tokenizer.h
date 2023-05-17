@@ -9,6 +9,9 @@ typedef enum {
   TOKEN_ASTERISK,
   TOKEN_SLASH_SLASH,
 
+  TOKEN_OPEN_PAREN,
+  TOKEN_CLOSE_PAREN,
+
   TOKEN_ERROR,
   TOKEN_EOF,
 
@@ -48,6 +51,7 @@ void test_Tokenizer_scan_integer_math_operators();
 void test_Tokenizer_peek_returnsScan();
 void test_Tokenizer_peek_doesNotProgress();
 void test_Tokenizer_scan_after_Tokenizer_peek();
+void test_Tokenizer_scanParentheses();
 
 #endif
 
