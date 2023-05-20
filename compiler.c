@@ -4,7 +4,6 @@
 #include "compiler.h"
 #include "node.h"
 #include "parser.h"
-#include "tokenizer.h"
 
 inline static void Compiler_emitOp(InstructionList* out, Instruction op) {
   InstructionList_append(out, (uint8_t)op);
@@ -58,12 +57,14 @@ void Compiler_emitNode(InstructionList* out, Node* node) {
 }
 
 void Compiler_compile(const char* source, InstructionList* out) {
-  Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Parser parser;
+  Parser_init(&parser, source);
 
-  Node* expression = parseExpression(&tokenizer);
+  Node* expression = parseExpression(&parser);
 
   Compiler_emitNode(out, expression);
+
+  Parser_free(&parser);
 }
 
 #ifdef TEST

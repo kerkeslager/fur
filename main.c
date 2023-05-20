@@ -6,6 +6,7 @@
 #include "compiler.h"
 #include "thread.h"
 #include "value.h"
+#include "value_stack.h"
 
 int main(int argc, char *argv[]) {
   for(;;) {
@@ -23,7 +24,7 @@ int main(int argc, char *argv[]) {
       Thread_init(&thread, byteCode.items);
       Thread_run(&thread);
 
-      Value result = Stack_pop(&(thread.stack));
+      Value result = ValueStack_pop(&(thread.stack));
       assert(result.type == VALUE_INTEGER);
 
       printf("  %i\n", result.as.integer);
