@@ -3,11 +3,11 @@
 
 void Thread_init(Thread* self, uint8_t* pc) {
   self->pc = pc;
-  Stack_init(&(self->stack));
+  ValueStack_init(&(self->stack));
 }
 
 void Thread_free(Thread* self) {
-  Stack_free(&(self->stack));
+  ValueStack_free(&(self->stack));
 }
 
 inline static Value opNegate(Value a) {
@@ -36,29 +36,29 @@ void Thread_run(Thread* self) {
     switch(instruction) {
       case OP_INTEGER:
         {
-          Stack_push(&(self->stack), Value_fromInteger(*((int32_t*)(self->pc))));
+          ValueStack_push(&(self->stack), Value_fromInteger(*((int32_t*)(self->pc))));
           self->pc += sizeof(int32_t);
         }
         break;
 
       case OP_NEGATE:
-        Stack_unary(&(self->stack), opNegate);
+        ValueStack_unary(&(self->stack), opNegate);
         break;
 
       case OP_ADD:
-        Stack_binary(&(self->stack), opAdd);
+        ValueStack_binary(&(self->stack), opAdd);
         break;
 
       case OP_SUBTRACT:
-        Stack_binary(&(self->stack), opSubtract);
+        ValueStack_binary(&(self->stack), opSubtract);
         break;
 
       case OP_MULTIPLY:
-        Stack_binary(&(self->stack), opMultiply);
+        ValueStack_binary(&(self->stack), opMultiply);
         break;
 
       case OP_IDIVIDE:
-        Stack_binary(&(self->stack), opIDivide);
+        ValueStack_binary(&(self->stack), opIDivide);
         break;
 
       case OP_RETURN:

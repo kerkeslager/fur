@@ -2,11 +2,11 @@
 #define THREAD_H
 
 #include "instruction.h"
-#include "stack.h"
+#include "value_stack.h"
 
 typedef struct {
   uint8_t* pc;
-  Stack stack;
+  ValueStack stack;
 } Thread;
 
 void Thread_init(Thread*, uint8_t*);

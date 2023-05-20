@@ -1,65 +1,62 @@
 #include <stdlib.h>
 
-#include "stack.h"
+#include "value_stack.h"
 
-void Stack_init(Stack* self) {
-  self->capacity = 8;
-  self->items = malloc(sizeof(Value) * self->capacity);
-  self->top = 0;
-}
-
-void Stack_free(Stack* self) {
-  free(self->items);
-}
+STACK_IMPLEMENT(Value, 8);
 
 #ifdef TEST
 
 #include <assert.h>
 
-void test_Stack_startsEmpty() {
-  Stack stack;
-  Stack_init(&stack);
+/*
+ * TODO
+ * Move first 3 tests into stack.c and have them test against an int stack
+ */
 
-  assert(Stack_isEmpty(&stack));
+void test_ValueStack_startsEmpty() {
+  ValueStack stack;
+  ValueStack_init(&stack);
 
-  Stack_free(&stack);
+  assert(ValueStack_isEmpty(&stack));
+
+  ValueStack_free(&stack);
 }
 
-void test_Stack_pushPop() {
-  Stack stack;
-  Stack_init(&stack);
+void test_ValueStack_pushPop() {
+  ValueStack stack;
+  ValueStack_init(&stack);
 
   Value toPush;
   toPush.type = VALUE_INTEGER;
   toPush.as.integer = 42;
 
-  Stack_push(&stack, toPush);
+  ValueStack_push(&stack, toPush);
 
-  Value popped = Stack_pop(&stack);
+  Value popped = ValueStack_pop(&stack);
 
   assert(toPush.type == popped.type);
   assert(toPush.as.integer == popped.as.integer);
 
-  Stack_free(&stack);
+  ValueStack_free(&stack);
 }
 
-void test_Stack_peek() {
-  Stack stack;
-  Stack_init(&stack);
+void test_ValueStack_peek() {
+  ValueStack stack;
+  ValueStack_init(&stack);
 
   Value toPush;
   toPush.type = VALUE_INTEGER;
   toPush.as.integer = 42;
 
-  Stack_push(&stack, toPush);
+  ValueStack_push(&stack, toPush);
 
-  Value peeked = Stack_peek(&stack);
-  Value popped = Stack_pop(&stack);
+  Value peeked = ValueStack_peek(&stack);
+  Value popped = ValueStack_pop(&stack);
 
   assert(peeked.type == popped.type);
   assert(peeked.as.integer == popped.as.integer);
 
-  Stack_free(&stack);
+  ValueStack_free(&stack);
 }
 
 Value _unaryFunction(Value v) {
@@ -72,24 +69,24 @@ Value _unaryFunction(Value v) {
   return testValue;
 }
 
-void test_Stack_unary() {
-  Stack stack;
-  Stack_init(&stack);
+void test_ValueStack_unary() {
+  ValueStack stack;
+  ValueStack_init(&stack);
 
   Value toPush;
   toPush.type = VALUE_INTEGER;
   toPush.as.integer = 42;
 
-  Stack_push(&stack, toPush);
+  ValueStack_push(&stack, toPush);
 
-  Stack_unary(&stack, _unaryFunction);
+  ValueStack_unary(&stack, _unaryFunction);
 
-  Value popped = Stack_pop(&stack);
+  Value popped = ValueStack_pop(&stack);
 
   assert(popped.type == VALUE_INTEGER);
   assert(popped.as.integer == 100);
 
-  Stack_free(&stack);
+  ValueStack_free(&stack);
 }
 
 Value _binaryFunction(Value v0, Value v1) {
@@ -104,27 +101,27 @@ Value _binaryFunction(Value v0, Value v1) {
   return testValue;
 }
 
-void test_Stack_binary() {
-  Stack stack;
-  Stack_init(&stack);
+void test_ValueStack_binary() {
+  ValueStack stack;
+  ValueStack_init(&stack);
 
   Value toPush;
   toPush.type = VALUE_INTEGER;
   toPush.as.integer = 42;
-  Stack_push(&stack, toPush);
+  ValueStack_push(&stack, toPush);
 
   toPush.type = VALUE_INTEGER;
   toPush.as.integer = 43;
-  Stack_push(&stack, toPush);
+  ValueStack_push(&stack, toPush);
 
-  Stack_binary(&stack, _binaryFunction);
+  ValueStack_binary(&stack, _binaryFunction);
 
-  Value popped = Stack_pop(&stack);
+  Value popped = ValueStack_pop(&stack);
 
   assert(popped.type == VALUE_INTEGER);
   assert(popped.as.integer == 100);
 
-  Stack_free(&stack);
+  ValueStack_free(&stack);
 }
 
 #endif
