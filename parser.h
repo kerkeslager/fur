@@ -4,7 +4,17 @@
 #include "node.h"
 #include "tokenizer.h"
 
-Node* parseExpression(Tokenizer* tokenizer);
+typedef struct {
+  Tokenizer tokenizer;
+  TokenStack openOutfixes;
+  bool isPanic;
+  bool hasErrors;
+} Parser;
+
+void Parser_init(Parser*, const char* source);
+void Parser_free(Parser*);
+
+Node* parseExpression(Parser*);
 
 #ifdef TEST
 

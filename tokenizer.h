@@ -1,6 +1,8 @@
 #ifndef TOKENIZER_H
 #define TOKENIZER_H
 
+#include "stack.h"
+
 typedef enum {
   TOKEN_INTEGER_LITERAL,
 
@@ -28,6 +30,8 @@ typedef struct {
   size_t length;
   size_t line;
 } Token;
+
+STACK_DECLARE(Token);
 
 typedef struct {
   const char* source;

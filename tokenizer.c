@@ -3,6 +3,8 @@
 
 #include "tokenizer.h"
 
+STACK_IMPLEMENT(Token, 8);
+
 void Tokenizer_init(Tokenizer* self, const char* source) {
   self->source = source;
   self->current = source;
