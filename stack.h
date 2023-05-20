@@ -49,4 +49,16 @@
     free(self->items); \
   }
 
+#ifdef TEST
+
+#include <stdlib.h>
+
+STACK_DECLARE(int);
+
+void test_Stack_startsEmpty();
+void test_Stack_pushPop();
+void test_Stack_peek();
+
+#endif
+
 #endif

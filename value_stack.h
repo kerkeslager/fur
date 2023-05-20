@@ -19,9 +19,6 @@ inline static void ValueStack_binary(ValueStack* self, Value (*apply)(Value, Val
 
 #ifdef TEST
 
-void test_ValueStack_startsEmpty();
-void test_ValueStack_pushPop();
-void test_ValueStack_peek();
 void test_ValueStack_unary();
 void test_ValueStack_binary();
 

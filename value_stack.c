@@ -8,57 +8,6 @@ STACK_IMPLEMENT(Value, 8);
 
 #include <assert.h>
 
-/*
- * TODO
- * Move first 3 tests into stack.c and have them test against an int stack
- */
-
-void test_ValueStack_startsEmpty() {
-  ValueStack stack;
-  ValueStack_init(&stack);
-
-  assert(ValueStack_isEmpty(&stack));
-
-  ValueStack_free(&stack);
-}
-
-void test_ValueStack_pushPop() {
-  ValueStack stack;
-  ValueStack_init(&stack);
-
-  Value toPush;
-  toPush.type = VALUE_INTEGER;
-  toPush.as.integer = 42;
-
-  ValueStack_push(&stack, toPush);
-
-  Value popped = ValueStack_pop(&stack);
-
-  assert(toPush.type == popped.type);
-  assert(toPush.as.integer == popped.as.integer);
-
-  ValueStack_free(&stack);
-}
-
-void test_ValueStack_peek() {
-  ValueStack stack;
-  ValueStack_init(&stack);
-
-  Value toPush;
-  toPush.type = VALUE_INTEGER;
-  toPush.as.integer = 42;
-
-  ValueStack_push(&stack, toPush);
-
-  Value peeked = ValueStack_peek(&stack);
-  Value popped = ValueStack_pop(&stack);
-
-  assert(peeked.type == popped.type);
-  assert(peeked.as.integer == popped.as.integer);
-
-  ValueStack_free(&stack);
-}
-
 Value _unaryFunction(Value v) {
   assert(v.type == VALUE_INTEGER);
   assert(v.as.integer == 42);
