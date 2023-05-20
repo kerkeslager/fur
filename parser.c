@@ -16,8 +16,8 @@ void Parser_free(Parser* self) {
   TokenStack_free(&(self->openOutfixes));
 }
 
-Node* parseAtom(Tokenizer* tokenizer) {
-  Token token = Tokenizer_scan(tokenizer);
+Node* Parser_parseAtom(Parser* self) {
+  Token token = Tokenizer_scan(&(self->tokenizer));
 
   switch(token.type) {
     case TOKEN_INTEGER_LITERAL:
@@ -90,28 +90,30 @@ inline static NodeType mapPrefix(Token token) {
   return NODE_ERROR;
 }
 
-Node* parseExpressionWithPrecedence(Tokenizer* tokenizer, Precedence minPrecedence);
+Node* Parser_parseExpressionWithPrecedence(Parser*, Precedence minPrecedence);
 
-Node* parseUnary(Tokenizer* tokenizer, Precedence minPrecedence) {
+Node* Parser_parseUnary(Parser* self, Precedence minPrecedence) {
+  Tokenizer* tokenizer = &(self->tokenizer);
   Token token = Tokenizer_peek(tokenizer);
   Precedence prefixPrecedence = Token_prefixPrecedence(token);
 
   if(prefixPrecedence != PREC_NONE) {
     Tokenizer_scan(tokenizer);
-    Node* inner = parseExpressionWithPrecedence(tokenizer, prefixPrecedence);
+    Node* inner = Parser_parseExpressionWithPrecedence(self, prefixPrecedence);
 
     // TODO Handle postfix
     return UnaryNode_new(mapPrefix(token), token.line, inner);
   } else {
     // TODO Handle postfix
     // TODO Handle outfix
-    return parseAtom(tokenizer);
+    return Parser_parseAtom(self);
   }
 
 }
 
-Node* parseExpressionWithPrecedence(Tokenizer* tokenizer, Precedence minPrecedence) {
-  Node* left = parseUnary(tokenizer, minPrecedence);
+Node* Parser_parseExpressionWithPrecedence(Parser* self, Precedence minPrecedence) {
+  Tokenizer* tokenizer = &(self->tokenizer);
+  Node* left = Parser_parseUnary(self, minPrecedence);
 
   for(;;) {
     Token operator = Tokenizer_peek(tokenizer);
@@ -122,8 +124,8 @@ Node* parseExpressionWithPrecedence(Tokenizer* tokenizer, Precedence minPreceden
 
     Tokenizer_scan(tokenizer);
 
-    Node* right = parseExpressionWithPrecedence(
-        tokenizer,
+    Node* right = Parser_parseExpressionWithPrecedence(
+        self,
         Token_infixLeftPrecedence(operator));
 
     left = BinaryNode_new(mapInfix(operator), left->line, left, right);
@@ -131,7 +133,7 @@ Node* parseExpressionWithPrecedence(Tokenizer* tokenizer, Precedence minPreceden
 }
 
 Node* Parser_parseExpression(Parser* self) {
-  return parseExpressionWithPrecedence(&(self->tokenizer), PREC_ANY);
+  return Parser_parseExpressionWithPrecedence(self, PREC_ANY);
 }
 
 #ifdef TEST
