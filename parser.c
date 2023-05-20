@@ -43,21 +43,23 @@ typedef struct {
   Precedence prefix;
   Precedence infixLeft;
   Precedence infixRight;
+  bool opensOutfix;
+  TokenType closesOutfix;
 } PrecedenceRule;
 
 const PrecedenceRule PRECEDENCE[] = {
-  [TOKEN_INTEGER_LITERAL] = { PREC_NONE,    PREC_NONE,        PREC_NONE },
+  [TOKEN_INTEGER_LITERAL] = { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
 
-  [TOKEN_PLUS] =            { PREC_NONE,    PREC_TERM_LEFT,   PREC_TERM_RIGHT },
-  [TOKEN_MINUS] =           { PREC_NEGATE,  PREC_TERM_LEFT,   PREC_TERM_RIGHT },
-  [TOKEN_ASTERISK] =        { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT },
-  [TOKEN_SLASH_SLASH] =     { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT },
+  [TOKEN_PLUS] =            { PREC_NONE,    PREC_TERM_LEFT,   PREC_TERM_RIGHT,    false,  NO_TOKEN },
+  [TOKEN_MINUS] =           { PREC_NEGATE,  PREC_TERM_LEFT,   PREC_TERM_RIGHT,    false,  NO_TOKEN },
+  [TOKEN_ASTERISK] =        { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_SLASH_SLASH] =     { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT,  false,  NO_TOKEN },
 
-  [TOKEN_OPEN_PAREN] =      { PREC_NONE,    PREC_NONE,        PREC_NONE },
-  [TOKEN_CLOSE_PAREN] =     { PREC_NONE,    PREC_NONE,        PREC_NONE },
+  [TOKEN_OPEN_PAREN] =      { PREC_NONE,    PREC_NONE,        PREC_NONE,          true,   NO_TOKEN },
+  [TOKEN_CLOSE_PAREN] =     { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  TOKEN_OPEN_PAREN },
 
-  [TOKEN_EOF] =             { PREC_NONE,    PREC_NONE,        PREC_NONE },
-  [TOKEN_ERROR] =           { PREC_NONE,    PREC_NONE,        PREC_NONE },
+  [TOKEN_EOF] =             { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
+  [TOKEN_ERROR] =           { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
 };
 
 inline static Precedence Token_prefixPrecedence(Token self) {

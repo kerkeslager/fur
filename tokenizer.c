@@ -9,7 +9,7 @@ void Tokenizer_init(Tokenizer* self, const char* source) {
   self->source = source;
   self->current = source;
   self->line = 1;
-  self->lookahead.type = TOKEN_NULL_LOOKAHEAD;
+  self->lookahead.type = NO_TOKEN;
 }
 
 inline static Token Token_create(TokenType type, const char* lexeme, size_t length, size_t line) {
@@ -53,9 +53,9 @@ inline static void Tokenizer_handleWhitespace(Tokenizer* self) {
 }
 
 Token Tokenizer_scan(Tokenizer* self) {
-  if(self->lookahead.type != TOKEN_NULL_LOOKAHEAD) {
+  if(self->lookahead.type != NO_TOKEN) {
     Token result = self->lookahead;
-    self->lookahead.type = TOKEN_NULL_LOOKAHEAD;
+    self->lookahead.type = NO_TOKEN;
     return result;
   }
 
@@ -124,7 +124,7 @@ Token Tokenizer_scan(Tokenizer* self) {
 }
 
 Token Tokenizer_peek(Tokenizer* self) {
-  if(self->lookahead.type == TOKEN_NULL_LOOKAHEAD) {
+  if(self->lookahead.type == NO_TOKEN) {
     self->lookahead = Tokenizer_scan(self);
   }
   return self->lookahead;

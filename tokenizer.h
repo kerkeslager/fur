@@ -18,10 +18,10 @@ typedef enum {
   TOKEN_EOF,
 
   /*
-   * This is used only internally to the tokenizer, to indicate that there are
-   * no lookahead tokens.
+   * This is used internally to the tokenizer and parser to indicate that
+   * there is no token, for lookaheads or matching outfix operators.
    */
-  TOKEN_NULL_LOOKAHEAD,
+  NO_TOKEN,
 } TokenType;
 
 typedef struct {
