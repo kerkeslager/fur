@@ -130,18 +130,18 @@ Node* parseExpressionWithPrecedence(Tokenizer* tokenizer, Precedence minPreceden
   }
 }
 
-Node* parseExpression(Parser* parser) {
-  return parseExpressionWithPrecedence(&(parser->tokenizer), PREC_ANY);
+Node* Parser_parseExpression(Parser* self) {
+  return parseExpressionWithPrecedence(&(self->tokenizer), PREC_ANY);
 }
 
 #ifdef TEST
 
-void test_parseExpression_parseIntegerLiteral() {
+void test_Parser_parseExpression_parseIntegerLiteral() {
   const char* source = "42";
   Parser parser;
   Parser_init(&parser, source);
 
-  Node* expression = parseExpression(&parser);
+  Node* expression = Parser_parseExpression(&parser);
 
   assert(expression->type == NODE_INTEGER_LITERAL);
   assert(expression->line == 1);
@@ -154,12 +154,12 @@ void test_parseExpression_parseIntegerLiteral() {
   Node_free(expression);
 }
 
-void test_parseExpression_addition() {
+void test_Parser_parseExpression_addition() {
   const char* source = "1 + 2";
   Parser parser;
   Parser_init(&parser, source);
 
-  Node* expression = parseExpression(&parser);
+  Node* expression = Parser_parseExpression(&parser);
   assert(expression->type == NODE_ADD);
   assert(expression->line == 1);
 
@@ -180,12 +180,12 @@ void test_parseExpression_addition() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_subtraction() {
+void test_Parser_parseExpression_subtraction() {
   const char* source = "3 - 2";
   Parser parser;
   Parser_init(&parser, source);
 
-  Node* expression = parseExpression(&parser);
+  Node* expression = Parser_parseExpression(&parser);
   assert(expression->type == NODE_SUBTRACT);
   assert(expression->line == 1);
 
@@ -206,12 +206,12 @@ void test_parseExpression_subtraction() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_multiplication() {
+void test_Parser_parseExpression_multiplication() {
   const char* source = "2 * 3";
   Parser parser;
   Parser_init(&parser, source);
 
-  Node* expression = parseExpression(&parser);
+  Node* expression = Parser_parseExpression(&parser);
   assert(expression->type == NODE_MULTIPLY);
   assert(expression->line == 1);
 
@@ -232,12 +232,12 @@ void test_parseExpression_multiplication() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_integerDivision() {
+void test_Parser_parseExpression_integerDivision() {
   const char* source = "6 // 2";
   Parser parser;
   Parser_init(&parser, source);
 
-  Node* expression = parseExpression(&parser);
+  Node* expression = Parser_parseExpression(&parser);
   assert(expression->type == NODE_INTEGER_DIVIDE);
   assert(expression->line == 1);
 
@@ -258,12 +258,12 @@ void test_parseExpression_integerDivision() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_additionLeftAssociative() {
+void test_Parser_parseExpression_additionLeftAssociative() {
   const char* source = "1 + 2 + 3";
   Parser parser;
   Parser_init(&parser, source);
 
-  BinaryNode* expression = (BinaryNode*)parseExpression(&parser);
+  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
   assert(expression->node.type == NODE_ADD);
   assert(expression->arg0->type == NODE_ADD);
   assert(expression->arg1->type == NODE_INTEGER_LITERAL);
@@ -272,12 +272,12 @@ void test_parseExpression_additionLeftAssociative() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_subtractionLeftAssociative() {
+void test_Parser_parseExpression_subtractionLeftAssociative() {
   const char* source = "3 - 2 - 1";
   Parser parser;
   Parser_init(&parser, source);
 
-  BinaryNode* expression = (BinaryNode*)parseExpression(&parser);
+  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
   assert(expression->node.type == NODE_SUBTRACT);
   assert(expression->arg0->type == NODE_SUBTRACT);
   assert(expression->arg1->type == NODE_INTEGER_LITERAL);
@@ -286,12 +286,12 @@ void test_parseExpression_subtractionLeftAssociative() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_multiplicationLeftAssociative() {
+void test_Parser_parseExpression_multiplicationLeftAssociative() {
   const char* source = "2 * 3 * 5";
   Parser parser;
   Parser_init(&parser, source);
 
-  BinaryNode* expression = (BinaryNode*)parseExpression(&parser);
+  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
   assert(expression->node.type == NODE_MULTIPLY);
   assert(expression->arg0->type == NODE_MULTIPLY);
   assert(expression->arg1->type == NODE_INTEGER_LITERAL);
@@ -300,12 +300,12 @@ void test_parseExpression_multiplicationLeftAssociative() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_integerDivisionLeftAssociative() {
+void test_Parser_parseExpression_integerDivisionLeftAssociative() {
   const char* source = "12 // 3 // 2";
   Parser parser;
   Parser_init(&parser, source);
 
-  BinaryNode* expression = (BinaryNode*)parseExpression(&parser);
+  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
   assert(expression->node.type == NODE_INTEGER_DIVIDE);
   assert(expression->arg0->type == NODE_INTEGER_DIVIDE);
   assert(expression->arg1->type == NODE_INTEGER_LITERAL);
@@ -314,12 +314,12 @@ void test_parseExpression_integerDivisionLeftAssociative() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_multiplicationBeforeAddition() {
+void test_Parser_parseExpression_multiplicationBeforeAddition() {
   const char* source = "1 + 3 * 2";
   Parser parser;
   Parser_init(&parser, source);
 
-  BinaryNode* expression = (BinaryNode*)parseExpression(&parser);
+  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
   assert(expression->node.type == NODE_ADD);
   assert(expression->arg0->type == NODE_INTEGER_LITERAL);
   assert(expression->arg1->type == NODE_MULTIPLY);
@@ -328,12 +328,12 @@ void test_parseExpression_multiplicationBeforeAddition() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_multiplicationBeforeSubtraction() {
+void test_Parser_parseExpression_multiplicationBeforeSubtraction() {
   const char* source = "1 - 3 * 2";
   Parser parser;
   Parser_init(&parser, source);
 
-  BinaryNode* expression = (BinaryNode*)parseExpression(&parser);
+  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
   assert(expression->node.type == NODE_SUBTRACT);
   assert(expression->arg0->type == NODE_INTEGER_LITERAL);
   assert(expression->arg1->type == NODE_MULTIPLY);
@@ -342,12 +342,12 @@ void test_parseExpression_multiplicationBeforeSubtraction() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_integerDivisionBeforeAddition() {
+void test_Parser_parseExpression_integerDivisionBeforeAddition() {
   const char* source = "1 + 6 // 2";
   Parser parser;
   Parser_init(&parser, source);
 
-  BinaryNode* expression = (BinaryNode*)parseExpression(&parser);
+  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
   assert(expression->node.type == NODE_ADD);
   assert(expression->arg0->type == NODE_INTEGER_LITERAL);
   assert(expression->arg1->type == NODE_INTEGER_DIVIDE);
@@ -356,12 +356,12 @@ void test_parseExpression_integerDivisionBeforeAddition() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_integerDivisionBeforeSubtraction() {
+void test_Parser_parseExpression_integerDivisionBeforeSubtraction() {
   const char* source = "1 - 6 // 2";
   Parser parser;
   Parser_init(&parser, source);
 
-  BinaryNode* expression = (BinaryNode*)parseExpression(&parser);
+  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
   assert(expression->node.type == NODE_SUBTRACT);
   assert(expression->arg0->type == NODE_INTEGER_LITERAL);
   assert(expression->arg1->type == NODE_INTEGER_DIVIDE);
@@ -370,12 +370,12 @@ void test_parseExpression_integerDivisionBeforeSubtraction() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_negation() {
+void test_Parser_parseExpression_negation() {
   const char* source = "-42";
   Parser parser;
   Parser_init(&parser, source);
 
-  Node* expression = parseExpression(&parser);
+  Node* expression = Parser_parseExpression(&parser);
   assert(expression->type == NODE_NEGATE);
   assert(expression->line == 1);
 
@@ -391,12 +391,12 @@ void test_parseExpression_negation() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_nestedNegation() {
+void test_Parser_parseExpression_nestedNegation() {
   const char* source = "--42";
   Parser parser;
   Parser_init(&parser, source);
 
-  Node* expression = parseExpression(&parser);
+  Node* expression = Parser_parseExpression(&parser);
   assert(expression->type == NODE_NEGATE);
   assert(expression->line == 1);
 
@@ -416,14 +416,14 @@ void test_parseExpression_nestedNegation() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_negationLeft() {
+void test_Parser_parseExpression_negationLeft() {
   const char* source;
   Parser parser;
   Node* node;
 
   source = "-42 + 1";
   Parser_init(&parser, source);
-  node = parseExpression(&parser);
+  node = Parser_parseExpression(&parser);
   assert(node->type == NODE_ADD);
   assert(((BinaryNode*)node)->arg0->type == NODE_NEGATE);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
@@ -432,7 +432,7 @@ void test_parseExpression_negationLeft() {
 
   source = "-42 - 1";
   Parser_init(&parser, source);
-  node = parseExpression(&parser);
+  node = Parser_parseExpression(&parser);
   assert(node->type == NODE_SUBTRACT);
   assert(((BinaryNode*)node)->arg0->type == NODE_NEGATE);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
@@ -441,7 +441,7 @@ void test_parseExpression_negationLeft() {
 
   source = "-42 * 1";
   Parser_init(&parser, source);
-  node = parseExpression(&parser);
+  node = Parser_parseExpression(&parser);
   assert(node->type == NODE_MULTIPLY);
   assert(((BinaryNode*)node)->arg0->type == NODE_NEGATE);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
@@ -450,7 +450,7 @@ void test_parseExpression_negationLeft() {
 
   source = "-42 // 1";
   Parser_init(&parser, source);
-  node = parseExpression(&parser);
+  node = Parser_parseExpression(&parser);
   assert(node->type == NODE_INTEGER_DIVIDE);
   assert(((BinaryNode*)node)->arg0->type == NODE_NEGATE);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
@@ -458,14 +458,14 @@ void test_parseExpression_negationLeft() {
   Parser_free(&parser);
 }
 
-void test_parseExpression_negationRight() {
+void test_Parser_parseExpression_negationRight() {
   const char* source;
   Parser parser;
   Node* node;
 
   source = "42 + -1";
   Parser_init(&parser, source);
-  node = parseExpression(&parser);
+  node = Parser_parseExpression(&parser);
   assert(node->type == NODE_ADD);
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1->type == NODE_NEGATE);
@@ -474,7 +474,7 @@ void test_parseExpression_negationRight() {
 
   source = "42 - -1";
   Parser_init(&parser, source);
-  node = parseExpression(&parser);
+  node = Parser_parseExpression(&parser);
   assert(node->type == NODE_SUBTRACT);
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1->type == NODE_NEGATE);
@@ -483,7 +483,7 @@ void test_parseExpression_negationRight() {
 
   source = "42 * -1";
   Parser_init(&parser, source);
-  node = parseExpression(&parser);
+  node = Parser_parseExpression(&parser);
   assert(node->type == NODE_MULTIPLY);
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1->type == NODE_NEGATE);
@@ -492,7 +492,7 @@ void test_parseExpression_negationRight() {
 
   source = "42 // -1";
   Parser_init(&parser, source);
-  node = parseExpression(&parser);
+  node = Parser_parseExpression(&parser);
   assert(node->type == NODE_INTEGER_DIVIDE);
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1->type == NODE_NEGATE);

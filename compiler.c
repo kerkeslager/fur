@@ -60,7 +60,7 @@ void Compiler_compile(const char* source, InstructionList* out) {
   Parser parser;
   Parser_init(&parser, source);
 
-  Node* expression = parseExpression(&parser);
+  Node* expression = Parser_parseExpression(&parser);
 
   Compiler_emitNode(out, expression);
 
