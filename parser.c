@@ -41,6 +41,9 @@ const PrecedenceRule PRECEDENCE[] = {
   [TOKEN_ASTERISK] =        { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT },
   [TOKEN_SLASH_SLASH] =     { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT },
 
+  [TOKEN_OPEN_PAREN] =      { PREC_NONE,    PREC_NONE,        PREC_NONE },
+  [TOKEN_CLOSE_PAREN] =     { PREC_NONE,    PREC_NONE,        PREC_NONE },
+
   [TOKEN_EOF] =             { PREC_NONE,    PREC_NONE,        PREC_NONE },
   [TOKEN_ERROR] =           { PREC_NONE,    PREC_NONE,        PREC_NONE },
 };
@@ -81,16 +84,18 @@ Node* parseUnary(Tokenizer* tokenizer, Precedence minPrecedence) {
   Token token = Tokenizer_peek(tokenizer);
   Precedence prefixPrecedence = Token_prefixPrecedence(token);
 
-  if(prefixPrecedence < minPrecedence) {
+  if(prefixPrecedence != PREC_NONE) {
+    Tokenizer_scan(tokenizer);
+    Node* inner = parseExpressionWithPrecedence(tokenizer, prefixPrecedence);
+
     // TODO Handle postfix
+    return UnaryNode_new(mapPrefix(token), token.line, inner);
+  } else {
+    // TODO Handle postfix
+    // TODO Handle outfix
     return parseAtom(tokenizer);
   }
 
-  Tokenizer_scan(tokenizer);
-  Node* inner = parseExpressionWithPrecedence(tokenizer, prefixPrecedence);
-
-  // TODO Handle postfix
-  return UnaryNode_new(mapPrefix(token), token.line, inner);
 }
 
 Node* parseExpressionWithPrecedence(Tokenizer* tokenizer, Precedence minPrecedence) {

@@ -74,7 +74,7 @@ Token Tokenizer_scan(Tokenizer* self) {
         if(self->current[1] == '/') {
           return Tokenizer_consume(self, TOKEN_SLASH_SLASH, 2);
         } else {
-          break;
+          return Token_create(TOKEN_ERROR, "Not implemented", strlen("Not implemented"), self->line);
         }
       }
 
@@ -117,10 +117,8 @@ Token Tokenizer_scan(Tokenizer* self) {
       }
 
     default:
-      break;
+      return Token_create(TOKEN_ERROR, "Unexpected character", strlen("Unexpected character"), self->line);
   }
-
-  return Token_create(TOKEN_ERROR, "Unexpected character", strlen("Unexpected character"), self->line);
 }
 
 Token Tokenizer_peek(Tokenizer* self) {
