@@ -40,6 +40,9 @@ void test_Parser_parseExpression_nestedNegation();
 void test_Parser_parseExpression_negationLeft();
 void test_Parser_parseExpression_negationRight();
 
+void test_Parser_parseExpression_simpleParens();
+void test_Parser_parseExpression_parensOverOrderOfOperations();
+
 #endif
 
 #endif

@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Wextra -lreadline
+CFLAGS = -Wall -Wextra -ggdb3
 SRCS := $(shell find . -name '*.c')
 HEADERS := $(shell find . -name '*.h')
 OBJS := $(SRCS:.c=.o)
@@ -12,7 +12,7 @@ TEST_OBJS := $(TEST_SRCS:.c=_test.o)
 	$(CC) -c -DTEST $(CFLAGS) $< -o $@
 
 fur: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o fur
+	$(CC) $(CFLAGS) -lreadline $(OBJS) -o fur
 
 unit_test.generated_c : $(HEADERS)
 	./unit_test.c.sh > unit_test.generated_c

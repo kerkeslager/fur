@@ -8,7 +8,7 @@
 #include "value.h"
 #include "value_stack.h"
 
-int main(int argc, char *argv[]) {
+int main() {
   for(;;) {
     char* buffer = readline("> ");
 

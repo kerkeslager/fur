@@ -16,19 +16,6 @@ void Parser_free(Parser* self) {
   TokenStack_free(&(self->openOutfixes));
 }
 
-Node* Parser_parseAtom(Parser* self) {
-  Token token = Tokenizer_scan(&(self->tokenizer));
-
-  switch(token.type) {
-    case TOKEN_INTEGER_LITERAL:
-      return AtomNode_new(NODE_INTEGER_LITERAL, token.line, token.lexeme, token.length);
-
-    default:
-      // TODO Handle this
-      assert(false);
-  }
-}
-
 typedef enum {
   PREC_NONE,
   PREC_ANY,
@@ -60,20 +47,37 @@ const PrecedenceRule PRECEDENCE[] = {
 
   [TOKEN_EOF] =             { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
   [TOKEN_ERROR] =           { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
+
+  [NO_TOKEN] =              { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
 };
 
 inline static Precedence Token_prefixPrecedence(Token self) {
+  assert(self.type != NO_TOKEN);
   return PRECEDENCE[self.type].prefix;
 }
 
 inline static Precedence Token_infixLeftPrecedence(Token self) {
+  assert(self.type != NO_TOKEN);
   return PRECEDENCE[self.type].infixLeft;
 }
 inline static Precedence Token_infixRightPrecedence(Token self) {
+  assert(self.type != NO_TOKEN);
   return PRECEDENCE[self.type].infixRight;
 }
 
+inline static bool Token_opensOutfix(Token self) {
+  assert(self.type != NO_TOKEN);
+  return PRECEDENCE[self.type].opensOutfix;
+}
+
+inline static TokenType Token_closesOutfix(Token self) {
+  assert(self.type != NO_TOKEN);
+  return PRECEDENCE[self.type].closesOutfix;
+}
+
 inline static NodeType mapInfix(Token token) {
+  assert(token.type != NO_TOKEN);
+
   switch(token.type) {
     case TOKEN_PLUS: return NODE_ADD;
     case TOKEN_MINUS: return NODE_SUBTRACT;
@@ -81,6 +85,7 @@ inline static NodeType mapInfix(Token token) {
     case TOKEN_SLASH_SLASH: return NODE_INTEGER_DIVIDE;
     default: assert(false);
   }
+
   return NODE_ERROR;
 }
 
@@ -92,9 +97,33 @@ inline static NodeType mapPrefix(Token token) {
   return NODE_ERROR;
 }
 
+Node* Parser_parseAtom(Parser* self) {
+  Token token = Tokenizer_scan(&(self->tokenizer));
+
+  assert(token.type != TOKEN_ERROR);
+  assert(token.type != TOKEN_EOF);
+  assert(!Token_opensOutfix(token));
+  assert(Token_prefixPrecedence(token) == PREC_NONE);
+  assert(Token_infixLeftPrecedence(token) == PREC_NONE);
+  assert(Token_infixRightPrecedence(token) == PREC_NONE);
+
+  switch(token.type) {
+    case TOKEN_INTEGER_LITERAL:
+      return AtomNode_new(NODE_INTEGER_LITERAL, token.line, token.lexeme, token.length);
+
+    default:
+      // TODO Handle this
+      assert(false);
+  }
+}
+
 Node* Parser_parseExpressionWithPrecedence(Parser*, Precedence minPrecedence);
 
-Node* Parser_parseUnary(Parser* self, Precedence minPrecedence) {
+/*
+ * TODO
+ * The commented parameter will be needed if we add any postfix operators.
+ */
+Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
   Tokenizer* tokenizer = &(self->tokenizer);
   Token token = Tokenizer_peek(tokenizer);
   Precedence prefixPrecedence = Token_prefixPrecedence(token);
@@ -105,9 +134,14 @@ Node* Parser_parseUnary(Parser* self, Precedence minPrecedence) {
 
     // TODO Handle postfix
     return UnaryNode_new(mapPrefix(token), token.line, inner);
+  } else if(Token_opensOutfix(token)) {
+    Tokenizer_scan(tokenizer);
+    TokenStack_push(&(self->openOutfixes), token);
+
+    // TODO Should we set a minPrecedence for opened "environments"?
+    return Parser_parseExpressionWithPrecedence(self, PREC_ANY);
   } else {
     // TODO Handle postfix
-    // TODO Handle outfix
     return Parser_parseAtom(self);
   }
 
@@ -115,7 +149,7 @@ Node* Parser_parseUnary(Parser* self, Precedence minPrecedence) {
 
 Node* Parser_parseExpressionWithPrecedence(Parser* self, Precedence minPrecedence) {
   Tokenizer* tokenizer = &(self->tokenizer);
-  Node* left = Parser_parseUnary(self, minPrecedence);
+  Node* left = Parser_parseUnary(self/*, minPrecedence*/);
 
   for(;;) {
     Token operator = Tokenizer_peek(tokenizer);
@@ -125,6 +159,33 @@ Node* Parser_parseExpressionWithPrecedence(Parser* self, Precedence minPrecedenc
     }
 
     Tokenizer_scan(tokenizer);
+
+    TokenType operatorClosesOutfix = Token_closesOutfix(operator);
+
+    switch(operatorClosesOutfix) {
+      case NO_TOKEN:
+        break;
+
+      default:
+        {
+          TokenStack* openOutfixes = &(self->openOutfixes);
+
+          // TODO Handle unbalanced outfix operators
+          // The following indicates no outfix operators are open
+          assert(!TokenStack_isEmpty(openOutfixes));
+
+          Token openOutfix = TokenStack_peek(openOutfixes);
+
+          // TODO Handle unbalanced outfix operators
+          // The following indicates that the last opened outfix operator
+          // does not match this closing outfix operator
+          assert(operatorClosesOutfix == openOutfix.type);
+
+          TokenStack_pop(openOutfixes);
+
+          return left;
+        }
+    }
 
     Node* right = Parser_parseExpressionWithPrecedence(
         self,
@@ -502,6 +563,25 @@ void test_Parser_parseExpression_negationRight() {
   assert(((BinaryNode*)node)->arg1->type == NODE_NEGATE);
   Node_free(node);
   Parser_free(&parser);
+}
+
+void test_Parser_parseExpression_simpleParens() {
+  const char* source = "(42)";
+  Parser parser;
+  Parser_init(&parser, source);
+  Node* node = Parser_parseExpression(&parser);
+  assert(node->type == NODE_INTEGER_LITERAL);
+}
+
+void test_Parser_parseExpression_parensOverOrderOfOperations() {
+  const char* source = "1 + (42 + 1)";
+  Parser parser;
+  Parser_init(&parser, source);
+
+  Node* node = Parser_parseExpression(&parser);
+  assert(node->type == NODE_ADD);
+  assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
+  assert(((BinaryNode*)node)->arg1->type == NODE_ADD);
 }
 
 #endif
