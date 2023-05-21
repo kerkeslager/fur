@@ -1,0 +1,52 @@
+#ifndef DEBUG_H
+#define DEBUG_H
+
+#include "tokenizer.h"
+
+#include <stdio.h>
+
+#define PRINT_CASE(tt) case tt: \
+  printf("%5zu %-25s %.*s\n", token.line, #tt, (int)token.length, token.lexeme); \
+  break
+inline static void Token_println(Token token) {
+  switch(token.type) {
+    PRINT_CASE(TOKEN_INTEGER_LITERAL);
+
+    PRINT_CASE(TOKEN_PLUS);
+    PRINT_CASE(TOKEN_MINUS);
+    PRINT_CASE(TOKEN_ASTERISK);
+    PRINT_CASE(TOKEN_SLASH_SLASH);
+
+    PRINT_CASE(TOKEN_OPEN_PAREN);
+    PRINT_CASE(TOKEN_CLOSE_PAREN);
+
+    PRINT_CASE(TOKEN_ERROR);
+    PRINT_CASE(TOKEN_EOF);
+
+    PRINT_CASE(NO_TOKEN);
+  }
+}
+#undef PRINT_CASE
+
+#define PRINT_CASE(tt) case tt: printf("Token: " #tt "\n"); break
+inline static void TokenType_println(TokenType tokenType) {
+  switch(tokenType) {
+    PRINT_CASE(TOKEN_INTEGER_LITERAL);
+
+    PRINT_CASE(TOKEN_PLUS);
+    PRINT_CASE(TOKEN_MINUS);
+    PRINT_CASE(TOKEN_ASTERISK);
+    PRINT_CASE(TOKEN_SLASH_SLASH);
+
+    PRINT_CASE(TOKEN_OPEN_PAREN);
+    PRINT_CASE(TOKEN_CLOSE_PAREN);
+
+    PRINT_CASE(TOKEN_ERROR);
+    PRINT_CASE(TOKEN_EOF);
+
+    PRINT_CASE(NO_TOKEN);
+  }
+}
+#undef PRINT_CASE
+
+#endif
