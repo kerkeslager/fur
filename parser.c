@@ -18,7 +18,6 @@ void Parser_free(Parser* self) {
 typedef enum {
   PREC_NONE,
   PREC_ANY,
-  PREC_STATEMENT,
   PREC_TERM_RIGHT,
   PREC_TERM_LEFT,
   PREC_FACTOR_RIGHT,
@@ -42,7 +41,7 @@ const PrecedenceRule PRECEDENCE[] = {
   [TOKEN_ASTERISK] =        { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT,  false,  NO_TOKEN },
   [TOKEN_SLASH_SLASH] =     { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT,  false,  NO_TOKEN },
 
-  [TOKEN_SEMICOLON] =       { PREC_NONE,    PREC_NONE,        PREC_STATEMENT,     false,  NO_TOKEN },
+  [TOKEN_SEMICOLON] =       { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
 
   [TOKEN_OPEN_PAREN] =      { PREC_NONE,    PREC_NONE,        PREC_NONE,          true,   NO_TOKEN },
   [TOKEN_CLOSE_PAREN] =     { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  TOKEN_OPEN_PAREN },
@@ -163,30 +162,6 @@ Node* Parser_parseExpressionWithPrecedence(Parser* self, Precedence minPrecedenc
       return left;
     }
 
-    /*
-     * TODO
-     * Semicolons are currently treated as an infix operator with precedence
-     * of PREC_STATEMENT, which is just above PREC_ANY, meaning it's the
-     * lowest precedence that actually gets parsed. Then we have the check
-     * below which exits parsing.
-     *
-     * This feels like a hack, since semicolons aren't infix operators.
-     * I considered using them as an infix operator that joins expressions
-     * into an expression list, but that doesn't handle situations like
-     * `if(true) { return 42; <no second operand> }`
-     *
-     * I considered implementing them as postfix operators, but that doesn't
-     * work either, because then statements like `foo(); + 1` would parse
-     * as one expression.
-     *
-     * This feels like the least hacky hack so far, but looking for a nicer
-     * solution.
-     */
-    if(operator.type == TOKEN_SEMICOLON) {
-      Tokenizer_scan(tokenizer);
-      return left;
-    }
-
     Tokenizer_scan(tokenizer);
 
     Node* right = Parser_parseExpressionWithPrecedence(
@@ -199,6 +174,19 @@ Node* Parser_parseExpressionWithPrecedence(Parser* self, Precedence minPrecedenc
 
 Node* Parser_parseExpression(Parser* self) {
   return Parser_parseExpressionWithPrecedence(self, PREC_ANY);
+}
+
+Node* Parser_parseStatement(Parser* self) {
+  Node* expression = Parser_parseExpression(self);
+  Tokenizer* tokenizer = &(self->tokenizer);
+  Token token = Tokenizer_peek(tokenizer);
+
+  // TODO Support eliding semicolons after blocks
+  assert(token.type == TOKEN_SEMICOLON);
+
+  Tokenizer_scan(tokenizer);
+
+  return expression;
 }
 
 #ifdef TEST
@@ -609,13 +597,13 @@ void test_Parser_parseExpression_parensOverOrderOfOperations() {
   Parser_free(&parser);
 }
 
-void test_Parser_parseExpression_terminatesAtSemicolon() {
+void test_Parser_parseStatement_terminatesAtSemicolon() {
   const char* source = "1 + 1; // 42";
 
   Parser parser;
   Parser_init(&parser, source);
 
-  Node* node = Parser_parseExpression(&parser);
+  Node* node = Parser_parseStatement(&parser);
   Token nextToken = Tokenizer_peek(&(parser.tokenizer));
 
   assert(node->type == NODE_ADD);

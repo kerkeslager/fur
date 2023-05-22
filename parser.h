@@ -43,7 +43,7 @@ void test_Parser_parseExpression_simpleParens();
 void test_Parser_parseExpression_parensOverAssociation();
 void test_Parser_parseExpression_parensOverOrderOfOperations();
 
-void test_Parser_parseExpression_terminatesAtSemicolon();
+void test_Parser_parseStatement_terminatesAtSemicolon();
 
 #endif
 
