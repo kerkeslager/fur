@@ -19,6 +19,7 @@ void Parser_free(Parser* self) {
 typedef enum {
   PREC_NONE,
   PREC_ANY,
+  PREC_STATEMENT,
   PREC_TERM_RIGHT,
   PREC_TERM_LEFT,
   PREC_FACTOR_RIGHT,
@@ -41,6 +42,8 @@ const PrecedenceRule PRECEDENCE[] = {
   [TOKEN_MINUS] =           { PREC_NEGATE,  PREC_TERM_LEFT,   PREC_TERM_RIGHT,    false,  NO_TOKEN },
   [TOKEN_ASTERISK] =        { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT,  false,  NO_TOKEN },
   [TOKEN_SLASH_SLASH] =     { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT,  false,  NO_TOKEN },
+
+  [TOKEN_SEMICOLON] =       { PREC_NONE,    PREC_NONE,        PREC_STATEMENT,     false,  NO_TOKEN },
 
   [TOKEN_OPEN_PAREN] =      { PREC_NONE,    PREC_NONE,        PREC_NONE,          true,   NO_TOKEN },
   [TOKEN_CLOSE_PAREN] =     { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  TOKEN_OPEN_PAREN },
@@ -158,33 +161,50 @@ Node* Parser_parseExpressionWithPrecedence(Parser* self, Precedence minPrecedenc
       return left;
     }
 
+    /*
+     * TODO
+     * Semicolons are currently treated as an infix operator with precedence
+     * of PREC_STATEMENT, which is just above PREC_ANY, meaning it's the
+     * lowest precedence that actually gets parsed. Then we have the check
+     * below which exits parsing.
+     *
+     * This feels like a hack, since semicolons aren't infix operators.
+     * I considered using them as an infix operator that joins expressions
+     * into an expression list, but that doesn't handle situations like
+     * `if(true) { return 42; <no second operand> }`
+     *
+     * I considered implementing them as postfix operators, but that doesn't
+     * work either, because then statements like `foo(); + 1` would parse
+     * as one expression.
+     *
+     * This feels like the least hacky hack so far, but looking for a nicer
+     * solution.
+     */
+    if(operator.type == TOKEN_SEMICOLON) {
+      Tokenizer_scan(tokenizer);
+      return left;
+    }
+
     Tokenizer_scan(tokenizer);
 
     TokenType operatorClosesOutfix = Token_closesOutfix(operator);
+    if(operatorClosesOutfix != NO_TOKEN) {
+      TokenStack* openOutfixes = &(self->openOutfixes);
 
-    switch(operatorClosesOutfix) {
-      case NO_TOKEN:
-        break;
+      // TODO Handle unbalanced outfix operators
+      // The following indicates no outfix operators are open
+      assert(!TokenStack_isEmpty(openOutfixes));
 
-      default:
-        {
-          TokenStack* openOutfixes = &(self->openOutfixes);
+      Token openOutfix = TokenStack_peek(openOutfixes);
 
-          // TODO Handle unbalanced outfix operators
-          // The following indicates no outfix operators are open
-          assert(!TokenStack_isEmpty(openOutfixes));
+      // TODO Handle unbalanced outfix operators
+      // The following indicates that the last opened outfix operator
+      // does not match this closing outfix operator
+      assert(operatorClosesOutfix == openOutfix.type);
 
-          Token openOutfix = TokenStack_peek(openOutfixes);
+      TokenStack_pop(openOutfixes);
 
-          // TODO Handle unbalanced outfix operators
-          // The following indicates that the last opened outfix operator
-          // does not match this closing outfix operator
-          assert(operatorClosesOutfix == openOutfix.type);
-
-          TokenStack_pop(openOutfixes);
-
-          return left;
-        }
+      return left;
     }
 
     Node* right = Parser_parseExpressionWithPrecedence(
@@ -570,7 +590,11 @@ void test_Parser_parseExpression_simpleParens() {
   Parser parser;
   Parser_init(&parser, source);
   Node* node = Parser_parseExpression(&parser);
+
   assert(node->type == NODE_INTEGER_LITERAL);
+
+  Node_free(node);
+  Parser_free(&parser);
 }
 
 void test_Parser_parseExpression_parensOverOrderOfOperations() {
@@ -582,6 +606,27 @@ void test_Parser_parseExpression_parensOverOrderOfOperations() {
   assert(node->type == NODE_ADD);
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1->type == NODE_ADD);
+
+  Node_free(node);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseExpression_terminatesAtSemicolon() {
+  const char* source = "1 + 1; // 42";
+
+  Parser parser;
+  Parser_init(&parser, source);
+
+  Node* node = Parser_parseExpression(&parser);
+  Token nextToken = Tokenizer_peek(&(parser.tokenizer));
+
+  assert(node->type == NODE_ADD);
+  assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
+  assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
+  assert(nextToken.type == TOKEN_SLASH_SLASH);
+
+  Node_free(node);
+  Parser_free(&parser);
 }
 
 #endif
