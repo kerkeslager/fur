@@ -315,7 +315,7 @@ void test_Tokenizer_scan_after_Tokenizer_peek() {
   assert(token.line == 1);
 }
 
-void test_Tokenizer_scanParentheses() {
+void test_Tokenizer_scan_parentheses() {
   const char* source = "()";
 
   Tokenizer tokenizer;

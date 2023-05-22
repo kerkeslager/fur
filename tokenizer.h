@@ -52,10 +52,11 @@ void test_Tokenizer_scan_integer();
 void test_Tokenizer_scan_ignore_whitespace();
 void test_Tokenizer_scan_linebreaks_increment_line();
 void test_Tokenizer_scan_integer_math_operators();
+void test_Tokenizer_scan_semicolon();
 void test_Tokenizer_peek_returnsScan();
 void test_Tokenizer_peek_doesNotProgress();
 void test_Tokenizer_scan_after_Tokenizer_peek();
-void test_Tokenizer_scanParentheses();
+void test_Tokenizer_scan_parentheses();
 
 #endif
 
