@@ -6,6 +6,8 @@
 typedef enum {
   TOKEN_INTEGER_LITERAL,
 
+  TOKEN_SEMICOLON,
+
   TOKEN_PLUS,
   TOKEN_MINUS,
   TOKEN_ASTERISK,
@@ -51,7 +53,7 @@ void test_Tokenizer_scan_unexpected_character();
 void test_Tokenizer_scan_integer();
 void test_Tokenizer_scan_ignore_whitespace();
 void test_Tokenizer_scan_linebreaks_increment_line();
-void test_Tokenizer_scan_integer_math_operators();
+void test_Tokenizer_scan_integerMathOperators();
 void test_Tokenizer_scan_semicolon();
 void test_Tokenizer_peek_returnsScan();
 void test_Tokenizer_peek_doesNotProgress();

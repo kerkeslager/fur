@@ -65,6 +65,9 @@ Token Tokenizer_scan(Tokenizer* self) {
     case '\0':
       return Tokenizer_consume(self, TOKEN_EOF, 0);
 
+    case ';':
+      return Tokenizer_consume(self, TOKEN_SEMICOLON, 1);
+
     case '+':
       return Tokenizer_consume(self, TOKEN_PLUS, 1);
     case '-':
@@ -203,7 +206,7 @@ void test_Tokenizer_scan_linebreaks_increment_line() {
   assert(token.line == 2);
 }
 
-void test_Tokenizer_scan_integer_math_operators() {
+void test_Tokenizer_scan_integerMathOperators() {
   const char* source = "+ - * //";
 
   Tokenizer tokenizer;
@@ -233,6 +236,19 @@ void test_Tokenizer_scan_integer_math_operators() {
   assert(token.type == TOKEN_SLASH_SLASH);
   assert(token.lexeme == source + 6);
   assert(token.length == 2);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_semicolon() {
+  const char* source = ";";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Token token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_SEMICOLON);
+  assert(token.lexeme == source);
+  assert(token.length == 1);
   assert(token.line == 1);
 }
 
