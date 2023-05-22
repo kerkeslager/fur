@@ -6,7 +6,6 @@
 
 typedef struct {
   Tokenizer tokenizer;
-  TokenStack openOutfixes;
   bool isPanic;
   bool hasErrors;
 } Parser;
@@ -41,6 +40,7 @@ void test_Parser_parseExpression_negationLeft();
 void test_Parser_parseExpression_negationRight();
 
 void test_Parser_parseExpression_simpleParens();
+void test_Parser_parseExpression_parensOverAssociation();
 void test_Parser_parseExpression_parensOverOrderOfOperations();
 
 void test_Parser_parseExpression_terminatesAtSemicolon();

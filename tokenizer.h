@@ -33,8 +33,6 @@ typedef struct {
   size_t line;
 } Token;
 
-STACK_DECLARE(Token);
-
 typedef struct {
   const char* source;
   const char* current;

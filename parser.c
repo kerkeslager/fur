@@ -7,13 +7,12 @@
 
 void Parser_init(Parser* self, const char* source) {
   Tokenizer_init(&(self->tokenizer), source);
-  TokenStack_init(&(self->openOutfixes));
   self->isPanic = false;
   self->hasErrors = false;
 }
 
 void Parser_free(Parser* self) {
-  TokenStack_free(&(self->openOutfixes));
+  assert(self != NULL);
 }
 
 typedef enum {
@@ -74,7 +73,6 @@ inline static bool Token_opensOutfix(Token self) {
 }
 
 inline static TokenType Token_closesOutfix(Token self) {
-  assert(self.type != NO_TOKEN);
   return PRECEDENCE[self.type].closesOutfix;
 }
 
@@ -139,10 +137,14 @@ Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
     return UnaryNode_new(mapPrefix(token), token.line, inner);
   } else if(Token_opensOutfix(token)) {
     Tokenizer_scan(tokenizer);
-    TokenStack_push(&(self->openOutfixes), token);
 
     // TODO Should we set a minPrecedence for opened "environments"?
-    return Parser_parseExpressionWithPrecedence(self, PREC_ANY);
+    Node* result = Parser_parseExpressionWithPrecedence(self, PREC_ANY);
+
+    Token closeToken = Tokenizer_scan(tokenizer);
+    assert(Token_closesOutfix(closeToken) == token.type);
+
+    return result;
   } else {
     // TODO Handle postfix
     return Parser_parseAtom(self);
@@ -186,26 +188,6 @@ Node* Parser_parseExpressionWithPrecedence(Parser* self, Precedence minPrecedenc
     }
 
     Tokenizer_scan(tokenizer);
-
-    TokenType operatorClosesOutfix = Token_closesOutfix(operator);
-    if(operatorClosesOutfix != NO_TOKEN) {
-      TokenStack* openOutfixes = &(self->openOutfixes);
-
-      // TODO Handle unbalanced outfix operators
-      // The following indicates no outfix operators are open
-      assert(!TokenStack_isEmpty(openOutfixes));
-
-      Token openOutfix = TokenStack_peek(openOutfixes);
-
-      // TODO Handle unbalanced outfix operators
-      // The following indicates that the last opened outfix operator
-      // does not match this closing outfix operator
-      assert(operatorClosesOutfix == openOutfix.type);
-
-      TokenStack_pop(openOutfixes);
-
-      return left;
-    }
 
     Node* right = Parser_parseExpressionWithPrecedence(
         self,
@@ -597,15 +579,31 @@ void test_Parser_parseExpression_simpleParens() {
   Parser_free(&parser);
 }
 
-void test_Parser_parseExpression_parensOverOrderOfOperations() {
+void test_Parser_parseExpression_parensOverAssociation() {
   const char* source = "1 + (42 + 1)";
   Parser parser;
   Parser_init(&parser, source);
 
   Node* node = Parser_parseExpression(&parser);
+
   assert(node->type == NODE_ADD);
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1->type == NODE_ADD);
+
+  Node_free(node);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseExpression_parensOverOrderOfOperations() {
+  const char* source = "(1 + 1) * 3";
+  Parser parser;
+  Parser_init(&parser, source);
+
+  Node* node = Parser_parseExpression(&parser);
+
+  assert(node->type == NODE_MULTIPLY);
+  assert(((BinaryNode*)node)->arg0->type == NODE_ADD);
+  assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
 
   Node_free(node);
   Parser_free(&parser);
