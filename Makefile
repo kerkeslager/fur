@@ -11,7 +11,7 @@ TEST_OBJS := $(TEST_SRCS:.c=_test.o)
 %_test.o : %.c
 	$(CC) -c -DTEST $(CFLAGS) $< -o $@
 
-fur: $(OBJS)
+fur: $(OBJS) $(HEADERS)
 	$(CC) $(CFLAGS) -lreadline $(OBJS) -o fur
 
 unit_test.generated_c : $(HEADERS)
@@ -20,7 +20,7 @@ unit_test.generated_c : $(HEADERS)
 unit_test.generated_co: unit_test.generated_c
 	$(CC) -c -DTEST $(CFLAGS) -x c $< -o $@
 
-unit_test: $(TEST_OBJS) unit_test.generated_co
+unit_test: $(TEST_OBJS) $(HEADERS) unit_test.generated_co
 	$(CC) -DTEST $(CFLAGS) $(TEST_OBJS) unit_test.generated_co -o unit_test
 
 .PHONY: clean
