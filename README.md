@@ -228,3 +228,90 @@ compilation if we can prove they fail, for example if we can prove that the
 denominator is 0 in division, like `prove() not is_provable(_ / 0);`.
 
 Under certain circumstances, might we be able to treat functions as axioms?
+
+### Threading benchmarks
+I'd like to have benchmarks around, well, everything, but a high priority
+is threading scalability. Memory usage is one limiting factor on threading.
+Looking at benchmarks for other languages, I think a reasonable goal is that
+the Fur equivalent of the following benchmark should stay below 50MB of
+memory usage:
+
+    #include <pthread.h>
+    #include <unistd.h>
+
+    void* threadFunction(void* arg) {
+      sleep(10);
+      pthread_exit(NULL);
+    }
+
+    int main() {
+      int numThreads = 1000000;
+      pthread_t threads[numThreads];
+
+      for (int i = 0; i < numThreads; i++) {
+        pthread_create(&threads[i], NULL, threadFunction, NULL);
+      }
+
+      for (int i = 0; i < numThreads; i++) {
+        pthread_join(threads[i], NULL);
+      }
+
+      return 0;
+    }
+
+At 1 million threads, 50MB is approximately 52 bytes per thread. Keeping in
+mind that the above benchmark runs in &lt;16MB, spiking up to &lt;23MB during
+cleanup, this would give us about 30 bytes per thread to work with. With
+just a stack and program counter pointer, we're already at 32 bytes,
+and we don't even have message queues for threads at the time of this
+writing, but there are some packing options we can explore.
+
+### Multiline in REPL
+
+The REPL used readline for history support and to integrate system-wide
+user keymaps on \*nix systems. I explored multiline support in the REPL by
+allowing the user to hold shift while pressing enter. This is a convention
+introduced by websites.
+
+This turns out to be not possible with readline because readline doesn't
+actually track keypresses, it tracks *characters* received from `stdin`.
+The shift key doesn't emit a character, and since the enter key is not
+cased, we have no way of knowing if shift is depressed when the enter key
+is pressed. There are platform-specific ways of tracking the shift key, but
+I'm not ready to commit to a multiplatform maintenance nightmare any time
+soon.
+
+There are a few other options we could explore:
+
+* A different key combo. Ctrl+Enter is the most obvious. Ctrl emits
+  characters to readline for historical reasons, but is bound in the emacs
+  keymap.
+* An actual key sequence. Enter Enter is an obvious choice, but then we have
+  to choose if Enter Enter submits the line, or inserts a newline. If it
+  inserts the newline, we have to inject a delay before submitting to allow
+  the user to press Enter a second time, which might make the REPL appear
+  laggy (let's experiment with this?). If we have Enter Enter submit the
+  line, that slows down the most common case where the user is simply
+  entering a single expression.
+* Another possible key sequence would be \ Enter, which is intuitive in a way
+  because \ is used elsewhere as an escape character, so it's like you're
+  escaping the enter. A possible problem with this is that it could mess
+  with copy/pasting (more on this later). However this does generally seem
+  like a reasonable option. We could also use other escape sequences to
+  perform other commands in the REPL.
+* There are only a few built-in keymaps by default in Readline. We could
+  come up with a separate keybinding for each that fits in with the spirit
+  of the keybinding. This also seems like a sensible option, but maybe a
+  bit more work.
+* The option used by Python and some other REPLs is syntactic analysis, i.e.
+  if a user presses Enter when the expression is clearly not complete, insert
+  a newline. The problem with this in Fur is that many expressions don't
+  require clear ending delimiters because we're using a 1-lookahead, For
+  example: `choose(a, b, c) = if(a) b; else c;` could easily break at
+  `choose(a, b, c)` or `choose(a, b, c) = if(a) b;`. There's nothing stopping
+  us from doing syntactic analysis *in addition* to one of the other
+  approaches.
+
+Another related note is that we probably want users to be able to paste
+multiline input into the REPL. We might be able to handle this by detecting
+keypresses more rapid than are humanly possible.
