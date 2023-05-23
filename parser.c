@@ -177,9 +177,16 @@ Node* Parser_parseExpression(Parser* self) {
 }
 
 Node* Parser_parseStatement(Parser* self) {
-  Node* expression = Parser_parseExpression(self);
   Tokenizer* tokenizer = &(self->tokenizer);
-  Token token = Tokenizer_peek(tokenizer);
+  Token token;
+
+  token = Tokenizer_peek(tokenizer);
+  if(token.type == TOKEN_EOF) {
+    return Node_new(NODE_EOF, token.line);
+  }
+
+  Node* expression = Parser_parseExpression(self);
+  token = Tokenizer_peek(tokenizer);
 
   switch(token.type) {
     case TOKEN_SEMICOLON:
@@ -634,6 +641,20 @@ void test_Parser_parseStatement_elideSemicolonAtEnd() {
   assert(node->type == NODE_ADD);
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
+
+  Node_free(node);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseStatement_eof() {
+  const char* source = " ";
+
+  Parser parser;
+  Parser_init(&parser, source);
+
+  Node* node = Parser_parseStatement(&parser);
+
+  assert(node->type == NODE_EOF);
 
   Node_free(node);
   Parser_free(&parser);

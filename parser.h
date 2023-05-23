@@ -46,6 +46,7 @@ void test_Parser_parseExpression_parensOverOrderOfOperations();
 
 void test_Parser_parseStatement_terminatesAtSemicolon();
 void test_Parser_parseStatement_elideSemicolonAtEnd();
+void test_Parser_parseStatement_eof();
 
 #endif
 

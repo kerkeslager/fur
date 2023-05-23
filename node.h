@@ -17,12 +17,15 @@ typedef enum {
   NODE_INTEGER_DIVIDE,
 
   NODE_ERROR,
+  NODE_EOF,
 } NodeType;
 
 typedef struct {
   NodeType type;
   size_t line;
 } Node;
+
+Node* Node_new(NodeType type, size_t line);
 
 typedef struct {
   Node node;
@@ -51,6 +54,7 @@ void Node_free(Node* self);
 
 #ifdef TEST
 
+void test_Node_new_basic();
 void test_AtomNode_new_basic();
 void test_UnaryNode_new_basic();
 void test_BinaryNode_new_basic();

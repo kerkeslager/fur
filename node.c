@@ -16,6 +16,13 @@ inline static void AtomNode_init(AtomNode* self, NodeType type, size_t line, con
   self->length = length;
 }
 
+Node* Node_new(NodeType type, size_t line) {
+  assert(type == NODE_EOF);
+  Node* node = malloc(sizeof(Node));
+  Node_init(node, type, line);
+  return node;
+}
+
 Node* AtomNode_new(NodeType type, size_t line, const char* text, size_t length) {
   AtomNode* node = malloc(sizeof(AtomNode));
   AtomNode_init(node, type, line, text, length);
@@ -67,6 +74,10 @@ inline static void BinaryNode_free(BinaryNode* self) {
 
 void Node_free(Node* self) {
   switch(self->type) {
+    case NODE_EOF:
+      free(self);
+      return;
+
     case NODE_INTEGER_LITERAL:
       AtomNode_free((AtomNode*)self);
       return;
@@ -90,6 +101,15 @@ void Node_free(Node* self) {
 #ifdef TEST
 
 #include <stdbool.h>
+
+void test_Node_new_basic() {
+  Node* node = Node_new(NODE_EOF, 5);
+
+  assert(node->type == NODE_EOF);
+  assert(node->line == 5);
+
+  Node_free(node);
+}
 
 void test_AtomNode_new_basic() {
   char* text = "42";
