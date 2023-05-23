@@ -29,36 +29,44 @@ inline static Value opIDivide(Value a, Value b) {
 
 void Thread_run(Thread* self) {
   // TODO Consider copying the pc into a register
+  ValueStack* stack = &(self->stack);
+
   for(;;) {
     Instruction instruction = *(self->pc);
     self->pc++;
 
     switch(instruction) {
+      case OP_NIL:
+        ValueStack_push(stack, Value_nil());
+        break;
+
       case OP_INTEGER:
-        {
-          ValueStack_push(&(self->stack), Value_fromInteger(*((int32_t*)(self->pc))));
-          self->pc += sizeof(int32_t);
-        }
+        ValueStack_push(stack, Value_fromInteger(*((int32_t*)(self->pc))));
+        self->pc += sizeof(int32_t);
         break;
 
       case OP_NEGATE:
-        ValueStack_unary(&(self->stack), opNegate);
+        ValueStack_unary(stack, opNegate);
         break;
 
       case OP_ADD:
-        ValueStack_binary(&(self->stack), opAdd);
+        ValueStack_binary(stack, opAdd);
         break;
 
       case OP_SUBTRACT:
-        ValueStack_binary(&(self->stack), opSubtract);
+        ValueStack_binary(stack, opSubtract);
         break;
 
       case OP_MULTIPLY:
-        ValueStack_binary(&(self->stack), opMultiply);
+        ValueStack_binary(stack, opMultiply);
         break;
 
       case OP_IDIVIDE:
-        ValueStack_binary(&(self->stack), opIDivide);
+        ValueStack_binary(stack, opIDivide);
+        break;
+
+      case OP_DROP:
+        ValueStack_pop(stack);
         break;
 
       case OP_RETURN:

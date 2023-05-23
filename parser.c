@@ -186,8 +186,8 @@ Node* Parser_parseStatement(Parser* self) {
   }
 
   Node* expression = Parser_parseExpression(self);
-  token = Tokenizer_peek(tokenizer);
 
+  token = Tokenizer_peek(tokenizer);
   switch(token.type) {
     case TOKEN_SEMICOLON:
       Tokenizer_scan(tokenizer);

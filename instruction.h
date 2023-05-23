@@ -5,12 +5,14 @@
 #include <stdlib.h>
 
 typedef enum {
+  OP_NIL,
   OP_INTEGER,
   OP_NEGATE,
   OP_ADD,
   OP_SUBTRACT,
   OP_MULTIPLY,
   OP_IDIVIDE,
+  OP_DROP,
   OP_RETURN,
 } Instruction;
 

@@ -56,13 +56,35 @@ void Compiler_emitNode(InstructionList* out, Node* node) {
   }
 }
 
-void Compiler_compile(const char* source, InstructionList* out) {
+void Compiler_compile(InstructionList* out, const char* source) {
   Parser parser;
   Parser_init(&parser, source);
 
-  Node* expression = Parser_parseExpression(&parser);
+  Node* expression = Parser_parseStatement(&parser);
 
-  Compiler_emitNode(out, expression);
+  if(expression->type == NODE_EOF) {
+    /*
+     * This is so that empty files or repl lines emit a return value, since
+     * callers expect this.
+     */
+    Compiler_emitOp(out, OP_NIL);
+  } else {
+    Compiler_emitNode(out, expression);
+  }
+
+  while((expression = Parser_parseStatement(&parser))->type != NODE_EOF) {
+    // Drop the result of previous statement
+    /*
+     * TODO
+     * We can pass a flag into emitNode() to tell it if the result of the
+     * expression will be used, and not emit unused results that we'll
+     * just have to drop.
+     */
+    Compiler_emitOp(out, OP_DROP);
+    Compiler_emitNode(out, expression);
+  }
+
+  Compiler_emitOp(out, OP_RETURN);
 
   Parser_free(&parser);
 }
@@ -193,6 +215,34 @@ void test_Compiler_emitNode_emitsIntegerDivide() {
   assert(out.items[10] == OP_IDIVIDE);
 
   Node_free(node);
+  InstructionList_free(&out);
+}
+
+void test_Compiler_compile_emitsNilOnEmptyInput() {
+  const char* text = "";
+  InstructionList out;
+  InstructionList_init(&out);
+
+  Compiler_compile(&out, text);
+
+  assert(out.count == 2);
+  assert(out.items[0] == OP_NIL);
+  assert(out.items[1] == OP_RETURN);
+
+  InstructionList_free(&out);
+}
+
+void test_Compiler_compile_emitsNilOnBlankInput() {
+  const char* text = " \t \n \r";
+  InstructionList out;
+  InstructionList_init(&out);
+
+  Compiler_compile(&out, text);
+
+  assert(out.count == 2);
+  assert(out.items[0] == OP_NIL);
+  assert(out.items[1] == OP_RETURN);
+
   InstructionList_free(&out);
 }
 

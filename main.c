@@ -17,17 +17,15 @@ int main() {
 
       InstructionList byteCode;
       InstructionList_init(&byteCode);
-      Compiler_compile((const char*)buffer, &byteCode);
-      InstructionList_append(&byteCode, OP_RETURN);
+      Compiler_compile(&byteCode, (const char*)buffer);
 
       Thread thread;
       Thread_init(&thread, byteCode.items);
       Thread_run(&thread);
 
       Value result = ValueStack_pop(&(thread.stack));
-      assert(result.type == VALUE_INTEGER);
+      Value_println(result);
 
-      printf("  %i\n", result.as.integer);
       Thread_free(&thread);
       InstructionList_free(&byteCode);
       free(buffer);
