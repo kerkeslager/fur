@@ -24,6 +24,7 @@ Node* Node_new(NodeType type, size_t line) {
 }
 
 Node* AtomNode_new(NodeType type, size_t line, const char* text, size_t length) {
+  assert(type == NODE_INTEGER_LITERAL);
   AtomNode* node = malloc(sizeof(AtomNode));
   AtomNode_init(node, type, line, text, length);
   return (Node*)node;
