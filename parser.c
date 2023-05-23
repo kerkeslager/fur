@@ -181,12 +181,20 @@ Node* Parser_parseStatement(Parser* self) {
   Tokenizer* tokenizer = &(self->tokenizer);
   Token token = Tokenizer_peek(tokenizer);
 
-  // TODO Support eliding semicolons after blocks
-  assert(token.type == TOKEN_SEMICOLON);
+  switch(token.type) {
+    case TOKEN_SEMICOLON:
+      Tokenizer_scan(tokenizer);
+      return expression;
 
-  Tokenizer_scan(tokenizer);
+    case TOKEN_EOF:
+      return expression;
 
-  return expression;
+    default:
+      // TODO Handle unexpected tokens
+      // TODO Support eliding semicolons after blocks
+      assert(false);
+      return NULL;
+  }
 }
 
 #ifdef TEST
@@ -610,6 +618,22 @@ void test_Parser_parseStatement_terminatesAtSemicolon() {
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
   assert(nextToken.type == TOKEN_SLASH_SLASH);
+
+  Node_free(node);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseStatement_elideSemicolonAtEnd() {
+  const char* source = "1 + 1";
+
+  Parser parser;
+  Parser_init(&parser, source);
+
+  Node* node = Parser_parseStatement(&parser);
+
+  assert(node->type == NODE_ADD);
+  assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
+  assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
 
   Node_free(node);
   Parser_free(&parser);

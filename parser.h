@@ -14,6 +14,7 @@ void Parser_init(Parser*, const char* source);
 void Parser_free(Parser*);
 
 Node* Parser_parseExpression(Parser*);
+Node* Parser_parseStatement(Parser*);
 
 #ifdef TEST
 
@@ -44,6 +45,7 @@ void test_Parser_parseExpression_parensOverAssociation();
 void test_Parser_parseExpression_parensOverOrderOfOperations();
 
 void test_Parser_parseStatement_terminatesAtSemicolon();
+void test_Parser_parseStatement_elideSemicolonAtEnd();
 
 #endif
 
