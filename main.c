@@ -17,18 +17,26 @@ int main() {
 
       InstructionList byteCode;
       InstructionList_init(&byteCode);
-      Compiler_compile(&byteCode, (const char*)buffer);
 
-      Thread thread;
-      Thread_init(&thread, byteCode.items);
-      Thread_run(&thread);
+      Compiler compiler;
+      Compiler_init(&compiler);
 
-      Value result = ValueStack_pop(&(thread.stack));
-      Value_println(result);
+      bool success = Compiler_compile(&compiler, &byteCode, (const char*)buffer);
 
-      Thread_free(&thread);
-      InstructionList_free(&byteCode);
-      free(buffer);
+      if(success) {
+        Thread thread;
+        Thread_init(&thread, byteCode.items);
+        Thread_run(&thread);
+
+        Value result = ValueStack_pop(&(thread.stack));
+        Value_println(result);
+
+        Thread_free(&thread);
+        InstructionList_free(&byteCode);
+        free(buffer);
+      } else {
+        fprintf(stderr, "Error in compilation\n");
+      }
     }
   }
 

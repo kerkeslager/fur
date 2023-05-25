@@ -7,8 +7,7 @@
 
 void Parser_init(Parser* self, const char* source) {
   Tokenizer_init(&(self->tokenizer), source);
-  self->isPanic = false;
-  self->hasErrors = false;
+  self->panic = false;
 }
 
 void Parser_free(Parser* self) {

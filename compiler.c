@@ -5,6 +5,20 @@
 #include "node.h"
 #include "parser.h"
 
+void Compiler_init(Compiler* self) {
+  self->hasErrors = false;
+}
+
+void Compiler_error(Compiler* self, Node* errorNode) {
+  assert(errorNode != NULL);
+  assert(errorNode->type == NODE_ERROR);
+
+  self->hasErrors = true;
+
+  // TODO Implement
+  assert(false);
+}
+
 inline static void Compiler_emitOp(InstructionList* out, Instruction op) {
   InstructionList_append(out, (uint8_t)op);
 }
@@ -56,37 +70,45 @@ void Compiler_emitNode(InstructionList* out, Node* node) {
   }
 }
 
-void Compiler_compile(InstructionList* out, const char* source) {
+bool Compiler_compile(Compiler* self, InstructionList* out, const char* source) {
   Parser parser;
   Parser_init(&parser, source);
 
-  Node* expression = Parser_parseStatement(&parser);
+  Node* statement = Parser_parseStatement(&parser);
 
-  if(expression->type == NODE_EOF) {
+  if(statement->type == NODE_EOF) {
     /*
      * This is so that empty files or repl lines emit a return value, since
      * callers expect this.
      */
     Compiler_emitOp(out, OP_NIL);
+  } else if(statement->type == NODE_ERROR) {
+    Compiler_error(self, statement);
   } else {
-    Compiler_emitNode(out, expression);
+    Compiler_emitNode(out, statement);
   }
 
-  while((expression = Parser_parseStatement(&parser))->type != NODE_EOF) {
-    // Drop the result of previous statement
-    /*
-     * TODO
-     * We can pass a flag into emitNode() to tell it if the result of the
-     * expression will be used, and not emit unused results that we'll
-     * just have to drop.
-     */
-    Compiler_emitOp(out, OP_DROP);
-    Compiler_emitNode(out, expression);
+  while((statement = Parser_parseStatement(&parser))->type != NODE_EOF) {
+    if(statement->type == NODE_ERROR) {
+      Compiler_error(self, statement);
+    } else {
+      // Drop the result of previous statement
+      /*
+       * TODO
+       * We can pass a flag into emitNode() to tell it if the result of the
+       * expression will be used, and not emit unused results that we'll
+       * just have to drop.
+       */
+      Compiler_emitOp(out, OP_DROP);
+      Compiler_emitNode(out, statement);
+    }
   }
 
   Compiler_emitOp(out, OP_RETURN);
 
   Parser_free(&parser);
+
+  return !(self->hasErrors);
 }
 
 #ifdef TEST
@@ -222,9 +244,12 @@ void test_Compiler_compile_emitsNilOnEmptyInput() {
   const char* text = "";
   InstructionList out;
   InstructionList_init(&out);
+  Compiler compiler;
+  Compiler_init(&compiler);
 
-  Compiler_compile(&out, text);
+  bool success = Compiler_compile(&compiler, &out, text);
 
+  assert(success);
   assert(out.count == 2);
   assert(out.items[0] == OP_NIL);
   assert(out.items[1] == OP_RETURN);
@@ -236,9 +261,12 @@ void test_Compiler_compile_emitsNilOnBlankInput() {
   const char* text = " \t \n \r";
   InstructionList out;
   InstructionList_init(&out);
+  Compiler compiler;
+  Compiler_init(&compiler);
 
-  Compiler_compile(&out, text);
+  bool success = Compiler_compile(&compiler, &out, text);
 
+  assert(success);
   assert(out.count == 2);
   assert(out.items[0] == OP_NIL);
   assert(out.items[1] == OP_RETURN);

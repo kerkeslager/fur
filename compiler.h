@@ -1,9 +1,17 @@
 #ifndef COMPILER_H
 #define COMPILER_H
 
+#include <stdbool.h>
+
 #include "instruction.h"
 
-void Compiler_compile(InstructionList* out, const char* source);
+typedef struct {
+  bool hasErrors;
+} Compiler;
+
+void Compiler_init(Compiler*);
+
+bool Compiler_compile(Compiler*, InstructionList* out, const char* source);
 
 #ifdef TEST
 

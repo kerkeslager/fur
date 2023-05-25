@@ -6,8 +6,7 @@
 
 typedef struct {
   Tokenizer tokenizer;
-  bool isPanic;
-  bool hasErrors;
+  bool panic;
 } Parser;
 
 void Parser_init(Parser*, const char* source);
