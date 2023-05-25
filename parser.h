@@ -7,9 +7,10 @@
 typedef struct {
   Tokenizer tokenizer;
   bool panic;
+  bool repl;
 } Parser;
 
-void Parser_init(Parser*, const char* source);
+void Parser_init(Parser*, const char* source, bool repl);
 void Parser_free(Parser*);
 
 Node* Parser_parseExpression(Parser*);
@@ -44,7 +45,7 @@ void test_Parser_parseExpression_parensOverAssociation();
 void test_Parser_parseExpression_parensOverOrderOfOperations();
 
 void test_Parser_parseStatement_terminatesAtSemicolon();
-void test_Parser_parseStatement_elideSemicolonAtEnd();
+void test_Parser_parseStatement_elideSemicolonAtEndInReplMode();
 void test_Parser_parseStatement_eof();
 
 #endif

@@ -7,10 +7,10 @@
 
 typedef struct {
   bool hasErrors;
+  bool repl;
 } Compiler;
 
-void Compiler_init(Compiler*);
-
+void Compiler_init(Compiler*, bool repl);
 bool Compiler_compile(Compiler*, InstructionList* out, const char* source);
 
 #ifdef TEST

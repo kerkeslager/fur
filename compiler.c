@@ -5,7 +5,8 @@
 #include "node.h"
 #include "parser.h"
 
-void Compiler_init(Compiler* self) {
+void Compiler_init(Compiler* self, bool repl) {
+  self->repl = repl;
   self->hasErrors = false;
 }
 
@@ -72,7 +73,7 @@ void Compiler_emitNode(InstructionList* out, Node* node) {
 
 bool Compiler_compile(Compiler* self, InstructionList* out, const char* source) {
   Parser parser;
-  Parser_init(&parser, source);
+  Parser_init(&parser, source, self->repl);
 
   Node* statement = Parser_parseStatement(&parser);
 
@@ -245,7 +246,7 @@ void test_Compiler_compile_emitsNilOnEmptyInput() {
   InstructionList out;
   InstructionList_init(&out);
   Compiler compiler;
-  Compiler_init(&compiler);
+  Compiler_init(&compiler, false);
 
   bool success = Compiler_compile(&compiler, &out, text);
 
@@ -262,7 +263,7 @@ void test_Compiler_compile_emitsNilOnBlankInput() {
   InstructionList out;
   InstructionList_init(&out);
   Compiler compiler;
-  Compiler_init(&compiler);
+  Compiler_init(&compiler, false);
 
   bool success = Compiler_compile(&compiler, &out, text);
 
