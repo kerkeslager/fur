@@ -15,6 +15,10 @@ void Parser_free(Parser* self) {
   assert(self != NULL);
 }
 
+Node* Parser_error(Token token, const char* msg) {
+  return ErrorNode_new(token, msg);
+}
+
 typedef enum {
   PREC_NONE,
   PREC_ANY,
@@ -98,7 +102,8 @@ inline static NodeType mapPrefix(Token token) {
 }
 
 Node* Parser_parseAtom(Parser* self) {
-  Token token = Tokenizer_scan(&(self->tokenizer));
+  Tokenizer* tokenizer = &(self->tokenizer);
+  Token token = Tokenizer_peek(tokenizer);
 
   assert(token.type != TOKEN_ERROR);
   assert(token.type != TOKEN_EOF);
@@ -109,11 +114,12 @@ Node* Parser_parseAtom(Parser* self) {
 
   switch(token.type) {
     case TOKEN_INTEGER_LITERAL:
+      Tokenizer_scan(tokenizer);
       return AtomNode_new(NODE_INTEGER_LITERAL, token.line, token.lexeme, token.length);
 
     default:
-      // TODO Handle this
-      assert(false);
+      // TODO More specific error
+      return ErrorNode_new(token, "Unexpected token.");
   }
 }
 
@@ -201,8 +207,13 @@ Node* Parser_parseStatement(Parser* self) {
        * could elide the last semicolon in a file without ambiguity, because
        * the file is not a block, but that feels inconsistent.
        */
-      assert(self->repl);
-      return expression;
+      if(self->repl) {
+        return expression;
+      } else {
+        // TODO Do we want to do something else?
+        Node_free(expression);
+        return Parser_error(token, "Unexpected EOF, expected `;`.");
+      }
 
     default:
       // TODO Handle unexpected tokens
@@ -213,6 +224,58 @@ Node* Parser_parseStatement(Parser* self) {
 }
 
 #ifdef TEST
+
+void test_Parser_parseAtom_parseIntegerLiteral() {
+  const char* source = "42";
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* expression = Parser_parseAtom(&parser);
+
+  assert(expression->type == NODE_INTEGER_LITERAL);
+  assert(expression->line == 1);
+
+  AtomNode* ilExpression = (AtomNode*)expression;
+  assert(ilExpression->text == source);
+  assert(ilExpression->length == 2);
+
+  Parser_free(&parser);
+  Node_free(expression);
+}
+
+void test_Parser_parseAtom_errorOnUnexpectedToken() {
+  const char* source = ")";
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* expression = Parser_parseAtom(&parser);
+
+  assert(expression->type == NODE_ERROR);
+  assert(expression->line == 1);
+
+  ErrorNode* eNode = (ErrorNode*)expression;
+  assert(eNode->token.type == TOKEN_CLOSE_PAREN);
+
+  Parser_free(&parser);
+  Node_free(expression);
+}
+
+void test_Parser_parseAtom_errorOnUnexpectedTokenDoesNotConsume() {
+  const char* source = ")";
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* expression = Parser_parseAtom(&parser);
+  Tokenizer* tokenizer = &(parser.tokenizer);
+  Token token = Tokenizer_peek(tokenizer);
+
+  assert(token.type == TOKEN_CLOSE_PAREN);
+  assert(token.line == 1);
+  assert(token.lexeme == source);
+
+  Parser_free(&parser);
+  Node_free(expression);
+}
 
 void test_Parser_parseExpression_parseIntegerLiteral() {
   const char* source = "42";
@@ -649,6 +712,22 @@ void test_Parser_parseStatement_elideSemicolonAtEndInReplMode() {
   assert(node->type == NODE_ADD);
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
+
+  Node_free(node);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseStatement_noElideSemicolonAtEndInModuleMode() {
+  const char* source = "1 + 1";
+
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* node = Parser_parseStatement(&parser);
+
+  assert(node->type == NODE_ERROR);
+
+  // TODO Assert more things
 
   Node_free(node);
   Parser_free(&parser);

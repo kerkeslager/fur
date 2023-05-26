@@ -30,6 +30,10 @@ Node* AtomNode_new(NodeType type, size_t line, const char* text, size_t length) 
   return (Node*)node;
 }
 
+inline static void AtomNode_free(AtomNode* self) {
+  free(self);
+}
+
 inline static void UnaryNode_init(UnaryNode* self, NodeType type, size_t line, Node* arg0) {
   assert(type == NODE_NEGATE);
   Node_init(&(self->node), type, line);
@@ -40,6 +44,11 @@ Node* UnaryNode_new(NodeType type, size_t line, Node* arg0) {
   UnaryNode* node = malloc(sizeof(UnaryNode));
   UnaryNode_init(node, type, line, arg0);
   return (Node*)node;
+}
+
+inline static void UnaryNode_free(UnaryNode* self) {
+  Node_free(self->arg0);
+  free(self);
 }
 
 inline static void BinaryNode_init(BinaryNode* self, NodeType type, size_t line, Node* arg0, Node* arg1) {
@@ -58,18 +67,25 @@ Node* BinaryNode_new(NodeType type, size_t line, Node* arg0, Node* arg1) {
   return (Node*)node;
 }
 
-inline static void AtomNode_free(AtomNode* self) {
-  free(self);
-}
-
-inline static void UnaryNode_free(UnaryNode* self) {
-  Node_free(self->arg0);
-  free(self);
-}
-
 inline static void BinaryNode_free(BinaryNode* self) {
   Node_free(self->arg0);
   Node_free(self->arg1);
+  free(self);
+}
+
+inline static void ErrorNode_init(ErrorNode* self, Token token, const char* msg) {
+  Node_init(&(self->node), NODE_ERROR, token.line);
+  self->token = token;
+  self->msg = msg;
+}
+
+Node* ErrorNode_new(Token token, const char* msg) {
+  ErrorNode* node = malloc(sizeof(ErrorNode));
+  ErrorNode_init(node, token, msg);
+  return (Node*)node;
+}
+
+inline static void ErrorNode_free(ErrorNode* self) {
   free(self);
 }
 
@@ -95,7 +111,7 @@ void Node_free(Node* self) {
       return;
 
     case NODE_ERROR:
-      assert(false);
+      ErrorNode_free((ErrorNode*)self);
   }
 }
 

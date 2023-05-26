@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 
+#include "tokenizer.h"
+
 typedef enum {
   // Atom Nodes
   NODE_INTEGER_LITERAL,
@@ -49,6 +51,14 @@ typedef struct {
 } BinaryNode;
 
 Node* BinaryNode_new(NodeType type, size_t line, Node* arg0, Node* arg1);
+
+typedef struct {
+  Node node;
+  Token token;
+  const char* msg;
+} ErrorNode;
+
+Node* ErrorNode_new(Token token, const char* msg);
 
 void Node_free(Node* self);
 

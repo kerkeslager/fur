@@ -18,6 +18,10 @@ Node* Parser_parseStatement(Parser*);
 
 #ifdef TEST
 
+void test_Parser_parseAtom_parseIntegerLiteral();
+void test_Parser_parseAtom_errorOnUnexpectedToken();
+void test_Parser_parseAtom_errorOnUnexpectedTokenDoesNotConsume();
+
 void test_Parser_parseExpression_parseIntegerLiteral();
 
 void test_Parser_parseExpression_addition();
@@ -46,6 +50,7 @@ void test_Parser_parseExpression_parensOverOrderOfOperations();
 
 void test_Parser_parseStatement_terminatesAtSemicolon();
 void test_Parser_parseStatement_elideSemicolonAtEndInReplMode();
+void test_Parser_parseStatement_noElideSemicolonAtEndInModuleMode();
 void test_Parser_parseStatement_eof();
 
 #endif
