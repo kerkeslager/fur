@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "node.h"
@@ -112,6 +113,20 @@ void Node_free(Node* self) {
 
     case NODE_ERROR:
       ErrorNode_free((ErrorNode*)self);
+  }
+}
+
+void ErrorNode_print(Node* node) {
+  assert(node->type == NODE_ERROR);
+
+  ErrorNode* self = (ErrorNode*)node;
+
+  switch(self->type) {
+    case ERROR_MISSING_SEMICOLON:
+      assert(false);
+
+    case ERROR_UNEXPECTED_TOKEN:
+      assert(false);
   }
 }
 

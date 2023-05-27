@@ -64,6 +64,7 @@ typedef struct {
 } ErrorNode;
 
 Node* ErrorNode_new(ErrorType type, Token token);
+void ErrorNode_print(Node*);
 
 void Node_free(Node* self);
 

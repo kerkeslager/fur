@@ -19,7 +19,7 @@ int main() {
       InstructionList_init(&byteCode);
 
       Compiler compiler;
-      Compiler_init(&compiler);
+      Compiler_init(&compiler, true /* Init in REPL mode */);
 
       bool success = Compiler_compile(&compiler, &byteCode, (const char*)buffer);
 

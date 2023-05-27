@@ -10,14 +10,13 @@ void Compiler_init(Compiler* self, bool repl) {
   self->hasErrors = false;
 }
 
-void Compiler_error(Compiler* self, Node* errorNode) {
+static void Compiler_error(Compiler* self, Node* errorNode) {
   assert(errorNode != NULL);
   assert(errorNode->type == NODE_ERROR);
 
   self->hasErrors = true;
 
-  // TODO Implement
-  assert(false);
+  ErrorNode_print(errorNode);
 }
 
 inline static void Compiler_emitOp(InstructionList* out, Instruction op) {
@@ -83,6 +82,8 @@ bool Compiler_compile(Compiler* self, InstructionList* out, const char* source) 
      * callers expect this.
      */
     Compiler_emitOp(out, OP_NIL);
+    Compiler_emitOp(out, OP_RETURN);
+    return true;
   } else if(statement->type == NODE_ERROR) {
     Compiler_error(self, statement);
   } else {
