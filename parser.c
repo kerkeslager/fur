@@ -212,16 +212,14 @@ Node* Parser_parseStatement(Parser* self) {
       if(self->repl) {
         return expression;
       } else {
-        // TODO Do we want to do something else?
         Node_free(expression);
         return ErrorNode_new(ERROR_MISSING_SEMICOLON, token);
       }
 
     default:
-      // TODO Handle unexpected tokens
       // TODO Support eliding semicolons after blocks
-      assert(false);
-      return NULL;
+      Node_free(expression);
+      return ErrorNode_new(ERROR_MISSING_SEMICOLON, token);
   }
 }
 
@@ -756,6 +754,31 @@ void test_Parser_parseStatement_noElideSemicolonAtEndInModuleMode() {
   assert(eNode->token.type == TOKEN_EOF);
 
   // TODO Assert more things
+
+  Node_free(node);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseStatement_noMissingSemicolon() {
+  /*
+   * TODO
+   * At some point we probably want 1 + 1() to be syntactically correct, but a
+   * type error because 1 is not callable. But at the time of this writing this
+   * is the only way to induce a statement end with a token that is not a
+   * semicolon. Change this source to something else at some point.
+   */
+  const char* source = "1 + 1 (";
+
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* node = Parser_parseStatement(&parser);
+
+  assert(node->type == NODE_ERROR);
+
+  ErrorNode* eNode = (ErrorNode*)node;
+  assert(eNode->type == ERROR_MISSING_SEMICOLON);
+  assert(eNode->token.type == TOKEN_OPEN_PAREN);
 
   Node_free(node);
   Parser_free(&parser);
