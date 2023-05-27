@@ -10,7 +10,7 @@ void Compiler_init(Compiler* self, bool repl) {
   self->hasErrors = false;
 }
 
-static void Compiler_error(Compiler* self, Node* errorNode) {
+void Compiler_error(Compiler* self, Node* errorNode) {
   assert(errorNode != NULL);
   assert(errorNode->type == NODE_ERROR);
 
