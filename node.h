@@ -52,13 +52,18 @@ typedef struct {
 
 Node* BinaryNode_new(NodeType type, size_t line, Node* arg0, Node* arg1);
 
+typedef enum {
+  ERROR_MISSING_SEMICOLON,
+  ERROR_UNEXPECTED_TOKEN
+} ErrorType;
+
 typedef struct {
   Node node;
+  ErrorType type;
   Token token;
-  const char* msg;
 } ErrorNode;
 
-Node* ErrorNode_new(Token token, const char* msg);
+Node* ErrorNode_new(ErrorType type, Token token);
 
 void Node_free(Node* self);
 

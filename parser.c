@@ -15,10 +15,6 @@ void Parser_free(Parser* self) {
   assert(self != NULL);
 }
 
-Node* Parser_error(Token token, const char* msg) {
-  return ErrorNode_new(token, msg);
-}
-
 typedef enum {
   PREC_NONE,
   PREC_ANY,
@@ -119,7 +115,7 @@ Node* Parser_parseAtom(Parser* self) {
 
     default:
       // TODO More specific error
-      return ErrorNode_new(token, "Unexpected token.");
+      return ErrorNode_new(ERROR_UNEXPECTED_TOKEN, token);
   }
 }
 
@@ -212,7 +208,7 @@ Node* Parser_parseStatement(Parser* self) {
       } else {
         // TODO Do we want to do something else?
         Node_free(expression);
-        return Parser_error(token, "Unexpected EOF, expected `;`.");
+        return ErrorNode_new(ERROR_MISSING_SEMICOLON, token);
       }
 
     default:
@@ -254,6 +250,7 @@ void test_Parser_parseAtom_errorOnUnexpectedToken() {
   assert(expression->line == 1);
 
   ErrorNode* eNode = (ErrorNode*)expression;
+  assert(eNode->type == ERROR_UNEXPECTED_TOKEN);
   assert(eNode->token.type == TOKEN_CLOSE_PAREN);
 
   Parser_free(&parser);
@@ -726,6 +723,10 @@ void test_Parser_parseStatement_noElideSemicolonAtEndInModuleMode() {
   Node* node = Parser_parseStatement(&parser);
 
   assert(node->type == NODE_ERROR);
+
+  ErrorNode* eNode = (ErrorNode*)node;
+  assert(eNode->type == ERROR_MISSING_SEMICOLON);
+  assert(eNode->token.type == TOKEN_EOF);
 
   // TODO Assert more things
 
