@@ -22,6 +22,8 @@ void test_Parser_parseAtom_parseIntegerLiteral();
 void test_Parser_parseAtom_errorOnUnexpectedToken();
 void test_Parser_parseAtom_errorOnUnexpectedTokenDoesNotConsume();
 
+void test_Parser_parseUnary_parenOpenedButNotClosed();
+
 void test_Parser_parseExpression_parseIntegerLiteral();
 
 void test_Parser_parseExpression_addition();

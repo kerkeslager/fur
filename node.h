@@ -54,16 +54,20 @@ Node* BinaryNode_new(NodeType type, size_t line, Node* arg0, Node* arg1);
 
 typedef enum {
   ERROR_MISSING_SEMICOLON,
-  ERROR_UNEXPECTED_TOKEN
+  ERROR_PAREN_OPENED_BUT_NOT_CLOSED,
+  ERROR_UNEXPECTED_TOKEN,
 } ErrorType;
 
 typedef struct {
   Node node;
   ErrorType type;
   Token token;
+  Token auxToken;
+  Node* previous;
 } ErrorNode;
 
 Node* ErrorNode_new(ErrorType type, Token token);
+Node* ErrorNode_newWithAuxAndPrevious(ErrorType, Token token, Token auxToken, Node* previous);
 void ErrorNode_print(Node*);
 
 void Node_free(Node* self);

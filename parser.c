@@ -103,10 +103,6 @@ Node* Parser_parseAtom(Parser* self) {
 
   assert(token.type != TOKEN_ERROR);
   assert(token.type != TOKEN_EOF);
-  assert(!Token_opensOutfix(token));
-  assert(Token_prefixPrecedence(token) == PREC_NONE);
-  assert(Token_infixLeftPrecedence(token) == PREC_NONE);
-  assert(Token_infixRightPrecedence(token) == PREC_NONE);
 
   switch(token.type) {
     case TOKEN_INTEGER_LITERAL:
@@ -142,10 +138,20 @@ Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
     // TODO Should we set a minPrecedence for opened "environments"?
     Node* result = Parser_parseExpressionWithPrecedence(self, PREC_ANY);
 
-    Token closeToken = Tokenizer_scan(tokenizer);
-    assert(Token_closesOutfix(closeToken) == token.type);
+    Token closeToken = Tokenizer_peek(tokenizer);
 
-    return result;
+    if(Token_closesOutfix(closeToken) == token.type) {
+      Tokenizer_scan(tokenizer);
+      return result;
+    } else  {
+      return ErrorNode_newWithAuxAndPrevious(
+          ERROR_PAREN_OPENED_BUT_NOT_CLOSED,
+          closeToken,
+          token,
+          result
+      );
+    }
+
   } else {
     // TODO Handle postfix
     return Parser_parseAtom(self);
@@ -262,13 +268,34 @@ void test_Parser_parseAtom_errorOnUnexpectedTokenDoesNotConsume() {
   Parser parser;
   Parser_init(&parser, source, false);
 
-  Node* expression = Parser_parseAtom(&parser);
+  Node* expression = Parser_parseUnary(&parser);
   Tokenizer* tokenizer = &(parser.tokenizer);
   Token token = Tokenizer_peek(tokenizer);
 
   assert(token.type == TOKEN_CLOSE_PAREN);
   assert(token.line == 1);
   assert(token.lexeme == source);
+
+  Parser_free(&parser);
+  Node_free(expression);
+}
+
+void test_Parser_parseUnary_parenOpenedButNotClosed() {
+  const char* source = "(1 + 2";
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* expression = Parser_parseUnary(&parser);
+
+  assert(expression->type == NODE_ERROR);
+  assert(expression->line == 1);
+
+  ErrorNode* eNode = (ErrorNode*)expression;
+  assert(eNode->type == ERROR_PAREN_OPENED_BUT_NOT_CLOSED);
+  assert(eNode->token.type == TOKEN_EOF);
+  assert(eNode->auxToken.type == TOKEN_OPEN_PAREN);
+  assert(eNode->auxToken.lexeme == source);
+  assert(eNode->previous->type == NODE_ADD);
 
   Parser_free(&parser);
   Node_free(expression);

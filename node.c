@@ -74,19 +74,28 @@ inline static void BinaryNode_free(BinaryNode* self) {
   free(self);
 }
 
-inline static void ErrorNode_init(ErrorNode* self, ErrorType type, Token token) {
+inline static void ErrorNode_init(ErrorNode* self, ErrorType type, Token token, Token auxToken, Node* previous) {
   Node_init(&(self->node), NODE_ERROR, token.line);
   self->type = type;
   self->token = token;
+  self->auxToken = auxToken;
+  self->previous = previous;
 }
 
-Node* ErrorNode_new(ErrorType type, Token token) {
+Node* ErrorNode_newWithAuxAndPrevious(ErrorType type, Token token, Token auxToken, Node* previous) {
   ErrorNode* node = malloc(sizeof(ErrorNode));
-  ErrorNode_init(node, type, token);
+  ErrorNode_init(node, type, token, auxToken, previous);
   return (Node*)node;
 }
 
+Node* ErrorNode_new(ErrorType type, Token token) {
+  Token auxToken;
+  auxToken.type = NO_TOKEN;
+  return ErrorNode_newWithAuxAndPrevious(type, token, auxToken, NULL);
+}
+
 inline static void ErrorNode_free(ErrorNode* self) {
+  if(self->previous != NULL) Node_free(self->previous);
   free(self);
 }
 
@@ -123,6 +132,9 @@ void ErrorNode_print(Node* node) {
 
   switch(self->type) {
     case ERROR_MISSING_SEMICOLON:
+      assert(false);
+
+    case ERROR_PAREN_OPENED_BUT_NOT_CLOSED:
       assert(false);
 
     case ERROR_UNEXPECTED_TOKEN:
