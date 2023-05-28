@@ -101,9 +101,6 @@ Node* Parser_parseAtom(Parser* self) {
   Tokenizer* tokenizer = &(self->tokenizer);
   Token token = Tokenizer_peek(tokenizer);
 
-  assert(token.type != TOKEN_ERROR);
-  assert(token.type != TOKEN_EOF);
-
   switch(token.type) {
     case TOKEN_INTEGER_LITERAL:
       Tokenizer_scan(tokenizer);
@@ -256,6 +253,26 @@ void test_Parser_parseAtom_errorOnUnexpectedToken() {
   ErrorNode* eNode = (ErrorNode*)expression;
   assert(eNode->type == ERROR_UNEXPECTED_TOKEN);
   assert(eNode->token.type == TOKEN_CLOSE_PAREN);
+
+  Parser_free(&parser);
+  Node_free(expression);
+}
+
+void test_Parser_parseAtom_errorOnUnexpectedEof() {
+  const char* source = " ";
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* expression = Parser_parseAtom(&parser);
+
+  assert(expression->type == NODE_ERROR);
+  assert(expression->line == 1);
+
+  ErrorNode* eNode = (ErrorNode*)expression;
+  assert(eNode->type == ERROR_UNEXPECTED_TOKEN);
+  assert(eNode->token.type == TOKEN_EOF);
+  assert(eNode->auxToken.type = NO_TOKEN);
+  assert(eNode->previous == NULL);
 
   Parser_free(&parser);
   Node_free(expression);
