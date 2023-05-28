@@ -6,7 +6,6 @@
 
 typedef struct {
   Tokenizer tokenizer;
-  bool panic;
   bool repl;
 } Parser;
 
