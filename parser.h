@@ -24,6 +24,7 @@ void test_Parser_parseAtom_errorOnUnexpectedEof();
 void test_Parser_parseAtom_errorOnUnexpectedTokenDoesNotConsume();
 
 void test_Parser_parseUnary_parenOpenedButNotClosed();
+void test_Parser_parseUnary_passesOnErrors();
 
 void test_Parser_parseExpression_parseIntegerLiteral();
 
@@ -50,6 +51,9 @@ void test_Parser_parseExpression_negationRight();
 void test_Parser_parseExpression_simpleParens();
 void test_Parser_parseExpression_parensOverAssociation();
 void test_Parser_parseExpression_parensOverOrderOfOperations();
+
+void test_Parser_parseExpression_infixLeftError();
+void test_Parser_parseExpression_infixRightError();
 
 void test_Parser_parseStatement_terminatesAtSemicolon();
 void test_Parser_parseStatement_elideSemicolonAtEndInReplMode();

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "error.h"
 #include "node.h"
 
 inline static void Node_init(Node* self, NodeType type, size_t line) {
@@ -130,16 +131,42 @@ void ErrorNode_print(Node* node) {
 
   ErrorNode* self = (ErrorNode*)node;
 
+  if(self->previous != NULL && self->previous->type == NODE_ERROR) {
+    ErrorNode_print(self->previous);
+  }
+
+  bool colorAllowed = isColorAllowed();
+
+  if(colorAllowed) fprintf(stderr, ANSI_COLOR_RED);
+
+  fprintf(stderr, "Error (line %zu): ", self->token.line);
+
   switch(self->type) {
     case ERROR_MISSING_SEMICOLON:
-      assert(false);
+      fprintf(stderr, "Missing ';'.\n");
+      break;
 
     case ERROR_PAREN_OPENED_BUT_NOT_CLOSED:
-      assert(false);
+      fprintf(stderr, "Parentheses opened but not closed.\n");
+      fprintf(stderr, "\tParentheses opened on line %zu.\n", self->auxToken.line);
+      break;
 
     case ERROR_UNEXPECTED_TOKEN:
-      assert(false);
+      if(self->token.type == TOKEN_EOF) {
+        fprintf(stderr, "Unexpected end of file.\n");
+      } else if(self->token.length > 64) {
+        /*
+         * This check also protects against overflowing the integer cast in the next
+         * block, so it's a security concern as well.
+         */
+        fprintf(stderr, "Unexpected token '%.*s...'.\n", 64, self->token.lexeme);
+      } else {
+        fprintf(stderr, "Unexpected token '%.*s'.\n", (int)(self->token.length), self->token.lexeme);
+      }
+      break;
   }
+
+  if(colorAllowed) fprintf(stderr, ANSI_COLOR_RESET);
 }
 
 #ifdef TEST

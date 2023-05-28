@@ -90,6 +90,8 @@ bool Compiler_compile(Compiler* self, InstructionList* out, const char* source) 
     Compiler_emitNode(out, statement);
   }
 
+  Node_free(statement);
+
   while((statement = Parser_parseStatement(&parser))->type != NODE_EOF) {
     if(statement->type == NODE_ERROR) {
       Compiler_error(self, statement);
@@ -104,6 +106,8 @@ bool Compiler_compile(Compiler* self, InstructionList* out, const char* source) 
       Compiler_emitOp(out, OP_DROP);
       Compiler_emitNode(out, statement);
     }
+
+    Node_free(statement);
   }
 
   Compiler_emitOp(out, OP_RETURN);

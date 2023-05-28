@@ -127,6 +127,10 @@ Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
     Tokenizer_scan(tokenizer);
     Node* inner = Parser_parseExpressionWithPrecedence(self, prefixPrecedence);
 
+    if(inner->type == NODE_ERROR) {
+      return inner;
+    }
+
     // TODO Handle postfix
     return UnaryNode_new(mapPrefix(token), token.line, inner);
   } else if(Token_opensOutfix(token)) {
@@ -156,9 +160,32 @@ Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
 
 }
 
+void Parser_panic(Parser* self) {
+  Tokenizer* tokenizer = &(self->tokenizer);
+
+  for(;;) {
+    switch(Tokenizer_peek(tokenizer).type) {
+      case TOKEN_SEMICOLON:
+      case TOKEN_CLOSE_PAREN:
+      case TOKEN_EOF:
+        return;
+
+      default:
+        break;
+    }
+
+    Tokenizer_scan(tokenizer);
+  }
+}
+
 Node* Parser_parseExpressionWithPrecedence(Parser* self, Precedence minPrecedence) {
   Tokenizer* tokenizer = &(self->tokenizer);
   Node* left = Parser_parseUnary(self/*, minPrecedence*/);
+
+  if(left->type == NODE_ERROR) {
+    Parser_panic(self);
+    return left;
+  }
 
   for(;;) {
     Token operator = Tokenizer_peek(tokenizer);
@@ -172,6 +199,12 @@ Node* Parser_parseExpressionWithPrecedence(Parser* self, Precedence minPrecedenc
     Node* right = Parser_parseExpressionWithPrecedence(
         self,
         Token_infixLeftPrecedence(operator));
+
+    if(right->type == NODE_ERROR) {
+      Parser_panic(self);
+      Node_free(left);
+      return right;
+    }
 
     left = BinaryNode_new(mapInfix(operator), left->line, left, right);
   }
@@ -311,6 +344,25 @@ void test_Parser_parseUnary_parenOpenedButNotClosed() {
   assert(eNode->auxToken.type == TOKEN_OPEN_PAREN);
   assert(eNode->auxToken.lexeme == source);
   assert(eNode->previous->type == NODE_ADD);
+
+  Parser_free(&parser);
+  Node_free(expression);
+}
+
+void test_Parser_parseUnary_passesOnErrors() {
+  const char* source = "- - ";
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* expression = Parser_parseUnary(&parser);
+
+  assert(expression->type == NODE_ERROR);
+  assert(expression->line == 1);
+
+  ErrorNode* eNode = (ErrorNode*)expression;
+  assert(eNode->type == ERROR_UNEXPECTED_TOKEN);
+  assert(eNode->token.type == TOKEN_EOF);
+  assert(eNode->token.lexeme == source + 4);
 
   Parser_free(&parser);
   Node_free(expression);
@@ -717,6 +769,44 @@ void test_Parser_parseExpression_parensOverOrderOfOperations() {
   assert(node->type == NODE_MULTIPLY);
   assert(((BinaryNode*)node)->arg0->type == NODE_ADD);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
+
+  Node_free(node);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseExpression_infixLeftError() {
+  const char* source = "(1 + ";
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* node = Parser_parseExpression(&parser);
+
+  assert(node->type == NODE_ERROR);
+  assert(node->line == 1);
+
+  ErrorNode* eNode = (ErrorNode*)node;
+  assert(eNode->type == ERROR_PAREN_OPENED_BUT_NOT_CLOSED);
+  assert(eNode->token.type == TOKEN_EOF);
+
+  Node_free(node);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseExpression_infixRightError() {
+  const char* source = "1 + ";
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* node = Parser_parseExpression(&parser);
+
+  assert(node->type == NODE_ERROR);
+  assert(node->line == 1);
+
+  ErrorNode* eNode = (ErrorNode*)node;
+  assert(eNode->type == ERROR_UNEXPECTED_TOKEN);
+  assert(eNode->token.type == TOKEN_EOF);
+  assert(eNode->auxToken.type = NO_TOKEN);
+  assert(eNode->previous == NULL);
 
   Node_free(node);
   Parser_free(&parser);

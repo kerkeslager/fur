@@ -4,6 +4,7 @@
 #include <readline/readline.h>
 
 #include "compiler.h"
+#include "error.h"
 #include "thread.h"
 #include "value.h"
 #include "value_stack.h"
@@ -35,7 +36,11 @@ int main() {
         InstructionList_free(&byteCode);
         free(buffer);
       } else {
-        fprintf(stderr, "Error in compilation\n");
+        if(isColorAllowed()) {
+          fprintf(stderr, ANSI_COLOR_RED "Error in compilation\n" ANSI_COLOR_RESET);
+        } else {
+          fprintf(stderr, "Error in compilation\n");
+        }
       }
     }
   }
