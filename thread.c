@@ -4,8 +4,9 @@
 
 #include "error.h"
 
-void Thread_init(Thread* self, uint8_t* pc) {
-  self->pc = pc;
+void Thread_init(Thread* self, InstructionList* instructionList) {
+  self->instructionList = instructionList;
+  self->pc = InstructionList_start(instructionList);
   ValueStack_init(&(self->stack));
   self->panic = false;
 }
@@ -31,13 +32,7 @@ inline static Value opIDivide(Value a, Value b) {
   return Value_fromInteger(Value_asInteger(a) / Value_asInteger(b));
 }
 
-/*
- * TODO
- * Intuitively something feels wrong about passing in the instruction list
- * here. It is only used for retrieving line numbers for errors. I'm not sure
- * why this feels bad, so I'll leave it until that becomes clear.
- */
-void Thread_run(Thread* self, InstructionList* instructionList) {
+void Thread_run(Thread* self) {
   // TODO Consider copying the pc into a register
   ValueStack* stack = &(self->stack);
 
@@ -82,7 +77,7 @@ void Thread_run(Thread* self, InstructionList* instructionList) {
             fprintf(
                 stderr,
                 "Error (line %zu): Division by 0.\n",
-                InstructionList_getLine(instructionList, self->pc)
+                InstructionList_getLine(self->instructionList, self->pc)
             );
 
             if(isColorAllowed()) {
@@ -110,5 +105,7 @@ void Thread_run(Thread* self, InstructionList* instructionList) {
 }
 
 #ifdef TEST
+
+// TODO Tests
 
 #endif
