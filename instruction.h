@@ -40,6 +40,21 @@ inline static uint8_t* InstructionList_start(InstructionList* self) {
   return self->items;
 }
 
+/*
+ * The following functions allow us to maintain program counters when compiling
+ * onto the end of an InstructionList that is already being referenced by a
+ * thread. If InstructionList_append() resizes the InstructionList, the thread
+ * pc is likely no longer valid. To solve this, we save the pc off as an index before
+ * compilation, and then restore the pc using the index after compilation.
+ */
+inline static uint8_t* InstructionList_pc(InstructionList* self, size_t index) {
+  return &(self->items[index]);
+}
+
+inline static size_t InstructionList_index(InstructionList* self, uint8_t* pc) {
+  return pc - (self->items);
+}
+
 #ifdef TEST
 
 #endif

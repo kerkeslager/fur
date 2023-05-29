@@ -18,11 +18,7 @@ typedef struct {
   } as;
 } Value;
 
-inline static Value Value_nil() {
-  Value result;
-  result.type = VALUE_NIL;
-  return result;
-}
+const static Value NIL = { VALUE_NIL, { 0 } };
 
 inline static Value Value_fromInteger(int32_t i) {
   Value result;

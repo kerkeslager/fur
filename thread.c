@@ -6,7 +6,7 @@
 
 void Thread_init(Thread* self, InstructionList* instructionList) {
   self->instructionList = instructionList;
-  self->pc = InstructionList_start(instructionList);
+  self->pcIndex = 0;
   ValueStack_init(&(self->stack));
   self->panic = false;
 }
@@ -32,22 +32,34 @@ inline static Value opIDivide(Value a, Value b) {
   return Value_fromInteger(Value_asInteger(a) / Value_asInteger(b));
 }
 
-void Thread_run(Thread* self) {
+Value Thread_run(Thread* self) {
   // TODO Consider copying the pc into a register
   ValueStack* stack = &(self->stack);
 
+  /*
+   * The program counter is stored on the thread as an index, rather than a
+   * pointer, so that resizing the InstructionList with realloc doesn't leave
+   * the program counter hanging. This line restores the program counter
+   * pointer from the index, but *everywhere* that we exit from this function,
+   * we have to sync the index with InstructionList_index().
+   *
+   * Another implication of this is that we can't modify the index on while
+   * another thread while Thread_run() is running.
+   */
+  register uint8_t* pc = InstructionList_pc(self->instructionList, self->pcIndex);
+
   for(;;) {
-    Instruction instruction = *(self->pc);
-    self->pc++;
+    Instruction instruction = *pc;
+    pc++;
 
     switch(instruction) {
       case OP_NIL:
-        ValueStack_push(stack, Value_nil());
+        ValueStack_push(stack, NIL);
         break;
 
       case OP_INTEGER:
-        ValueStack_push(stack, Value_fromInteger(*((int32_t*)(self->pc))));
-        self->pc += sizeof(int32_t);
+        ValueStack_push(stack, Value_fromInteger(*((int32_t*)pc)));
+        pc += sizeof(int32_t);
         break;
 
       case OP_NEGATE:
@@ -77,7 +89,7 @@ void Thread_run(Thread* self) {
             fprintf(
                 stderr,
                 "Error (line %zu): Division by 0.\n",
-                InstructionList_getLine(self->instructionList, self->pc)
+                InstructionList_getLine(self->instructionList, pc)
             );
 
             if(isColorAllowed()) {
@@ -85,7 +97,9 @@ void Thread_run(Thread* self) {
             }
 
             self->panic = true;
-            return;
+
+            self->pcIndex = InstructionList_index(self->instructionList, pc);
+            return NIL;
           }
         }
         ValueStack_binary(stack, opIDivide);
@@ -96,7 +110,8 @@ void Thread_run(Thread* self) {
         break;
 
       case OP_RETURN:
-        return;
+        self->pcIndex = InstructionList_index(self->instructionList, pc);
+        return ValueStack_pop(stack);
 
       default:
         assert(false);

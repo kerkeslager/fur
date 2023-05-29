@@ -8,7 +8,7 @@
 
 typedef struct {
   InstructionList* instructionList;
-  uint8_t* pc;
+  size_t pcIndex;
   ValueStack stack;
   bool panic;
 } Thread;
@@ -16,7 +16,7 @@ typedef struct {
 void Thread_init(Thread*, InstructionList*);
 void Thread_free(Thread*);
 
-void Thread_run(Thread*);
+Value Thread_run(Thread*);
 
 inline static void Thread_clearPanic(Thread* self) {
   self->panic = false;

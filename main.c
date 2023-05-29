@@ -27,12 +27,11 @@ int main() {
       if(success) {
         Thread thread;
         Thread_init(&thread, &byteCode);
-        Thread_run(&thread);
+        Value result = Thread_run(&thread);
 
         if(thread.panic) {
           Thread_clearPanic(&thread);
         } else {
-          Value result = ValueStack_pop(&(thread.stack));
           Value_println(result);
         }
 
