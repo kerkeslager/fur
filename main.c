@@ -27,10 +27,12 @@ int main() {
       if(success) {
         Thread thread;
         Thread_init(&thread, byteCode.items);
-        Thread_run(&thread);
+        Thread_run(&thread, &byteCode);
 
-        Value result = ValueStack_pop(&(thread.stack));
-        Value_println(result);
+        if(!thread.panic) {
+          Value result = ValueStack_pop(&(thread.stack));
+          Value_println(result);
+        }
 
         Thread_free(&thread);
         InstructionList_free(&byteCode);

@@ -1,9 +1,13 @@
 #include <stdio.h>
+
 #include "thread.h"
+
+#include "error.h"
 
 void Thread_init(Thread* self, uint8_t* pc) {
   self->pc = pc;
   ValueStack_init(&(self->stack));
+  self->panic = false;
 }
 
 void Thread_free(Thread* self) {
@@ -27,7 +31,13 @@ inline static Value opIDivide(Value a, Value b) {
   return Value_fromInteger(Value_asInteger(a) / Value_asInteger(b));
 }
 
-void Thread_run(Thread* self) {
+/*
+ * TODO
+ * Intuitively something feels wrong about passing in the instruction list
+ * here. It is only used for retrieving line numbers for errors. I'm not sure
+ * why this feels bad, so I'll leave it until that becomes clear.
+ */
+void Thread_run(Thread* self, InstructionList* instructionList) {
   // TODO Consider copying the pc into a register
   ValueStack* stack = &(self->stack);
 
@@ -62,6 +72,27 @@ void Thread_run(Thread* self) {
         break;
 
       case OP_IDIVIDE:
+        {
+          int32_t denominator = Value_asInteger(ValueStack_peek(stack));
+          if(denominator == 0) {
+            if(isColorAllowed()) {
+              fprintf(stderr, ANSI_COLOR_RED);
+            }
+
+            fprintf(
+                stderr,
+                "Error (line %zu): Division by 0.\n",
+                InstructionList_getLine(instructionList, self->pc)
+            );
+
+            if(isColorAllowed()) {
+              fprintf(stderr, ANSI_COLOR_RESET);
+            }
+
+            self->panic = true;
+            return;
+          }
+        }
         ValueStack_binary(stack, opIDivide);
         break;
 
