@@ -19,12 +19,12 @@ void Compiler_error(Compiler* self, Node* errorNode) {
   ErrorNode_print(errorNode);
 }
 
-inline static void Compiler_emitOp(InstructionList* out, Instruction op) {
-  InstructionList_append(out, (uint8_t)op);
+inline static void Compiler_emitOp(InstructionList* out, Instruction op, size_t line) {
+  InstructionList_append(out, (uint8_t)op, line);
 }
 
-inline static void Compiler_emitInt32(InstructionList* out, int32_t i) {
-  InstructionList_appendInt32(out, i);
+inline static void Compiler_emitInt32(InstructionList* out, int32_t i, size_t line) {
+  InstructionList_appendInt32(out, i, line);
 }
 
 inline static void Compiler_emitInteger(Node* node, InstructionList* out) {
@@ -38,8 +38,8 @@ inline static void Compiler_emitInteger(Node* node, InstructionList* out) {
     result += aNode->text[i] - '0';
   }
 
-  Compiler_emitOp(out, OP_INTEGER);
-  Compiler_emitInt32(out, result);
+  Compiler_emitOp(out, OP_INTEGER, aNode->node.line);
+  Compiler_emitInt32(out, result, aNode->node.line);
 }
 
 void Compiler_emitNode(InstructionList* out, Node* node);
@@ -47,7 +47,7 @@ void Compiler_emitNode(InstructionList* out, Node* node);
 inline static void Compiler_emitBinaryNode(InstructionList* out, Instruction op, Node* node) {
   Compiler_emitNode(out, ((BinaryNode*)node)->arg0);
   Compiler_emitNode(out, ((BinaryNode*)node)->arg1);
-  InstructionList_append(out, op);
+  InstructionList_append(out, op, node->line);
 }
 
 // TODO Switch arguments
@@ -58,7 +58,7 @@ void Compiler_emitNode(InstructionList* out, Node* node) {
 
     case NODE_NEGATE:
       Compiler_emitNode(out, ((UnaryNode*)node)->arg0);
-      return Compiler_emitOp(out, OP_NEGATE);
+      return Compiler_emitOp(out, OP_NEGATE, node->line);
 
     case NODE_ADD:            Compiler_emitBinaryNode(out, OP_ADD, node);       return;
     case NODE_SUBTRACT:       Compiler_emitBinaryNode(out, OP_SUBTRACT, node);  return;
@@ -81,8 +81,8 @@ bool Compiler_compile(Compiler* self, InstructionList* out, const char* source) 
      * This is so that empty files or repl lines emit a return value, since
      * callers expect this.
      */
-    Compiler_emitOp(out, OP_NIL);
-    Compiler_emitOp(out, OP_RETURN);
+    Compiler_emitOp(out, OP_NIL, statement->line);
+    Compiler_emitOp(out, OP_RETURN, statement->line);
     return true;
   } else if(statement->type == NODE_ERROR) {
     Compiler_error(self, statement);
@@ -103,14 +103,19 @@ bool Compiler_compile(Compiler* self, InstructionList* out, const char* source) 
        * expression will be used, and not emit unused results that we'll
        * just have to drop.
        */
-      Compiler_emitOp(out, OP_DROP);
+      /*
+       * TODO
+       * The OP_DROP is really part of the previous statement, and should have
+       * the line number of the previous statement.
+       */
+      Compiler_emitOp(out, OP_DROP, statement->line);
       Compiler_emitNode(out, statement);
     }
 
     Node_free(statement);
   }
 
-  Compiler_emitOp(out, OP_RETURN);
+  Compiler_emitOp(out, OP_RETURN, statement->line);
 
   Parser_free(&parser);
 

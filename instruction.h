@@ -17,15 +17,24 @@ typedef enum {
 } Instruction;
 
 typedef struct {
+  size_t line;
+  size_t run;
+} LineRun;
+
+typedef struct {
   size_t count;
   size_t capacity;
   uint8_t* items;
+  size_t lineRunCount;
+  size_t lineRunCapacity;
+  LineRun* lineRuns;
 } InstructionList;
 
 void InstructionList_init(InstructionList*);
 void InstructionList_free(InstructionList*);
-void InstructionList_append(InstructionList*, uint8_t);
-void InstructionList_appendInt32(InstructionList*, int32_t);
+void InstructionList_append(InstructionList*, uint8_t, size_t line);
+void InstructionList_appendInt32(InstructionList*, int32_t, size_t line);
+size_t InstructionList_getLine(InstructionList*, uint8_t* instruction);
 
 #ifdef TEST
 
