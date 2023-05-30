@@ -12,7 +12,7 @@ inline static void Node_init(Node* self, NodeType type, size_t line) {
 }
 
 inline static void AtomNode_init(AtomNode* self, NodeType type, size_t line, const char* text, size_t length) {
-  assert(type == NODE_INTEGER_LITERAL);
+  assert(type == NODE_INTEGER_LITERAL || type == NODE_BOOLEAN_LITERAL);
   Node_init(&(self->node), type, line);
   self->text = text;
   self->length = length;
@@ -26,7 +26,7 @@ Node* Node_new(NodeType type, size_t line) {
 }
 
 Node* AtomNode_new(NodeType type, size_t line, const char* text, size_t length) {
-  assert(type == NODE_INTEGER_LITERAL);
+  assert(type == NODE_INTEGER_LITERAL || type == NODE_BOOLEAN_LITERAL);
   AtomNode* node = malloc(sizeof(AtomNode));
   AtomNode_init(node, type, line, text, length);
   return (Node*)node;
@@ -107,6 +107,7 @@ void Node_free(Node* self) {
       return;
 
     case NODE_INTEGER_LITERAL:
+    case NODE_BOOLEAN_LITERAL:
       AtomNode_free((AtomNode*)self);
       return;
 

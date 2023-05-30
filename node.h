@@ -8,6 +8,7 @@
 typedef enum {
   // Atom Nodes
   NODE_INTEGER_LITERAL,
+  NODE_BOOLEAN_LITERAL,
 
   // Unary Nodes
   NODE_NEGATE,

@@ -110,6 +110,11 @@ Node* Parser_parseAtom(Parser* self) {
       Tokenizer_scan(tokenizer);
       return AtomNode_new(NODE_INTEGER_LITERAL, token.line, token.lexeme, token.length);
 
+    case TOKEN_TRUE:
+    case TOKEN_FALSE:
+      Tokenizer_scan(tokenizer);
+      return AtomNode_new(NODE_BOOLEAN_LITERAL, token.line, token.lexeme, token.length);
+
     default:
       // TODO More specific error
       return ErrorNode_new(ERROR_UNEXPECTED_TOKEN, token);
@@ -320,13 +325,49 @@ void test_Parser_parseAtom_errorOnUnexpectedTokenDoesNotConsume() {
   Parser parser;
   Parser_init(&parser, source, false);
 
-  Node* expression = Parser_parseUnary(&parser);
+  Node* expression = Parser_parseAtom(&parser);
   Tokenizer* tokenizer = &(parser.tokenizer);
   Token token = Tokenizer_peek(tokenizer);
 
   assert(token.type == TOKEN_CLOSE_PAREN);
   assert(token.line == 1);
   assert(token.lexeme == source);
+
+  Parser_free(&parser);
+  Node_free(expression);
+}
+
+void test_Parser_parseAtom_parsesTrue() {
+  const char* source = "true";
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* expression = Parser_parseAtom(&parser);
+
+  assert(expression->type == NODE_BOOLEAN_LITERAL);
+  assert(expression->line == 1);
+
+  AtomNode* ilExpression = (AtomNode*)expression;
+  assert(ilExpression->text == source);
+  assert(ilExpression->length == 4);
+
+  Parser_free(&parser);
+  Node_free(expression);
+}
+
+void test_Parser_parseAtom_parsesFalse() {
+  const char* source = "false";
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* expression = Parser_parseAtom(&parser);
+
+  assert(expression->type == NODE_BOOLEAN_LITERAL);
+  assert(expression->line == 1);
+
+  AtomNode* ilExpression = (AtomNode*)expression;
+  assert(ilExpression->text == source);
+  assert(ilExpression->length == 5);
 
   Parser_free(&parser);
   Node_free(expression);
