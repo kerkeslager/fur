@@ -6,6 +6,8 @@
 
 typedef enum {
   OP_NIL,
+  OP_TRUE,
+  OP_FALSE,
   OP_INTEGER,
   OP_NEGATE,
   OP_ADD,
@@ -38,6 +40,10 @@ size_t InstructionList_getLine(InstructionList*, uint8_t* instruction);
 
 inline static uint8_t* InstructionList_start(InstructionList* self) {
   return self->items;
+}
+
+inline static size_t InstructionList_count(InstructionList* self) {
+  return self->count;
 }
 
 /*

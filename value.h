@@ -53,7 +53,7 @@ inline static void Value_println(Value v) {
       } else {
         printf("  false\n");
       }
-      break;
+      return;
 
     case VALUE_NIL:
       printf("  nil\n");

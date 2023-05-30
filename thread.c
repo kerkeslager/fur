@@ -57,6 +57,14 @@ Value Thread_run(Thread* self) {
         ValueStack_push(stack, NIL);
         break;
 
+      case OP_TRUE:
+        ValueStack_push(stack, TRUE);
+        break;
+
+      case OP_FALSE:
+        ValueStack_push(stack, FALSE);
+        break;
+
       case OP_INTEGER:
         ValueStack_push(stack, Value_fromInteger(*((int32_t*)pc)));
         pc += sizeof(int32_t);
@@ -121,6 +129,38 @@ Value Thread_run(Thread* self) {
 
 #ifdef TEST
 
-// TODO Tests
+void test_Thread_clearPanic_setsPanicFalse() {
+  InstructionList instructionList;
+  InstructionList_init(&instructionList);
+
+  InstructionList_append(&instructionList, OP_NIL, 1);
+  InstructionList_append(&instructionList, OP_RETURN, 2);
+
+  Thread thread;
+  Thread_init(&thread, &instructionList);
+  thread.panic = true;
+
+  Thread_clearPanic(&thread);
+
+  assert(!(thread.panic));
+}
+
+void test_Thread_clearPanic_setsPCIndexToEnd() {
+  InstructionList instructionList;
+  InstructionList_init(&instructionList);
+
+  InstructionList_append(&instructionList, OP_NIL, 1);
+  InstructionList_append(&instructionList, OP_RETURN, 2);
+
+  Thread thread;
+  Thread_init(&thread, &instructionList);
+  thread.panic = true;
+
+  Thread_clearPanic(&thread);
+
+  assert(thread.pcIndex == 2);
+}
+
+// TODO Need a lot more tests here
 
 #endif

@@ -100,8 +100,6 @@ void InstructionList_appendInt32(InstructionList* self, int32_t i, size_t line) 
     InstructionList_grow(self);
   }
 
-  // TODO Handle different item sizes before using this function
-  // for other lists.
   *((int32_t*)&(self->items[self->count])) = i;
   self->count += sizeof(int32_t);
 
@@ -138,6 +136,6 @@ size_t InstructionList_getLine(InstructionList* self, uint8_t* instruction) {
 
 #ifdef TEST
 
-// TODO Oof, why didn't I write these originally?
+// TODO Need a lot more tests here
 
 #endif

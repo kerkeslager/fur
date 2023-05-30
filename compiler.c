@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "compiler.h"
 #include "node.h"
@@ -27,19 +28,33 @@ inline static void Compiler_emitInt32(InstructionList* out, int32_t i, size_t li
   InstructionList_appendInt32(out, i, line);
 }
 
-inline static void Compiler_emitInteger(Node* node, InstructionList* out) {
+inline static void Compiler_emitInteger(InstructionList* out, AtomNode* node) {
   // TODO Handle overflows
 
-  AtomNode* aNode = (AtomNode*)node;
   int32_t result = 0;
 
-  for(size_t i = 0; i < aNode->length; i++) {
+  for(size_t i = 0; i < node->length; i++) {
     result *= 10;
-    result += aNode->text[i] - '0';
+    result += node->text[i] - '0';
   }
 
-  Compiler_emitOp(out, OP_INTEGER, aNode->node.line);
-  Compiler_emitInt32(out, result, aNode->node.line);
+  Compiler_emitOp(out, OP_INTEGER, node->node.line);
+  Compiler_emitInt32(out, result, node->node.line);
+}
+
+inline static void Compiler_emitBoolean(InstructionList* out, AtomNode* node) {
+  /*
+   * Since there are only two possibilities which should have been matched
+   * by the tokenizer, it should be sufficient to check only the first character.
+   * However, we assert the full values for debug.
+   */
+  if(*(node->text) == 't') {
+    assert(strncmp("true", node->text, node->length) == 0);
+    return Compiler_emitOp(out, OP_TRUE, node->node.line);
+  } else {
+    assert(strncmp("false", ((AtomNode*)node)->text, ((AtomNode*)node)->length) == 0);
+    return Compiler_emitOp(out, OP_FALSE, node->node.line);
+  }
 }
 
 void Compiler_emitNode(InstructionList* out, Node* node);
@@ -54,7 +69,10 @@ inline static void Compiler_emitBinaryNode(InstructionList* out, Instruction op,
 void Compiler_emitNode(InstructionList* out, Node* node) {
   switch(node->type) {
     case NODE_INTEGER_LITERAL:
-      return Compiler_emitInteger(node, out);
+      return Compiler_emitInteger(out, (AtomNode*)node);
+
+    case NODE_BOOLEAN_LITERAL:
+      return Compiler_emitBoolean(out, (AtomNode*)node);
 
     case NODE_NEGATE:
       Compiler_emitNode(out, ((UnaryNode*)node)->arg0);
