@@ -45,6 +45,11 @@ const PrecedenceRule PRECEDENCE[] = {
   [TOKEN_OPEN_PAREN] =      { PREC_NONE,    PREC_NONE,        PREC_NONE,          true,   NO_TOKEN },
   [TOKEN_CLOSE_PAREN] =     { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  TOKEN_OPEN_PAREN },
 
+  [TOKEN_TRUE] =            { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
+  [TOKEN_FALSE] =           { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
+
+  [TOKEN_IDENTIFIER] =      { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
+
   [TOKEN_EOF] =             { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
   [TOKEN_ERROR] =           { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
 

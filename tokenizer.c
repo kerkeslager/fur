@@ -50,6 +50,33 @@ inline static void Tokenizer_handleWhitespace(Tokenizer* self) {
   }
 }
 
+bool isIdentifierChar(char c) {
+  // TODO Allow more charcters in identifiers
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+}
+
+Token Tokenizer_keywordOrIdentifier(Tokenizer* self, const char* lexeme, const char* suffix, TokenType type) {
+  for(;;) {
+    if(*suffix == '\0') {
+      if(isIdentifierChar(*(self->current))) {
+        self->current++;
+        break;
+      } else {
+        return Token_create(type, lexeme, self->current - lexeme, self->line);
+      }
+    } else if(*suffix == *(self->current)) {
+      suffix++;
+      self->current++;
+    } else {
+      break;
+    }
+  }
+
+  while(isIdentifierChar(*(self->current))) self->current++;
+
+  return Token_create(TOKEN_IDENTIFIER, lexeme, self->current - lexeme, self->line);
+}
+
 Token Tokenizer_scan(Tokenizer* self) {
   if(self->lookahead.type != NO_TOKEN) {
     Token result = self->lookahead;
@@ -117,6 +144,20 @@ Token Tokenizer_scan(Tokenizer* self) {
               return Token_create(TOKEN_INTEGER_LITERAL, lexeme, self->current - lexeme, self->line);
           }
         }
+      }
+
+    case 'f':
+      {
+        const char* lexeme = self->current;
+        self->current++;
+        return Tokenizer_keywordOrIdentifier(self, lexeme, "alse", TOKEN_FALSE);
+      }
+
+    case 't':
+      {
+        const char* lexeme = self->current;
+        self->current++;
+        return Tokenizer_keywordOrIdentifier(self, lexeme, "rue", TOKEN_TRUE);
       }
 
     default:
@@ -349,4 +390,72 @@ void test_Tokenizer_scan_parentheses() {
   assert(token.length == 1);
   assert(token.line == 1);
 }
+
+void test_Tokenizer_scan_identifier() {
+  const char* source = "foo";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Token token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_IDENTIFIER);
+  assert(token.lexeme == source);
+  assert(token.length == 3);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_booleans() {
+  const char* source = "true false";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Token token;
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_TRUE);
+  assert(token.lexeme == source);
+  assert(token.length == 4);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_FALSE);
+  assert(token.lexeme == source + 5);
+  assert(token.length == 5);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_differentiateKeywords() {
+  const char* source = "tru fals truey falsey";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Token token;
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_IDENTIFIER);
+  assert(token.lexeme == source);
+  assert(token.length == 3);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_IDENTIFIER);
+  assert(token.lexeme == source + 4);
+  assert(token.length == 4);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_IDENTIFIER);
+  assert(token.lexeme == source + 9);
+  assert(token.length == 5);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_IDENTIFIER);
+  assert(token.lexeme == source + 15);
+  assert(token.length == 6);
+  assert(token.line == 1);
+}
+
 #endif
