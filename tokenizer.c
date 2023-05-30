@@ -134,7 +134,6 @@ Token Tokenizer_scan(Tokenizer* self) {
         return Token_create(TOKEN_ERROR, "Not implemented", strlen("Not implemented"), self->line);
       }
 
-
     case '(':
       return Tokenizer_consume(self, TOKEN_OPEN_PAREN, 1);
     case ')':

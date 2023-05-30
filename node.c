@@ -57,7 +57,13 @@ inline static void BinaryNode_init(BinaryNode* self, NodeType type, size_t line,
   assert(type == NODE_ADD
       || type == NODE_SUBTRACT
       || type == NODE_MULTIPLY
-      || type == NODE_INTEGER_DIVIDE);
+      || type == NODE_INTEGER_DIVIDE
+      || type == NODE_LESS_THAN
+      || type == NODE_LESS_THAN_EQUAL
+      || type == NODE_GREATER_THAN
+      || type == NODE_GREATER_THAN_EQUAL
+      || type == NODE_EQUAL
+      || type == NODE_NOT_EQUAL);
   Node_init(&(self->node), type, line);
   self->arg0 = arg0;
   self->arg1 = arg1;
@@ -119,6 +125,12 @@ void Node_free(Node* self) {
     case NODE_SUBTRACT:
     case NODE_MULTIPLY:
     case NODE_INTEGER_DIVIDE:
+    case NODE_LESS_THAN:
+    case NODE_LESS_THAN_EQUAL:
+    case NODE_GREATER_THAN:
+    case NODE_GREATER_THAN_EQUAL:
+    case NODE_EQUAL:
+    case NODE_NOT_EQUAL:
       BinaryNode_free((BinaryNode*)self);
       return;
 

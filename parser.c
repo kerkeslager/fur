@@ -17,6 +17,8 @@ void Parser_free(Parser* self) {
 typedef enum {
   PREC_NONE,
   PREC_ANY,
+  PREC_COMPARISON_RIGHT,
+  PREC_COMPARISON_LEFT,
   PREC_TERM_RIGHT,
   PREC_TERM_LEFT,
   PREC_FACTOR_RIGHT,
@@ -33,27 +35,34 @@ typedef struct {
 } PrecedenceRule;
 
 const PrecedenceRule PRECEDENCE[] = {
-  [TOKEN_INTEGER_LITERAL] = { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
+  [TOKEN_INTEGER_LITERAL] =     { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
-  [TOKEN_PLUS] =            { PREC_NONE,    PREC_TERM_LEFT,   PREC_TERM_RIGHT,    false,  NO_TOKEN },
-  [TOKEN_MINUS] =           { PREC_NEGATE,  PREC_TERM_LEFT,   PREC_TERM_RIGHT,    false,  NO_TOKEN },
-  [TOKEN_ASTERISK] =        { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT,  false,  NO_TOKEN },
-  [TOKEN_SLASH_SLASH] =     { PREC_NONE,    PREC_FACTOR_LEFT, PREC_FACTOR_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_PLUS] =                { PREC_NONE,    PREC_TERM_LEFT,       PREC_TERM_RIGHT,        false,  NO_TOKEN },
+  [TOKEN_MINUS] =               { PREC_NEGATE,  PREC_TERM_LEFT,       PREC_TERM_RIGHT,        false,  NO_TOKEN },
+  [TOKEN_ASTERISK] =            { PREC_NONE,    PREC_FACTOR_LEFT,     PREC_FACTOR_RIGHT,      false,  NO_TOKEN },
+  [TOKEN_SLASH_SLASH] =         { PREC_NONE,    PREC_FACTOR_LEFT,     PREC_FACTOR_RIGHT,      false,  NO_TOKEN },
 
-  [TOKEN_SEMICOLON] =       { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
+  [TOKEN_LESS_THAN] =           { PREC_NONE,    PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_LESS_THAN_EQUALS] =    { PREC_NONE,    PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_GREATER_THAN] =        { PREC_NONE,    PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_GREATER_THAN_EQUALS] = { PREC_NONE,    PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_EQUALS_EQUALS] =       { PREC_NONE,    PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_BANG_EQUALS] =         { PREC_NONE,    PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
 
-  [TOKEN_OPEN_PAREN] =      { PREC_NONE,    PREC_NONE,        PREC_NONE,          true,   NO_TOKEN },
-  [TOKEN_CLOSE_PAREN] =     { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  TOKEN_OPEN_PAREN },
+  [TOKEN_SEMICOLON] =           { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
-  [TOKEN_TRUE] =            { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
-  [TOKEN_FALSE] =           { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
+  [TOKEN_OPEN_PAREN] =          { PREC_NONE,    PREC_NONE,            PREC_NONE,              true,   NO_TOKEN },
+  [TOKEN_CLOSE_PAREN] =         { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  TOKEN_OPEN_PAREN },
 
-  [TOKEN_IDENTIFIER] =      { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
+  [TOKEN_TRUE] =                { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_FALSE] =               { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
-  [TOKEN_EOF] =             { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
-  [TOKEN_ERROR] =           { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
+  [TOKEN_IDENTIFIER] =          { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
-  [NO_TOKEN] =              { PREC_NONE,    PREC_NONE,        PREC_NONE,          false,  NO_TOKEN },
+  [TOKEN_EOF] =                 { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_ERROR] =               { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+
+  [NO_TOKEN] =                  { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 };
 
 inline static Precedence Token_prefixPrecedence(Token self) {
@@ -87,6 +96,12 @@ inline static NodeType mapInfix(Token token) {
     case TOKEN_MINUS: return NODE_SUBTRACT;
     case TOKEN_ASTERISK: return NODE_MULTIPLY;
     case TOKEN_SLASH_SLASH: return NODE_INTEGER_DIVIDE;
+    case TOKEN_LESS_THAN: return NODE_LESS_THAN;
+    case TOKEN_LESS_THAN_EQUALS: return NODE_LESS_THAN_EQUAL;
+    case TOKEN_GREATER_THAN: return NODE_GREATER_THAN;
+    case TOKEN_GREATER_THAN_EQUALS: return NODE_GREATER_THAN_EQUAL;
+    case TOKEN_EQUALS_EQUALS: return NODE_EQUAL;
+    case TOKEN_BANG_EQUALS: return NODE_NOT_EQUAL;
     default: assert(false);
   }
 
@@ -616,6 +631,78 @@ void test_Parser_parseExpression_multiplicationBeforeSubtraction() {
   assert(expression->arg1->type == NODE_MULTIPLY);
 
   Node_free((Node*)expression);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseExpression_comparisonBasic() {
+  const char* source;
+  Parser parser;
+  Node* expression;
+
+  source = "6 < 2";
+  Parser_init(&parser, source, false);
+
+  expression = Parser_parseExpression(&parser);
+
+  assert(expression->type == NODE_LESS_THAN);
+  assert(expression->line == 1);
+
+  Node_free(expression);
+  Parser_free(&parser);
+
+  source = "6 > 2";
+  Parser_init(&parser, source, false);
+
+  expression = Parser_parseExpression(&parser);
+
+  assert(expression->type == NODE_GREATER_THAN);
+  assert(expression->line == 1);
+
+  Node_free(expression);
+  Parser_free(&parser);
+
+  source = "6 <= 2";
+  Parser_init(&parser, source, false);
+
+  expression = Parser_parseExpression(&parser);
+
+  assert(expression->type == NODE_LESS_THAN_EQUAL);
+  assert(expression->line == 1);
+
+  Node_free(expression);
+  Parser_free(&parser);
+
+  source = "6 >= 2";
+  Parser_init(&parser, source, false);
+
+  expression = Parser_parseExpression(&parser);
+
+  assert(expression->type == NODE_GREATER_THAN_EQUAL);
+  assert(expression->line == 1);
+
+  Node_free(expression);
+  Parser_free(&parser);
+
+  source = "6 == 2";
+  Parser_init(&parser, source, false);
+
+  expression = Parser_parseExpression(&parser);
+
+  assert(expression->type == NODE_EQUAL);
+  assert(expression->line == 1);
+
+  Node_free(expression);
+  Parser_free(&parser);
+
+  source = "6 != 2";
+  Parser_init(&parser, source, false);
+
+  expression = Parser_parseExpression(&parser);
+
+  assert(expression->type == NODE_NOT_EQUAL);
+  assert(expression->line == 1);
+
+  Node_free(expression);
   Parser_free(&parser);
 }
 
