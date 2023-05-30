@@ -100,13 +100,40 @@ Token Tokenizer_scan(Tokenizer* self) {
     case '*':
       return Tokenizer_consume(self, TOKEN_ASTERISK, 1);
     case '/':
-      {
-        if(self->current[1] == '/') {
-          return Tokenizer_consume(self, TOKEN_SLASH_SLASH, 2);
-        } else {
-          return Token_create(TOKEN_ERROR, "Not implemented", strlen("Not implemented"), self->line);
-        }
+      if(self->current[1] == '/') {
+        return Tokenizer_consume(self, TOKEN_SLASH_SLASH, 2);
+      } else {
+        return Token_create(TOKEN_ERROR, "Not implemented", strlen("Not implemented"), self->line);
       }
+
+    case '<':
+      if(self->current[1] == '=') {
+        return Tokenizer_consume(self, TOKEN_LESS_THAN_EQUALS, 2);
+      } else {
+        return Tokenizer_consume(self, TOKEN_LESS_THAN, 1);
+      }
+
+    case '>':
+      if(self->current[1] == '=') {
+        return Tokenizer_consume(self, TOKEN_GREATER_THAN_EQUALS, 2);
+      } else {
+        return Tokenizer_consume(self, TOKEN_GREATER_THAN, 1);
+      }
+
+    case '=':
+      if(self->current[1] == '=') {
+        return Tokenizer_consume(self, TOKEN_EQUALS_EQUALS, 2);
+      } else {
+        return Token_create(TOKEN_ERROR, "Not implemented", strlen("Not implemented"), self->line);
+      }
+
+    case '!':
+      if(self->current[1] == '=') {
+        return Tokenizer_consume(self, TOKEN_BANG_EQUALS, 2);
+      } else {
+        return Token_create(TOKEN_ERROR, "Not implemented", strlen("Not implemented"), self->line);
+      }
+
 
     case '(':
       return Tokenizer_consume(self, TOKEN_OPEN_PAREN, 1);
@@ -455,6 +482,51 @@ void test_Tokenizer_scan_differentiateKeywords() {
   assert(token.type == TOKEN_IDENTIFIER);
   assert(token.lexeme == source + 15);
   assert(token.length == 6);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_comparisonOperators() {
+  const char* source = "< > == <= >= !=";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Token token;
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_LESS_THAN);
+  assert(token.lexeme == source);
+  assert(token.length == 1);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_GREATER_THAN);
+  assert(token.lexeme == source + 2);
+  assert(token.length == 1);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_EQUALS_EQUALS);
+  assert(token.lexeme == source + 4);
+  assert(token.length == 2);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_LESS_THAN_EQUALS);
+  assert(token.lexeme == source + 7);
+  assert(token.length == 2);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_GREATER_THAN_EQUALS);
+  assert(token.lexeme == source + 10);
+  assert(token.length == 2);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_BANG_EQUALS);
+  assert(token.lexeme == source + 13);
+  assert(token.length == 2);
   assert(token.line == 1);
 }
 
