@@ -169,6 +169,106 @@ Value Thread_run(Thread* self) {
 
 #ifdef TEST
 
+void test_Thread_run_executesIntegerMathOps() {
+  typedef struct {
+    Instruction instruction;
+    int32_t operand0;
+    int32_t operand1;
+    int32_t result;
+  } TestCase;
+
+  const int TEST_COUNT = 4;
+
+  /*
+   * Don't infer the array length--we want an error if we add tests and don't
+   * update the test count, otherwise the loop won't execute new tests.
+   */
+  TestCase tests[TEST_COUNT] = {
+    { OP_ADD, 1, 2, 3 },
+    { OP_SUBTRACT, 5, 2, 3 },
+    { OP_MULTIPLY, 2, 3, 6 },
+    { OP_IDIVIDE, 7, 2, 3 },
+  };
+
+  for(int i = 0; i < TEST_COUNT; i++) {
+    InstructionList instructionList;
+    InstructionList_init(&instructionList);
+    InstructionList_append(&instructionList, OP_INTEGER, 1);
+    InstructionList_appendInt32(&instructionList, tests[i].operand0, 1);
+    InstructionList_append(&instructionList, OP_INTEGER, 1);
+    InstructionList_appendInt32(&instructionList, tests[i].operand1, 1);
+    InstructionList_append(&instructionList, tests[i].instruction, 1);
+    InstructionList_append(&instructionList, OP_RETURN, 1);
+    Thread thread;
+    Thread_init(&thread, &instructionList);
+
+    Value result = Thread_run(&thread);
+
+    assert(result.type == VALUE_INTEGER);
+    assert(Value_asInteger(result) == tests[i].result);
+
+    InstructionList_free(&instructionList);
+    Thread_free(&thread);
+  }
+}
+
+void test_Thread_run_integerComparison() {
+  typedef struct {
+    Instruction instruction;
+    int32_t operand0;
+    int32_t operand1;
+    bool result;
+  } TestCase;
+
+  const int TEST_COUNT = 18;
+
+  /*
+   * Don't infer the array length--we want an error if we add tests and don't
+   * update the test count, otherwise the loop won't execute new tests.
+   */
+  TestCase tests[TEST_COUNT] = {
+    { OP_LESS_THAN, 1, 2, true },
+    { OP_LESS_THAN, 2, 2, false },
+    { OP_LESS_THAN, 3, 2, false },
+    { OP_LESS_THAN_EQUAL, 1, 2, true },
+    { OP_LESS_THAN_EQUAL, 2, 2, true },
+    { OP_LESS_THAN_EQUAL, 3, 2, false },
+    { OP_GREATER_THAN, 1, 2, false },
+    { OP_GREATER_THAN, 2, 2, false },
+    { OP_GREATER_THAN, 3, 2, true },
+    { OP_GREATER_THAN_EQUAL, 1, 2, false },
+    { OP_GREATER_THAN_EQUAL, 2, 2, true },
+    { OP_GREATER_THAN_EQUAL, 3, 2, true },
+    { OP_EQUAL, 1, 2, false },
+    { OP_EQUAL, 2, 2, true },
+    { OP_EQUAL, 3, 2, false },
+    { OP_NOT_EQUAL, 1, 2, true },
+    { OP_NOT_EQUAL, 2, 2, false },
+    { OP_NOT_EQUAL, 3, 2, true },
+  };
+
+  for(int i = 0; i < TEST_COUNT; i++) {
+    InstructionList instructionList;
+    InstructionList_init(&instructionList);
+    InstructionList_append(&instructionList, OP_INTEGER, 1);
+    InstructionList_appendInt32(&instructionList, tests[i].operand0, 1);
+    InstructionList_append(&instructionList, OP_INTEGER, 1);
+    InstructionList_appendInt32(&instructionList, tests[i].operand1, 1);
+    InstructionList_append(&instructionList, tests[i].instruction, 1);
+    InstructionList_append(&instructionList, OP_RETURN, 1);
+    Thread thread;
+    Thread_init(&thread, &instructionList);
+
+    Value result = Thread_run(&thread);
+
+    assert(result.type == VALUE_BOOLEAN);
+    assert(Value_asBoolean(result) == tests[i].result);
+
+    InstructionList_free(&instructionList);
+    Thread_free(&thread);
+  }
+}
+
 void test_Thread_clearPanic_setsPanicFalse() {
   InstructionList instructionList;
   InstructionList_init(&instructionList);

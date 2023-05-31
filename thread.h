@@ -27,6 +27,9 @@ inline static void Thread_clearPanic(Thread* self) {
 
 #ifdef TEST
 
+void test_Thread_run_executesIntegerMathOps();
+void test_Thread_run_integerComparison();
+
 void test_Thread_clearPanic_setsPanicFalse();
 void test_Thread_clearPanic_setsPCIndexToEnd();
 

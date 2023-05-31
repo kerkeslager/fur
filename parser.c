@@ -455,7 +455,13 @@ void test_Parser_parseExpression_infixOperatorsBasic() {
     NodeType nodeType;
   } Test;
 
-  Test tests[] = {
+  const int TEST_COUNT = 10;
+
+  /*
+   * Don't infer the array length--we want an error if we add tests and don't
+   * update the test count, otherwise the loop won't execute new tests.
+   */
+  Test tests[TEST_COUNT] = {
     { "6 + 2", NODE_ADD },
     { "6 - 2", NODE_SUBTRACT },
     { "6 * 2", NODE_MULTIPLY },
@@ -468,7 +474,7 @@ void test_Parser_parseExpression_infixOperatorsBasic() {
     { "6 != 2", NODE_NOT_EQUAL },
   };
 
-  for(int i = 0; i < 10; i++) {
+  for(int i = 0; i < TEST_COUNT; i++) {
     Parser_init(&parser, tests[i].source, false);
     expression = Parser_parseExpression(&parser);
 
@@ -504,7 +510,13 @@ void test_Parser_parseExpression_infixOperatorsLeftAssociative() {
     NodeType nodeType1;
   } Test;
 
-  Test tests[] = {
+  const int TEST_COUNT = 44;
+
+  /*
+   * Don't infer the array length--we want an error if we add tests and don't
+   * update the test count, otherwise the loop won't execute new tests.
+   */
+  Test tests[TEST_COUNT] = {
     { "6 + 2 + 3", NODE_ADD, NODE_ADD },
     { "6 + 2 - 3", NODE_ADD, NODE_SUBTRACT },
     { "6 - 2 + 3", NODE_SUBTRACT, NODE_ADD },
@@ -551,7 +563,7 @@ void test_Parser_parseExpression_infixOperatorsLeftAssociative() {
     { "6 != 2 != 3", NODE_NOT_EQUAL, NODE_NOT_EQUAL },
   };
 
-  for(int i = 0; i < 10; i++) {
+  for(int i = 0; i < TEST_COUNT; i++) {
     Parser_init(&parser, tests[i].source, false);
     expression = Parser_parseExpression(&parser);
 
@@ -579,7 +591,13 @@ void test_Parser_parseExpression_infixOrderOfOperations() {
     NodeType nodeType1;
   } Test;
 
-  Test tests[] = {
+  const int TEST_COUNT = 28;
+
+  /*
+   * Don't infer the array length--we want an error if we add tests and don't
+   * update the test count, otherwise the loop won't execute new tests.
+   */
+  Test tests[TEST_COUNT] = {
     { "6 + 2 * 3", NODE_ADD, NODE_MULTIPLY },
     { "6 + 2 // 3", NODE_ADD, NODE_INTEGER_DIVIDE },
     { "6 - 2 * 3", NODE_SUBTRACT, NODE_MULTIPLY },
@@ -610,7 +628,7 @@ void test_Parser_parseExpression_infixOrderOfOperations() {
     { "6 != 2 // 3", NODE_NOT_EQUAL, NODE_INTEGER_DIVIDE },
   };
 
-  for(int i = 0; i < 10; i++) {
+  for(int i = 0; i < TEST_COUNT; i++) {
     Parser_init(&parser, tests[i].source, false);
     expression = Parser_parseExpression(&parser);
 
