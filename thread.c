@@ -32,6 +32,27 @@ inline static Value opIDivide(Value a, Value b) {
   return Value_fromInteger(Value_asInteger(a) / Value_asInteger(b));
 }
 
+inline static Value opLessThan(Value a, Value b) {
+  return Value_fromBoolean(Value_asInteger(a) < Value_asInteger(b));
+}
+inline static Value opLessThanEqual(Value a, Value b) {
+  return Value_fromBoolean(Value_asInteger(a) <= Value_asInteger(b));
+}
+inline static Value opGreaterThan(Value a, Value b) {
+  return Value_fromBoolean(Value_asInteger(a) > Value_asInteger(b));
+}
+inline static Value opGreaterThanEqual(Value a, Value b) {
+  return Value_fromBoolean(Value_asInteger(a) >= Value_asInteger(b));
+}
+inline static Value opEqual(Value a, Value b) {
+  // TODO Handle other types besides integers
+  return Value_fromBoolean(Value_asInteger(a) == Value_asInteger(b));
+}
+inline static Value opNotEqual(Value a, Value b) {
+  // TODO Handle other types besides integers
+  return Value_fromBoolean(Value_asInteger(a) != Value_asInteger(b));
+}
+
 Value Thread_run(Thread* self) {
   // TODO Consider copying the pc into a register
   ValueStack* stack = &(self->stack);
@@ -111,6 +132,25 @@ Value Thread_run(Thread* self) {
           }
         }
         ValueStack_binary(stack, opIDivide);
+        break;
+
+      case OP_LESS_THAN:
+        ValueStack_binary(stack, opLessThan);
+        break;
+      case OP_LESS_THAN_EQUAL:
+        ValueStack_binary(stack, opLessThanEqual);
+        break;
+      case OP_GREATER_THAN:
+        ValueStack_binary(stack, opGreaterThan);
+        break;
+      case OP_GREATER_THAN_EQUAL:
+        ValueStack_binary(stack, opGreaterThanEqual);
+        break;
+      case OP_EQUAL:
+        ValueStack_binary(stack, opEqual);
+        break;
+      case OP_NOT_EQUAL:
+        ValueStack_binary(stack, opNotEqual);
         break;
 
       case OP_DROP:
