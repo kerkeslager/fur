@@ -136,6 +136,27 @@ size_t InstructionList_getLine(InstructionList* self, uint8_t* instruction) {
 
 #ifdef TEST
 
-// TODO Need a lot more tests here
+void test_InstructionList_append_basic() {
+  InstructionList instructionList;
+  InstructionList_init(&instructionList);
+
+  InstructionList_append(&instructionList, OP_RETURN, 1);
+
+  assert(InstructionList_count(&instructionList) == 1);
+  assert(*InstructionList_pc(&instructionList, 0) == OP_RETURN);
+
+  InstructionList_free(&instructionList);
+}
+
+void test_InstructionList_append_lines() {
+  InstructionList instructionList;
+  InstructionList_init(&instructionList);
+
+  InstructionList_append(&instructionList, OP_RETURN, 42);
+
+  assert(InstructionList_getLine(&instructionList, InstructionList_pc(&instructionList, 0)) == 42);
+
+  InstructionList_free(&instructionList);
+}
 
 #endif

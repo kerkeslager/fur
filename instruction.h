@@ -44,10 +44,6 @@ void InstructionList_append(InstructionList*, uint8_t, size_t line);
 void InstructionList_appendInt32(InstructionList*, int32_t, size_t line);
 size_t InstructionList_getLine(InstructionList*, uint8_t* instruction);
 
-inline static uint8_t* InstructionList_start(InstructionList* self) {
-  return self->items;
-}
-
 inline static size_t InstructionList_count(InstructionList* self) {
   return self->count;
 }
@@ -68,6 +64,9 @@ inline static size_t InstructionList_index(InstructionList* self, uint8_t* pc) {
 }
 
 #ifdef TEST
+
+void test_InstructionList_append_basic();
+void test_InstructionList_append_lines();
 
 #endif
 
