@@ -83,6 +83,13 @@ void Compiler_emitNode(InstructionList* out, Node* node) {
     case NODE_MULTIPLY:       Compiler_emitBinaryNode(out, OP_MULTIPLY, node);  return;
     case NODE_INTEGER_DIVIDE: Compiler_emitBinaryNode(out, OP_IDIVIDE, node);   return;
 
+    case NODE_LESS_THAN:          Compiler_emitBinaryNode(out, OP_LESS_THAN, node);   return;
+    case NODE_LESS_THAN_EQUAL:    Compiler_emitBinaryNode(out, OP_LESS_THAN_EQUAL, node);   return;
+    case NODE_GREATER_THAN:       Compiler_emitBinaryNode(out, OP_GREATER_THAN, node);   return;
+    case NODE_GREATER_THAN_EQUAL: Compiler_emitBinaryNode(out, OP_GREATER_THAN_EQUAL, node);   return;
+    case NODE_EQUAL:              Compiler_emitBinaryNode(out, OP_EQUAL, node);   return;
+    case NODE_NOT_EQUAL:          Compiler_emitBinaryNode(out, OP_NOT_EQUAL, node);   return;
+
     default:
       assert(false);
   }
@@ -267,6 +274,48 @@ void test_Compiler_emitNode_emitsIntegerDivide() {
 
   Node_free(node);
   InstructionList_free(&out);
+}
+
+void test_Compiler_emitNode_emitsComparisons() {
+  NodeType COMPARISON_NODE_TYPES[] = {
+    NODE_LESS_THAN,
+    NODE_LESS_THAN_EQUAL,
+    NODE_GREATER_THAN,
+    NODE_GREATER_THAN_EQUAL,
+    NODE_EQUAL,
+    NODE_NOT_EQUAL,
+  };
+
+  Instruction COMPARISON_INSTRUCTIONS[] = {
+    OP_LESS_THAN,
+    OP_LESS_THAN_EQUAL,
+    OP_GREATER_THAN,
+    OP_GREATER_THAN_EQUAL,
+    OP_EQUAL,
+    OP_NOT_EQUAL,
+  };
+
+  for(int i = 0; i < 6; i++) {
+    const char* text = "1";
+    Node* node = BinaryNode_new(
+        COMPARISON_NODE_TYPES[i],
+        1,
+        AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1),
+        AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1)
+    );
+    InstructionList out;
+    InstructionList_init(&out);
+
+    Compiler_emitNode(&out, node);
+
+    assert(out.count == 11);
+    assert(out.items[0] == OP_INTEGER);
+    assert(out.items[5] == OP_INTEGER);
+    assert(out.items[10] == COMPARISON_INSTRUCTIONS[i]);
+
+    Node_free(node);
+    InstructionList_free(&out);
+  }
 }
 
 void test_Compiler_compile_emitsNilOnEmptyInput() {

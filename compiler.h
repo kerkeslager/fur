@@ -23,6 +23,8 @@ void test_Compiler_emitNode_emitsSubtract();
 void test_Compiler_emitNode_emitsMultiply();
 void test_Compiler_emitNode_emitsIntegerDivide();
 
+void test_Compiler_emitNode_emitsComparisons();
+
 void test_Compiler_compile_emitsNilOnEmptyInput();
 void test_Compiler_compile_emitsNilOnBlankInput();
 
