@@ -446,292 +446,186 @@ void test_Parser_parseExpression_parseIntegerLiteral() {
   Node_free(expression);
 }
 
-void test_Parser_parseExpression_addition() {
-  const char* source = "1 + 2";
-  Parser parser;
-  Parser_init(&parser, source, false);
-
-  Node* expression = Parser_parseExpression(&parser);
-  assert(expression->type == NODE_ADD);
-  assert(expression->line == 1);
-
-  BinaryNode* bNode = (BinaryNode*)expression;
-  assert(bNode->arg0->type == NODE_INTEGER_LITERAL);
-  assert(bNode->arg0->line == 1);
-  assert(bNode->arg1->type == NODE_INTEGER_LITERAL);
-  assert(bNode->arg1->line == 1);
-
-  AtomNode* arg0 = (AtomNode*)(bNode->arg0);
-  assert(arg0->text == source);
-  assert(arg0->length == 1);
-  AtomNode* arg1 = (AtomNode*)(bNode->arg1);
-  assert(arg1->text == source + 4);
-  assert(arg1->length == 1);
-
-  Node_free(expression);
-  Parser_free(&parser);
-}
-
-void test_Parser_parseExpression_subtraction() {
-  const char* source = "3 - 2";
-  Parser parser;
-  Parser_init(&parser, source, false);
-
-  Node* expression = Parser_parseExpression(&parser);
-  assert(expression->type == NODE_SUBTRACT);
-  assert(expression->line == 1);
-
-  BinaryNode* bNode = (BinaryNode*)expression;
-  assert(bNode->arg0->type == NODE_INTEGER_LITERAL);
-  assert(bNode->arg0->line == 1);
-  assert(bNode->arg1->type == NODE_INTEGER_LITERAL);
-  assert(bNode->arg1->line == 1);
-
-  AtomNode* arg0 = (AtomNode*)(bNode->arg0);
-  assert(arg0->text == source);
-  assert(arg0->length == 1);
-  AtomNode* arg1 = (AtomNode*)(bNode->arg1);
-  assert(arg1->text == source + 4);
-  assert(arg1->length == 1);
-
-  Node_free(expression);
-  Parser_free(&parser);
-}
-
-void test_Parser_parseExpression_multiplication() {
-  const char* source = "2 * 3";
-  Parser parser;
-  Parser_init(&parser, source, false);
-
-  Node* expression = Parser_parseExpression(&parser);
-  assert(expression->type == NODE_MULTIPLY);
-  assert(expression->line == 1);
-
-  BinaryNode* bNode = (BinaryNode*)expression;
-  assert(bNode->arg0->type == NODE_INTEGER_LITERAL);
-  assert(bNode->arg0->line == 1);
-  assert(bNode->arg1->type == NODE_INTEGER_LITERAL);
-  assert(bNode->arg1->line == 1);
-
-  AtomNode* arg0 = (AtomNode*)(bNode->arg0);
-  assert(arg0->text == source);
-  assert(arg0->length == 1);
-  AtomNode* arg1 = (AtomNode*)(bNode->arg1);
-  assert(arg1->text == source + 4);
-  assert(arg1->length == 1);
-
-  Node_free(expression);
-  Parser_free(&parser);
-}
-
-void test_Parser_parseExpression_integerDivision() {
-  const char* source = "6 // 2";
-  Parser parser;
-  Parser_init(&parser, source, false);
-
-  Node* expression = Parser_parseExpression(&parser);
-  assert(expression->type == NODE_INTEGER_DIVIDE);
-  assert(expression->line == 1);
-
-  BinaryNode* bNode = (BinaryNode*)expression;
-  assert(bNode->arg0->type == NODE_INTEGER_LITERAL);
-  assert(bNode->arg0->line == 1);
-  assert(bNode->arg1->type == NODE_INTEGER_LITERAL);
-  assert(bNode->arg1->line == 1);
-
-  AtomNode* arg0 = (AtomNode*)(bNode->arg0);
-  assert(arg0->text == source);
-  assert(arg0->length == 1);
-  AtomNode* arg1 = (AtomNode*)(bNode->arg1);
-  assert(arg1->text == source + 5);
-  assert(arg1->length == 1);
-
-  Node_free(expression);
-  Parser_free(&parser);
-}
-
-void test_Parser_parseExpression_additionLeftAssociative() {
-  const char* source = "1 + 2 + 3";
-  Parser parser;
-  Parser_init(&parser, source, false);
-
-  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
-  assert(expression->node.type == NODE_ADD);
-  assert(expression->arg0->type == NODE_ADD);
-  assert(expression->arg1->type == NODE_INTEGER_LITERAL);
-
-  Node_free((Node*)expression);
-  Parser_free(&parser);
-}
-
-void test_Parser_parseExpression_subtractionLeftAssociative() {
-  const char* source = "3 - 2 - 1";
-  Parser parser;
-  Parser_init(&parser, source, false);
-
-  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
-  assert(expression->node.type == NODE_SUBTRACT);
-  assert(expression->arg0->type == NODE_SUBTRACT);
-  assert(expression->arg1->type == NODE_INTEGER_LITERAL);
-
-  Node_free((Node*)expression);
-  Parser_free(&parser);
-}
-
-void test_Parser_parseExpression_multiplicationLeftAssociative() {
-  const char* source = "2 * 3 * 5";
-  Parser parser;
-  Parser_init(&parser, source, false);
-
-  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
-  assert(expression->node.type == NODE_MULTIPLY);
-  assert(expression->arg0->type == NODE_MULTIPLY);
-  assert(expression->arg1->type == NODE_INTEGER_LITERAL);
-
-  Node_free((Node*)expression);
-  Parser_free(&parser);
-}
-
-void test_Parser_parseExpression_integerDivisionLeftAssociative() {
-  const char* source = "12 // 3 // 2";
-  Parser parser;
-  Parser_init(&parser, source, false);
-
-  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
-  assert(expression->node.type == NODE_INTEGER_DIVIDE);
-  assert(expression->arg0->type == NODE_INTEGER_DIVIDE);
-  assert(expression->arg1->type == NODE_INTEGER_LITERAL);
-
-  Node_free((Node*)expression);
-  Parser_free(&parser);
-}
-
-void test_Parser_parseExpression_multiplicationBeforeAddition() {
-  const char* source = "1 + 3 * 2";
-  Parser parser;
-  Parser_init(&parser, source, false);
-
-  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
-  assert(expression->node.type == NODE_ADD);
-  assert(expression->arg0->type == NODE_INTEGER_LITERAL);
-  assert(expression->arg1->type == NODE_MULTIPLY);
-
-  Node_free((Node*)expression);
-  Parser_free(&parser);
-}
-
-void test_Parser_parseExpression_multiplicationBeforeSubtraction() {
-  const char* source = "1 - 3 * 2";
-  Parser parser;
-  Parser_init(&parser, source, false);
-
-  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
-  assert(expression->node.type == NODE_SUBTRACT);
-  assert(expression->arg0->type == NODE_INTEGER_LITERAL);
-  assert(expression->arg1->type == NODE_MULTIPLY);
-
-  Node_free((Node*)expression);
-  Parser_free(&parser);
-}
-
-void test_Parser_parseExpression_comparisonBasic() {
-  const char* source;
+void test_Parser_parseExpression_infixOperatorsBasic() {
   Parser parser;
   Node* expression;
 
-  source = "6 < 2";
-  Parser_init(&parser, source, false);
+  typedef struct {
+    const char* source;
+    NodeType nodeType;
+  } Test;
 
-  expression = Parser_parseExpression(&parser);
+  Test tests[] = {
+    { "6 + 2", NODE_ADD },
+    { "6 - 2", NODE_SUBTRACT },
+    { "6 * 2", NODE_MULTIPLY },
+    { "6 // 2", NODE_INTEGER_DIVIDE },
+    { "6 < 2", NODE_LESS_THAN },
+    { "6 <= 2", NODE_LESS_THAN_EQUAL },
+    { "6 > 2", NODE_GREATER_THAN },
+    { "6 >= 2", NODE_GREATER_THAN_EQUAL },
+    { "6 == 2", NODE_EQUAL },
+    { "6 != 2", NODE_NOT_EQUAL },
+  };
 
-  assert(expression->type == NODE_LESS_THAN);
-  assert(expression->line == 1);
+  for(int i = 0; i < 10; i++) {
+    Parser_init(&parser, tests[i].source, false);
+    expression = Parser_parseExpression(&parser);
 
-  Node_free(expression);
-  Parser_free(&parser);
+    assert(expression->type == tests[i].nodeType);
+    assert(expression->line == 1);
 
-  source = "6 > 2";
-  Parser_init(&parser, source, false);
+    BinaryNode* bNode = (BinaryNode*)expression;
+    assert(bNode->arg0->type == NODE_INTEGER_LITERAL);
+    assert(bNode->arg0->line == 1);
+    assert(bNode->arg1->type == NODE_INTEGER_LITERAL);
+    assert(bNode->arg1->line == 1);
 
-  expression = Parser_parseExpression(&parser);
+    AtomNode* arg0 = (AtomNode*)(bNode->arg0);
+    assert(arg0->text[0] == '6');
+    assert(arg0->length == 1);
 
-  assert(expression->type == NODE_GREATER_THAN);
-  assert(expression->line == 1);
+    AtomNode* arg1 = (AtomNode*)(bNode->arg1);
+    assert(arg1->text[0] == '2');
+    assert(arg1->length == 1);
 
-  Node_free(expression);
-  Parser_free(&parser);
-
-  source = "6 <= 2";
-  Parser_init(&parser, source, false);
-
-  expression = Parser_parseExpression(&parser);
-
-  assert(expression->type == NODE_LESS_THAN_EQUAL);
-  assert(expression->line == 1);
-
-  Node_free(expression);
-  Parser_free(&parser);
-
-  source = "6 >= 2";
-  Parser_init(&parser, source, false);
-
-  expression = Parser_parseExpression(&parser);
-
-  assert(expression->type == NODE_GREATER_THAN_EQUAL);
-  assert(expression->line == 1);
-
-  Node_free(expression);
-  Parser_free(&parser);
-
-  source = "6 == 2";
-  Parser_init(&parser, source, false);
-
-  expression = Parser_parseExpression(&parser);
-
-  assert(expression->type == NODE_EQUAL);
-  assert(expression->line == 1);
-
-  Node_free(expression);
-  Parser_free(&parser);
-
-  source = "6 != 2";
-  Parser_init(&parser, source, false);
-
-  expression = Parser_parseExpression(&parser);
-
-  assert(expression->type == NODE_NOT_EQUAL);
-  assert(expression->line == 1);
-
-  Node_free(expression);
-  Parser_free(&parser);
+    Node_free(expression);
+    Parser_free(&parser);
+  }
 }
 
-void test_Parser_parseExpression_integerDivisionBeforeAddition() {
-  const char* source = "1 + 6 // 2";
+void test_Parser_parseExpression_infixOperatorsLeftAssociative() {
   Parser parser;
-  Parser_init(&parser, source, false);
+  Node* expression;
 
-  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
-  assert(expression->node.type == NODE_ADD);
-  assert(expression->arg0->type == NODE_INTEGER_LITERAL);
-  assert(expression->arg1->type == NODE_INTEGER_DIVIDE);
+  typedef struct {
+    const char* source;
+    NodeType nodeType0;
+    NodeType nodeType1;
+  } Test;
 
-  Node_free((Node*)expression);
-  Parser_free(&parser);
+  Test tests[] = {
+    { "6 + 2 + 3", NODE_ADD, NODE_ADD },
+    { "6 + 2 - 3", NODE_ADD, NODE_SUBTRACT },
+    { "6 - 2 + 3", NODE_SUBTRACT, NODE_ADD },
+    { "6 - 2 - 3", NODE_SUBTRACT, NODE_SUBTRACT},
+    { "6 * 2 * 3", NODE_MULTIPLY, NODE_MULTIPLY },
+    { "6 * 2 // 3", NODE_MULTIPLY, NODE_INTEGER_DIVIDE },
+    { "6 // 2 * 3", NODE_INTEGER_DIVIDE, NODE_MULTIPLY },
+    { "6 // 2 // 3", NODE_INTEGER_DIVIDE, NODE_INTEGER_DIVIDE },
+    { "6 < 2 < 3", NODE_LESS_THAN, NODE_LESS_THAN },
+    { "6 < 2 <= 3", NODE_LESS_THAN, NODE_LESS_THAN_EQUAL },
+    { "6 < 2 > 3", NODE_LESS_THAN, NODE_GREATER_THAN },
+    { "6 < 2 >= 3", NODE_LESS_THAN, NODE_GREATER_THAN_EQUAL },
+    { "6 < 2 == 3", NODE_LESS_THAN, NODE_EQUAL },
+    { "6 < 2 != 3", NODE_LESS_THAN, NODE_NOT_EQUAL },
+    { "6 <= 2 < 3", NODE_LESS_THAN_EQUAL, NODE_LESS_THAN },
+    { "6 <= 2 <= 3", NODE_LESS_THAN_EQUAL, NODE_LESS_THAN_EQUAL },
+    { "6 <= 2 > 3", NODE_LESS_THAN_EQUAL, NODE_GREATER_THAN },
+    { "6 <= 2 >= 3", NODE_LESS_THAN_EQUAL, NODE_GREATER_THAN_EQUAL },
+    { "6 <= 2 == 3", NODE_LESS_THAN_EQUAL, NODE_EQUAL },
+    { "6 <= 2 != 3", NODE_LESS_THAN_EQUAL, NODE_NOT_EQUAL },
+    { "6 > 2 < 3", NODE_GREATER_THAN, NODE_LESS_THAN },
+    { "6 > 2 <= 3", NODE_GREATER_THAN, NODE_LESS_THAN_EQUAL },
+    { "6 > 2 > 3", NODE_GREATER_THAN, NODE_GREATER_THAN },
+    { "6 > 2 >= 3", NODE_GREATER_THAN, NODE_GREATER_THAN_EQUAL },
+    { "6 > 2 == 3", NODE_GREATER_THAN, NODE_EQUAL },
+    { "6 > 2 != 3", NODE_GREATER_THAN, NODE_NOT_EQUAL },
+    { "6 >= 2 < 3", NODE_GREATER_THAN_EQUAL, NODE_LESS_THAN },
+    { "6 >= 2 <= 3", NODE_GREATER_THAN_EQUAL, NODE_LESS_THAN_EQUAL },
+    { "6 >= 2 > 3", NODE_GREATER_THAN_EQUAL, NODE_GREATER_THAN },
+    { "6 >= 2 >= 3", NODE_GREATER_THAN_EQUAL, NODE_GREATER_THAN_EQUAL },
+    { "6 >= 2 == 3", NODE_GREATER_THAN_EQUAL, NODE_EQUAL },
+    { "6 >= 2 != 3", NODE_GREATER_THAN_EQUAL, NODE_NOT_EQUAL },
+    { "6 == 2 < 3", NODE_EQUAL, NODE_LESS_THAN },
+    { "6 == 2 <= 3", NODE_EQUAL, NODE_LESS_THAN_EQUAL },
+    { "6 == 2 > 3", NODE_EQUAL, NODE_GREATER_THAN },
+    { "6 == 2 >= 3", NODE_EQUAL, NODE_GREATER_THAN_EQUAL },
+    { "6 == 2 == 3", NODE_EQUAL, NODE_EQUAL },
+    { "6 == 2 != 3", NODE_EQUAL, NODE_NOT_EQUAL },
+    { "6 != 2 < 3", NODE_NOT_EQUAL, NODE_LESS_THAN },
+    { "6 != 2 <= 3", NODE_NOT_EQUAL, NODE_LESS_THAN_EQUAL },
+    { "6 != 2 > 3", NODE_NOT_EQUAL, NODE_GREATER_THAN },
+    { "6 != 2 >= 3", NODE_NOT_EQUAL, NODE_GREATER_THAN_EQUAL },
+    { "6 != 2 == 3", NODE_NOT_EQUAL, NODE_EQUAL },
+    { "6 != 2 != 3", NODE_NOT_EQUAL, NODE_NOT_EQUAL },
+  };
+
+  for(int i = 0; i < 10; i++) {
+    Parser_init(&parser, tests[i].source, false);
+    expression = Parser_parseExpression(&parser);
+
+    assert(expression->type == tests[i].nodeType1);
+    assert(expression->line == 1);
+
+    BinaryNode* bNode = (BinaryNode*)expression;
+    assert(bNode->arg0->type == tests[i].nodeType0);
+    assert(bNode->arg0->line == 1);
+    assert(bNode->arg1->type == NODE_INTEGER_LITERAL);
+    assert(bNode->arg1->line == 1);
+
+    Node_free(expression);
+    Parser_free(&parser);
+  }
 }
 
-void test_Parser_parseExpression_integerDivisionBeforeSubtraction() {
-  const char* source = "1 - 6 // 2";
+void test_Parser_parseExpression_infixOrderOfOperations() {
   Parser parser;
-  Parser_init(&parser, source, false);
+  Node* expression;
 
-  BinaryNode* expression = (BinaryNode*)Parser_parseExpression(&parser);
-  assert(expression->node.type == NODE_SUBTRACT);
-  assert(expression->arg0->type == NODE_INTEGER_LITERAL);
-  assert(expression->arg1->type == NODE_INTEGER_DIVIDE);
+  typedef struct {
+    const char* source;
+    NodeType nodeType0;
+    NodeType nodeType1;
+  } Test;
 
-  Node_free((Node*)expression);
-  Parser_free(&parser);
+  Test tests[] = {
+    { "6 + 2 * 3", NODE_ADD, NODE_MULTIPLY },
+    { "6 + 2 // 3", NODE_ADD, NODE_INTEGER_DIVIDE },
+    { "6 - 2 * 3", NODE_SUBTRACT, NODE_MULTIPLY },
+    { "6 - 2 // 3", NODE_SUBTRACT, NODE_INTEGER_DIVIDE },
+    { "6 < 2 + 3", NODE_LESS_THAN, NODE_ADD },
+    { "6 < 2 - 3", NODE_LESS_THAN, NODE_SUBTRACT },
+    { "6 < 2 * 3", NODE_LESS_THAN, NODE_MULTIPLY },
+    { "6 < 2 // 3", NODE_LESS_THAN, NODE_INTEGER_DIVIDE },
+    { "6 <= 2 + 3", NODE_LESS_THAN_EQUAL, NODE_ADD },
+    { "6 <=  2 - 3", NODE_LESS_THAN_EQUAL, NODE_SUBTRACT },
+    { "6 <=  2 * 3", NODE_LESS_THAN_EQUAL, NODE_MULTIPLY },
+    { "6 <=  2 // 3", NODE_LESS_THAN_EQUAL, NODE_INTEGER_DIVIDE },
+    { "6 > 2 + 3", NODE_GREATER_THAN, NODE_ADD },
+    { "6 > 2 - 3", NODE_GREATER_THAN, NODE_SUBTRACT },
+    { "6 > 2 * 3", NODE_GREATER_THAN, NODE_MULTIPLY },
+    { "6 > 2 // 3", NODE_GREATER_THAN, NODE_INTEGER_DIVIDE },
+    { "6 >= 2 + 3", NODE_GREATER_THAN_EQUAL, NODE_ADD },
+    { "6 >= 2 - 3", NODE_GREATER_THAN_EQUAL, NODE_SUBTRACT },
+    { "6 >= 2 * 3", NODE_GREATER_THAN_EQUAL, NODE_MULTIPLY },
+    { "6 >= 2 // 3", NODE_GREATER_THAN_EQUAL, NODE_INTEGER_DIVIDE },
+    { "6 == 2 + 3", NODE_EQUAL, NODE_ADD },
+    { "6 == 2 - 3", NODE_EQUAL, NODE_SUBTRACT },
+    { "6 == 2 * 3", NODE_EQUAL, NODE_MULTIPLY },
+    { "6 == 2 // 3", NODE_EQUAL, NODE_INTEGER_DIVIDE },
+    { "6 != 2 + 3", NODE_NOT_EQUAL, NODE_ADD },
+    { "6 != 2 - 3", NODE_NOT_EQUAL, NODE_SUBTRACT },
+    { "6 != 2 * 3", NODE_NOT_EQUAL, NODE_MULTIPLY },
+    { "6 != 2 // 3", NODE_NOT_EQUAL, NODE_INTEGER_DIVIDE },
+  };
+
+  for(int i = 0; i < 10; i++) {
+    Parser_init(&parser, tests[i].source, false);
+    expression = Parser_parseExpression(&parser);
+
+    assert(expression->type == tests[i].nodeType0);
+    assert(expression->line == 1);
+
+    BinaryNode* bNode = (BinaryNode*)expression;
+    assert(bNode->arg0->type == NODE_INTEGER_LITERAL);
+    assert(bNode->arg0->line == 1);
+    assert(bNode->arg1->type == tests[i].nodeType1);
+    assert(bNode->arg1->line == 1);
+
+    Node_free(expression);
+    Parser_free(&parser);
+  }
 }
 
 void test_Parser_parseExpression_negation() {

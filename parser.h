@@ -29,24 +29,9 @@ void test_Parser_parseUnary_passesOnErrors();
 
 void test_Parser_parseExpression_parseIntegerLiteral();
 
-void test_Parser_parseExpression_addition();
-void test_Parser_parseExpression_subtraction();
-void test_Parser_parseExpression_multiplication();
-void test_Parser_parseExpression_integerDivision();
-
-void test_Parser_parseExpression_additionLeftAssociative();
-void test_Parser_parseExpression_subtractionLeftAssociative();
-void test_Parser_parseExpression_multiplicationLeftAssociative();
-void test_Parser_parseExpression_integerDivisionLeftAssociative();
-
-void test_Parser_parseExpression_multiplicationBeforeAddition();
-void test_Parser_parseExpression_multiplicationBeforeSubtraction();
-void test_Parser_parseExpression_integerDivisionBeforeAddition();
-void test_Parser_parseExpression_integerDivisionBeforeSubtraction();
-
-void test_Parser_parseExpression_comparisonBasic();
-// TODO void test_Parser_parseExpression_comparisonLeftAssociative();
-// TODO void test_Parser_parseExpression_comparisonBeforeFactorOperations();
+void test_Parser_parseExpression_infixOperatorsBasic();
+void test_Parser_parseExpression_infixOperatorsLeftAssociative();
+void test_Parser_parseExpression_infixOrderOfOperations();
 
 void test_Parser_parseExpression_negation();
 void test_Parser_parseExpression_nestedNegation();

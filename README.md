@@ -2,6 +2,58 @@
 
 ## Ideas
 
+### n-ary Comparison operators
+
+```
+> 1 < 2 < 3
+  true
+> n() = {
+    print("Hello\n");
+    1;
+  }
+  nil
+> 1 < 1 + n() < 3 # n is only called once
+Hello
+  true
+> 1 < 1 < 10 // 0 # no error, because 1 < 1 returns false and short circuits before division by zero
+  false
+```
+
+This is as if...
+
+```
+(A) < (B) < (C)
+```
+
+...expanded to...
+
+```
+(A) < (B) and (B) < (C)
+```
+
+...except that `(A)`, `(B)` and `(C)` are guaranteed to evaluate only once and
+in that order, so it's actually expanded to something  more like...
+
+```
+let a = (A);
+let b = (B);
+
+if(a < b) {
+  b < c;
+} else {
+  false;
+}
+```
+
+...except it doesn't create variables `a` and `b`. A final note is that this works
+for any string of left-associative comparison operators, so things like...
+
+```
+a != b == c < d > e <= f >= g
+```
+
+...are legal, although of questionable utility.
+
 ### Function declaration syntax
 Declaring a function is just a type of destructured assignment:
 
