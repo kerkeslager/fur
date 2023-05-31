@@ -81,7 +81,7 @@ inline static void BinaryNode_free(BinaryNode* self) {
   free(self);
 }
 
-inline static void ErrorNode_init(ErrorNode* self, ErrorType type, Token token, Token auxToken, Node* previous) {
+inline static void ErrorNode_init(ErrorNode* self, ParseErrorType type, Token token, Token auxToken, Node* previous) {
   Node_init(&(self->node), NODE_ERROR, token.line);
   self->type = type;
   self->token = token;
@@ -89,13 +89,13 @@ inline static void ErrorNode_init(ErrorNode* self, ErrorType type, Token token, 
   self->previous = previous;
 }
 
-Node* ErrorNode_newWithAuxAndPrevious(ErrorType type, Token token, Token auxToken, Node* previous) {
+Node* ErrorNode_newWithAuxAndPrevious(ParseErrorType type, Token token, Token auxToken, Node* previous) {
   ErrorNode* node = malloc(sizeof(ErrorNode));
   ErrorNode_init(node, type, token, auxToken, previous);
   return (Node*)node;
 }
 
-Node* ErrorNode_new(ErrorType type, Token token) {
+Node* ErrorNode_new(ParseErrorType type, Token token) {
   Token auxToken;
   auxToken.type = NO_TOKEN;
   return ErrorNode_newWithAuxAndPrevious(type, token, auxToken, NULL);

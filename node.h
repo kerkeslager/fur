@@ -64,18 +64,18 @@ typedef enum {
   ERROR_MISSING_SEMICOLON,
   ERROR_PAREN_OPENED_BUT_NOT_CLOSED,
   ERROR_UNEXPECTED_TOKEN,
-} ErrorType;
+} ParseErrorType;
 
 typedef struct {
   Node node;
-  ErrorType type;
+  ParseErrorType type;
   Token token;
   Token auxToken;
   Node* previous;
 } ErrorNode;
 
-Node* ErrorNode_new(ErrorType type, Token token);
-Node* ErrorNode_newWithAuxAndPrevious(ErrorType, Token token, Token auxToken, Node* previous);
+Node* ErrorNode_new(ParseErrorType type, Token token);
+Node* ErrorNode_newWithAuxAndPrevious(ParseErrorType, Token token, Token auxToken, Node* previous);
 void ErrorNode_print(Node*);
 
 void Node_free(Node* self);
