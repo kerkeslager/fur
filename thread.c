@@ -4,6 +4,10 @@
 
 #include "error.h"
 
+typedef enum {
+  ERROR_DIVISON_BY_ZERO,
+} RuntimeError;
+
 void Thread_init(Thread* self, InstructionList* instructionList) {
   self->instructionList = instructionList;
   self->pcIndex = 0;
@@ -13,6 +17,32 @@ void Thread_init(Thread* self, InstructionList* instructionList) {
 
 void Thread_free(Thread* self) {
   ValueStack_free(&(self->stack));
+}
+
+static Value Thread_error(Thread* self, RuntimeError error, uint8_t* pc) {
+  if(isColorAllowed()) {
+    fprintf(stderr, ANSI_COLOR_RED);
+  }
+
+  size_t line = InstructionList_getLine(self->instructionList, pc);
+  fprintf(stderr, "Error (line %zu):", line);
+
+  switch(error) {
+    case ERROR_DIVISON_BY_ZERO:
+      fprintf(stderr, "Division by 0.");
+      break;
+  }
+
+  fprintf(stderr, "\n");
+
+  if(isColorAllowed()) {
+    fprintf(stderr, ANSI_COLOR_RESET);
+  }
+
+  self->panic = true;
+
+  self->pcIndex = InstructionList_index(self->instructionList, pc);
+  return NIL;
 }
 
 inline static Value opNegate(Value a) {
@@ -111,24 +141,7 @@ Value Thread_run(Thread* self) {
         {
           int32_t denominator = Value_asInteger(ValueStack_peek(stack));
           if(denominator == 0) {
-            if(isColorAllowed()) {
-              fprintf(stderr, ANSI_COLOR_RED);
-            }
-
-            fprintf(
-                stderr,
-                "Error (line %zu): Division by 0.\n",
-                InstructionList_getLine(self->instructionList, pc)
-            );
-
-            if(isColorAllowed()) {
-              fprintf(stderr, ANSI_COLOR_RESET);
-            }
-
-            self->panic = true;
-
-            self->pcIndex = InstructionList_index(self->instructionList, pc);
-            return NIL;
+            return Thread_error(self, ERROR_DIVISON_BY_ZERO, pc);
           }
         }
         ValueStack_binary(stack, opIDivide);
