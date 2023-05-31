@@ -6,6 +6,11 @@
 
 STACK_DECLARE(Value);
 
+inline static Value ValueStack_peekN(ValueStack* self, size_t n) {
+  assert(n < self->top);
+  return self->items[self->top - n - 1];
+}
+
 inline static void ValueStack_unary(ValueStack* self, Value (*apply)(Value)) {
   assert(self->top >= 1);
   self->items[self->top - 1] = apply(self->items[self->top - 1]);

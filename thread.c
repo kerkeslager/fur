@@ -6,6 +6,7 @@
 
 typedef enum {
   ERROR_DIVISON_BY_ZERO,
+  ERROR_COMPARISON_TYPE_ERROR,
 } RuntimeError;
 
 void Thread_init(Thread* self, InstructionList* instructionList) {
@@ -25,9 +26,18 @@ static Value Thread_error(Thread* self, RuntimeError error, uint8_t* pc) {
   }
 
   size_t line = InstructionList_getLine(self->instructionList, pc);
-  fprintf(stderr, "Error (line %zu):", line);
+  fprintf(stderr, "Error (line %zu): ", line);
 
   switch(error) {
+    case ERROR_COMPARISON_TYPE_ERROR:
+      /*
+       * TODO
+       * We have access to the stack, so we can find out what the errors are
+       * and give a better message than this.
+       */
+      fprintf(stderr, "Attempting to compare incomparably-typed values.");
+      break;
+
     case ERROR_DIVISON_BY_ZERO:
       fprintf(stderr, "Division by 0.");
       break;
@@ -75,12 +85,36 @@ inline static Value opGreaterThanEqual(Value a, Value b) {
   return Value_fromBoolean(Value_asInteger(a) >= Value_asInteger(b));
 }
 inline static Value opEqual(Value a, Value b) {
-  // TODO Handle other types besides integers
-  return Value_fromBoolean(Value_asInteger(a) == Value_asInteger(b));
+  /*
+   * We have already checked that the types are the same, so we can infer the
+   * type of b from a.
+   */
+  switch(a.type) {
+    case VALUE_BOOLEAN:
+      return Value_fromBoolean(Value_asBoolean(a) == Value_asBoolean(b));
+
+    case VALUE_INTEGER:
+      return Value_fromBoolean(Value_asInteger(a) == Value_asInteger(b));
+
+    case VALUE_NIL:
+      return Value_fromBoolean(true);
+  }
 }
 inline static Value opNotEqual(Value a, Value b) {
-  // TODO Handle other types besides integers
-  return Value_fromBoolean(Value_asInteger(a) != Value_asInteger(b));
+  /*
+   * We have already checked that the types are the same, so we can infer the
+   * type of b from a.
+   */
+  switch(a.type) {
+    case VALUE_BOOLEAN:
+      return Value_fromBoolean(Value_asBoolean(a) != Value_asBoolean(b));
+
+    case VALUE_INTEGER:
+      return Value_fromBoolean(Value_asInteger(a) != Value_asInteger(b));
+
+    case VALUE_NIL:
+      return Value_fromBoolean(false);
+  }
 }
 
 Value Thread_run(Thread* self) {
@@ -148,21 +182,43 @@ Value Thread_run(Thread* self) {
         break;
 
       case OP_LESS_THAN:
+        if(ValueStack_peekN(stack, 1).type != VALUE_INTEGER
+            || ValueStack_peek(stack).type != VALUE_INTEGER) {
+          return Thread_error(self, ERROR_COMPARISON_TYPE_ERROR, pc);
+        }
         ValueStack_binary(stack, opLessThan);
         break;
       case OP_LESS_THAN_EQUAL:
+        if(ValueStack_peekN(stack, 1).type != VALUE_INTEGER
+            || ValueStack_peek(stack).type != VALUE_INTEGER) {
+          return Thread_error(self, ERROR_COMPARISON_TYPE_ERROR, pc);
+        }
         ValueStack_binary(stack, opLessThanEqual);
         break;
       case OP_GREATER_THAN:
+        if(ValueStack_peekN(stack, 1).type != VALUE_INTEGER
+            || ValueStack_peek(stack).type != VALUE_INTEGER) {
+          return Thread_error(self, ERROR_COMPARISON_TYPE_ERROR, pc);
+        }
         ValueStack_binary(stack, opGreaterThan);
         break;
       case OP_GREATER_THAN_EQUAL:
+        if(ValueStack_peekN(stack, 1).type != VALUE_INTEGER
+            || ValueStack_peek(stack).type != VALUE_INTEGER) {
+          return Thread_error(self, ERROR_COMPARISON_TYPE_ERROR, pc);
+        }
         ValueStack_binary(stack, opGreaterThanEqual);
         break;
       case OP_EQUAL:
+        if(ValueStack_peekN(stack, 1).type != ValueStack_peek(stack).type) {
+          return Thread_error(self, ERROR_COMPARISON_TYPE_ERROR, pc);
+        }
         ValueStack_binary(stack, opEqual);
         break;
       case OP_NOT_EQUAL:
+        if(ValueStack_peekN(stack, 1).type != ValueStack_peek(stack).type) {
+          return Thread_error(self, ERROR_COMPARISON_TYPE_ERROR, pc);
+        }
         ValueStack_binary(stack, opNotEqual);
         break;
 
