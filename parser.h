@@ -26,6 +26,7 @@ void test_Parser_parseAtom_parsesFalse();
 
 void test_Parser_parseUnary_parenOpenedButNotClosed();
 void test_Parser_parseUnary_passesOnErrors();
+void test_Parser_parseUnary_notAfterComparison();
 
 void test_Parser_parseExpression_parseIntegerLiteral();
 

@@ -17,6 +17,9 @@ void Parser_free(Parser* self) {
 typedef enum {
   PREC_NONE,
   PREC_ANY,
+  PREC_ASSIGNMENT_LEFT,
+  PREC_ASSIGNMENT_RIGHT,
+  PREC_LOGICAL_NOT,
   PREC_COMPARISON_RIGHT,
   PREC_COMPARISON_LEFT,
   PREC_TERM_RIGHT,
@@ -35,34 +38,36 @@ typedef struct {
 } PrecedenceRule;
 
 const PrecedenceRule PRECEDENCE[] = {
-  [TOKEN_INTEGER_LITERAL] =     { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_INTEGER_LITERAL] =     { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
-  [TOKEN_PLUS] =                { PREC_NONE,    PREC_TERM_LEFT,       PREC_TERM_RIGHT,        false,  NO_TOKEN },
-  [TOKEN_MINUS] =               { PREC_NEGATE,  PREC_TERM_LEFT,       PREC_TERM_RIGHT,        false,  NO_TOKEN },
-  [TOKEN_ASTERISK] =            { PREC_NONE,    PREC_FACTOR_LEFT,     PREC_FACTOR_RIGHT,      false,  NO_TOKEN },
-  [TOKEN_SLASH_SLASH] =         { PREC_NONE,    PREC_FACTOR_LEFT,     PREC_FACTOR_RIGHT,      false,  NO_TOKEN },
+  [TOKEN_EQUALS] =              { PREC_NONE,        PREC_ASSIGNMENT_LEFT, PREC_ASSIGNMENT_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_SEMICOLON] =           { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
-  [TOKEN_LESS_THAN] =           { PREC_NONE,    PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
-  [TOKEN_LESS_THAN_EQUALS] =    { PREC_NONE,    PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
-  [TOKEN_GREATER_THAN] =        { PREC_NONE,    PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
-  [TOKEN_GREATER_THAN_EQUALS] = { PREC_NONE,    PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
-  [TOKEN_EQUALS_EQUALS] =       { PREC_NONE,    PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
-  [TOKEN_BANG_EQUALS] =         { PREC_NONE,    PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_PLUS] =                { PREC_NONE,        PREC_TERM_LEFT,       PREC_TERM_RIGHT,        false,  NO_TOKEN },
+  [TOKEN_MINUS] =               { PREC_NEGATE,      PREC_TERM_LEFT,       PREC_TERM_RIGHT,        false,  NO_TOKEN },
+  [TOKEN_ASTERISK] =            { PREC_NONE,        PREC_FACTOR_LEFT,     PREC_FACTOR_RIGHT,      false,  NO_TOKEN },
+  [TOKEN_SLASH_SLASH] =         { PREC_NONE,        PREC_FACTOR_LEFT,     PREC_FACTOR_RIGHT,      false,  NO_TOKEN },
 
-  [TOKEN_SEMICOLON] =           { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_LESS_THAN] =           { PREC_NONE,        PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_LESS_THAN_EQUALS] =    { PREC_NONE,        PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_GREATER_THAN] =        { PREC_NONE,        PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_GREATER_THAN_EQUALS] = { PREC_NONE,        PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_EQUALS_EQUALS] =       { PREC_NONE,        PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_BANG_EQUALS] =         { PREC_NONE,        PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
 
-  [TOKEN_OPEN_PAREN] =          { PREC_NONE,    PREC_NONE,            PREC_NONE,              true,   NO_TOKEN },
-  [TOKEN_CLOSE_PAREN] =         { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  TOKEN_OPEN_PAREN },
+  [TOKEN_OPEN_PAREN] =          { PREC_NONE,        PREC_NONE,            PREC_NONE,              true,   NO_TOKEN },
+  [TOKEN_CLOSE_PAREN] =         { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  TOKEN_OPEN_PAREN },
 
-  [TOKEN_TRUE] =                { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
-  [TOKEN_FALSE] =               { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_TRUE] =                { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_FALSE] =               { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_NOT] =                 { PREC_LOGICAL_NOT, PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
-  [TOKEN_IDENTIFIER] =          { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_IDENTIFIER] =          { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
-  [TOKEN_EOF] =                 { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
-  [TOKEN_ERROR] =               { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_EOF] =                 { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_ERROR] =               { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
-  [NO_TOKEN] =                  { PREC_NONE,    PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [NO_TOKEN] =                  { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 };
 
 inline static Precedence Token_prefixPrecedence(Token self) {
@@ -110,7 +115,11 @@ inline static NodeType mapInfix(Token token) {
 
 inline static NodeType mapPrefix(Token token) {
   switch(token.type) {
-    case TOKEN_MINUS: return NODE_NEGATE;
+    case TOKEN_MINUS:
+      return NODE_NEGATE;
+    case TOKEN_NOT:
+      return NODE_LOGICAL_NOT;
+
     default: assert(false);
   }
   return NODE_ERROR;
@@ -426,6 +435,42 @@ void test_Parser_parseUnary_passesOnErrors() {
 
   Parser_free(&parser);
   Node_free(expression);
+}
+
+void test_Parser_parseUnary_notAfterComparison() {
+  typedef struct {
+    const char* source;
+    NodeType nestedNodeType;
+  } TestCase;
+
+  const int TEST_COUNT = 6;
+  /*
+   * Don't infer the array length, because if we add cases, we want an error
+   * if we don't update the test count, so that all test cases are executed
+   * by the loop.
+   */
+  TestCase tests[TEST_COUNT] = {
+    { "not 6 < 2", NODE_LESS_THAN },
+    { "not 6 <= 2", NODE_LESS_THAN_EQUAL },
+    { "not 6 > 2", NODE_GREATER_THAN },
+    { "not 6 >= 2", NODE_GREATER_THAN_EQUAL },
+    { "not 6 == 2", NODE_EQUAL },
+    { "not 6 != 2", NODE_NOT_EQUAL },
+  };
+
+  for(int i = 0; i < TEST_COUNT; i++) {
+    Parser parser;
+    Parser_init(&parser, tests[i].source, false);
+
+    Node* expression = Parser_parseUnary(&parser);
+
+    assert(expression->type == NODE_LOGICAL_NOT);
+    assert(expression->line == 1);
+    assert(((UnaryNode*)expression)->arg0->type == tests[i].nestedNodeType);
+
+    Parser_free(&parser);
+    Node_free(expression);
+  }
 }
 
 void test_Parser_parseExpression_parseIntegerLiteral() {
