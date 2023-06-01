@@ -179,6 +179,13 @@ Token Tokenizer_scan(Tokenizer* self) {
         return Tokenizer_keywordOrIdentifier(self, lexeme, "alse", TOKEN_FALSE);
       }
 
+    case 'n':
+      {
+        const char* lexeme = self->current;
+        self->current++;
+        return Tokenizer_keywordOrIdentifier(self, lexeme, "ot", TOKEN_NOT);
+      }
+
     case 't':
       {
         const char* lexeme = self->current;
@@ -494,6 +501,19 @@ void test_Tokenizer_scan_differentiateKeywords() {
   assert(token.type == TOKEN_IDENTIFIER);
   assert(token.lexeme == source + 15);
   assert(token.length == 6);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_not() {
+  const char* source = "not";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Token token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_NOT);
+  assert(token.lexeme == source);
+  assert(token.length == 3);
   assert(token.line == 1);
 }
 

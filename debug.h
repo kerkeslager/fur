@@ -33,6 +33,7 @@ inline static void Token_println(Token token) {
 
     PRINT_CASE(TOKEN_TRUE);
     PRINT_CASE(TOKEN_FALSE);
+    PRINT_CASE(TOKEN_NOT);
 
     PRINT_CASE(TOKEN_IDENTIFIER);
 
@@ -70,6 +71,7 @@ inline static void TokenType_println(TokenType tokenType) {
 
     PRINT_CASE(TOKEN_TRUE);
     PRINT_CASE(TOKEN_FALSE);
+    PRINT_CASE(TOKEN_NOT);
 
     PRINT_CASE(TOKEN_IDENTIFIER);
 

@@ -27,6 +27,7 @@ typedef enum {
 
   TOKEN_TRUE,
   TOKEN_FALSE,
+  TOKEN_NOT,
 
   TOKEN_IDENTIFIER,
 
@@ -75,6 +76,7 @@ void test_Tokenizer_scan_parentheses();
 void test_Tokenizer_scan_identifier();
 void test_Tokenizer_scan_booleans();
 void test_Tokenizer_scan_differentiateKeywords();
+void test_Tokenizer_scan_not();
 void test_Tokenizer_scan_comparisonOperators();
 
 #endif
