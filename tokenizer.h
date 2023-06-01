@@ -13,6 +13,8 @@ typedef enum {
   TOKEN_ASTERISK,
   TOKEN_SLASH_SLASH,
 
+  TOKEN_EQUALS,
+
   TOKEN_LESS_THAN,
   TOKEN_LESS_THAN_EQUALS,
   TOKEN_GREATER_THAN,
@@ -65,6 +67,7 @@ void test_Tokenizer_scan_ignore_whitespace();
 void test_Tokenizer_scan_linebreaks_increment_line();
 void test_Tokenizer_scan_integerMathOperators();
 void test_Tokenizer_scan_semicolon();
+void test_Tokenizer_scan_equals();
 void test_Tokenizer_peek_returnsScan();
 void test_Tokenizer_peek_doesNotProgress();
 void test_Tokenizer_scan_after_Tokenizer_peek();

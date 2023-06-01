@@ -124,7 +124,7 @@ Token Tokenizer_scan(Tokenizer* self) {
       if(self->current[1] == '=') {
         return Tokenizer_consume(self, TOKEN_EQUALS_EQUALS, 2);
       } else {
-        return Token_create(TOKEN_ERROR, "Not implemented", strlen("Not implemented"), self->line);
+        return Tokenizer_consume(self, TOKEN_EQUALS, 1);
       }
 
     case '!':
@@ -312,6 +312,19 @@ void test_Tokenizer_scan_semicolon() {
 
   Token token = Tokenizer_scan(&tokenizer);
   assert(token.type == TOKEN_SEMICOLON);
+  assert(token.lexeme == source);
+  assert(token.length == 1);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_equals() {
+  const char* source = "=";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Token token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_EQUALS);
   assert(token.lexeme == source);
   assert(token.length == 1);
   assert(token.line == 1);
