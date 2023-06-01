@@ -17,6 +17,7 @@ bool Compiler_compile(Compiler*, InstructionList* out, const char* source);
 
 void test_Compiler_emitNode_emitsIntegerLiteral();
 void test_Compiler_emitNode_emitsNegate();
+void test_Compiler_emitNode_emitsNot();
 
 void test_Compiler_emitNode_emitsAdd();
 void test_Compiler_emitNode_emitsSubtract();

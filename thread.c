@@ -59,6 +59,10 @@ inline static Value opNegate(Value a) {
   return Value_fromInteger(-Value_asInteger(a));
 }
 
+inline static Value opNot(Value a) {
+  return Value_fromBoolean(!Value_asBoolean(a));
+}
+
 inline static Value opAdd(Value a, Value b) {
   return Value_fromInteger(Value_asInteger(a) + Value_asInteger(b));
 }
@@ -156,22 +160,32 @@ Value Thread_run(Thread* self) {
         break;
 
       case OP_NEGATE:
+        // TODO Check that the argument type is integer
         ValueStack_unary(stack, opNegate);
         break;
 
+      case OP_NOT:
+        // TODO Check that the argument type is boolean
+        ValueStack_unary(stack, opNot);
+        break;
+
       case OP_ADD:
+        // TODO Check that the argument type is integer
         ValueStack_binary(stack, opAdd);
         break;
 
       case OP_SUBTRACT:
+        // TODO Check that the argument type is integer
         ValueStack_binary(stack, opSubtract);
         break;
 
       case OP_MULTIPLY:
+        // TODO Check that the argument type is integer
         ValueStack_binary(stack, opMultiply);
         break;
 
       case OP_IDIVIDE:
+        // TODO Check that the argument type is integer
         {
           int32_t denominator = Value_asInteger(ValueStack_peek(stack));
           if(denominator == 0) {

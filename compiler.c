@@ -78,6 +78,10 @@ void Compiler_emitNode(InstructionList* out, Node* node) {
       Compiler_emitNode(out, ((UnaryNode*)node)->arg0);
       return Compiler_emitOp(out, OP_NEGATE, node->line);
 
+    case NODE_LOGICAL_NOT:
+      Compiler_emitNode(out, ((UnaryNode*)node)->arg0);
+      return Compiler_emitOp(out, OP_NOT, node->line);
+
     case NODE_ADD:            Compiler_emitBinaryNode(out, OP_ADD, node);       return;
     case NODE_SUBTRACT:       Compiler_emitBinaryNode(out, OP_SUBTRACT, node);  return;
     case NODE_MULTIPLY:       Compiler_emitBinaryNode(out, OP_MULTIPLY, node);  return;
@@ -90,7 +94,8 @@ void Compiler_emitNode(InstructionList* out, Node* node) {
     case NODE_EQUAL:              Compiler_emitBinaryNode(out, OP_EQUAL, node);   return;
     case NODE_NOT_EQUAL:          Compiler_emitBinaryNode(out, OP_NOT_EQUAL, node);   return;
 
-    default:
+    case NODE_ERROR:
+    case NODE_EOF:
       assert(false);
   }
 }
@@ -181,6 +186,26 @@ void test_Compiler_emitNode_emitsNegate() {
   assert(out.items[0] == OP_INTEGER);
   assert(*(int32_t*)(out.items + 1) == 42);
   assert(out.items[5] == OP_NEGATE);
+
+  Node_free(node);
+  InstructionList_free(&out);
+}
+
+void test_Compiler_emitNode_emitsNot() {
+  const char* text = "true";
+  Node* node = UnaryNode_new(
+      NODE_LOGICAL_NOT,
+      1,
+      AtomNode_new(NODE_BOOLEAN_LITERAL, 1, text, 4)
+  );
+  InstructionList out;
+  InstructionList_init(&out);
+
+  Compiler_emitNode(&out, node);
+
+  assert(out.count == 2);
+  assert(out.items[0] == OP_TRUE);
+  assert(out.items[1] == OP_NOT);
 
   Node_free(node);
   InstructionList_free(&out);
