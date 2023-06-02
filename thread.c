@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdio.h>
 
 #include "thread.h"
@@ -6,7 +7,8 @@
 
 typedef enum {
   ERROR_DIVISON_BY_ZERO,
-  ERROR_COMPARISON_TYPE_ERROR,
+  ERROR_UNARY_OP_TYPE,
+  ERROR_BINARY_OP_TYPE,
 } RuntimeError;
 
 void Thread_init(Thread* self, InstructionList* instructionList) {
@@ -20,7 +22,80 @@ void Thread_free(Thread* self) {
   ValueStack_free(&(self->stack));
 }
 
-static Value Thread_error(Thread* self, RuntimeError error, uint8_t* pc) {
+static const char* Instruction_toOperatorCString(uint8_t* pc) {
+  Instruction op = (Instruction)(*pc);
+
+  switch(op) {
+    case OP_NIL:
+    case OP_TRUE:
+    case OP_FALSE:
+    case OP_INTEGER:
+    case OP_DROP:
+    case OP_RETURN:
+      assert(false);
+
+    case OP_NOT:
+      return "not";
+
+    case OP_NEGATE:
+      return "-";
+
+    case OP_ADD:
+      return "+";
+
+    case OP_SUBTRACT:
+      return "-";
+
+    case OP_MULTIPLY:
+      return "*";
+
+    case OP_IDIVIDE:
+      return "//";
+
+    case OP_LESS_THAN:
+      return "<";
+
+    case OP_LESS_THAN_EQUAL:
+      return "<=";
+
+    case OP_GREATER_THAN:
+      return ">";
+
+    case OP_GREATER_THAN_EQUAL:
+      return ">=";
+
+    case OP_EQUAL:
+      return "==";
+
+    case OP_NOT_EQUAL:
+      return "!=";
+  }
+}
+
+const char* ValueType_toCString(ValueType type) {
+  switch(type) {
+    case VALUE_NIL:
+      return "Void";
+
+    case VALUE_BOOLEAN:
+      return "Boolean";
+
+    case VALUE_INTEGER:
+      return "Integer";
+  }
+}
+
+static Value Thread_error(Thread* self, RuntimeError error, uint8_t* pc, ...) {
+  /*
+   * Thread_run increments the program counter before the instruction is
+   * executed, so we decrement it here to get the proper instruction, rather
+   * than forcing every caller to pass in a decremented program counter.
+   */
+  // TODO Can we get this off self?
+  pc--;
+
+  va_list varargs;
+
   if(isColorAllowed()) {
     fprintf(stderr, ANSI_COLOR_RED);
   }
@@ -29,13 +104,35 @@ static Value Thread_error(Thread* self, RuntimeError error, uint8_t* pc) {
   fprintf(stderr, "Error (line %zu): ", line);
 
   switch(error) {
-    case ERROR_COMPARISON_TYPE_ERROR:
-      /*
-       * TODO
-       * We have access to the stack, so we can find out what the errors are
-       * and give a better message than this.
-       */
-      fprintf(stderr, "Attempting to compare incomparably-typed values.");
+    case ERROR_UNARY_OP_TYPE:
+      {
+        va_start(varargs, pc);
+
+        fprintf(
+          stderr,
+          "Cannot apply unary operator `%s` to value of type `%s`.",
+          Instruction_toOperatorCString(pc),
+          ValueType_toCString(va_arg(varargs, ValueType))
+        );
+
+        va_end(varargs);
+      }
+      break;
+
+    case ERROR_BINARY_OP_TYPE:
+      {
+        va_start(varargs, pc);
+
+        fprintf(
+          stderr,
+          "Cannot apply unary operator `%s` to values of type `%s` and `%s`.",
+          Instruction_toOperatorCString(pc),
+          ValueType_toCString(va_arg(varargs, ValueType)),
+          ValueType_toCString(va_arg(varargs, ValueType))
+        );
+
+        va_end(varargs);
+      }
       break;
 
     case ERROR_DIVISON_BY_ZERO:
@@ -55,72 +152,6 @@ static Value Thread_error(Thread* self, RuntimeError error, uint8_t* pc) {
   return NIL;
 }
 
-inline static Value opNegate(Value a) {
-  return Value_fromInteger(-Value_asInteger(a));
-}
-
-inline static Value opNot(Value a) {
-  return Value_fromBoolean(!Value_asBoolean(a));
-}
-
-inline static Value opAdd(Value a, Value b) {
-  return Value_fromInteger(Value_asInteger(a) + Value_asInteger(b));
-}
-inline static Value opSubtract(Value a, Value b) {
-  return Value_fromInteger(Value_asInteger(a) - Value_asInteger(b));
-}
-inline static Value opMultiply(Value a, Value b) {
-  return Value_fromInteger(Value_asInteger(a) * Value_asInteger(b));
-}
-inline static Value opIDivide(Value a, Value b) {
-  return Value_fromInteger(Value_asInteger(a) / Value_asInteger(b));
-}
-
-inline static Value opLessThan(Value a, Value b) {
-  return Value_fromBoolean(Value_asInteger(a) < Value_asInteger(b));
-}
-inline static Value opLessThanEqual(Value a, Value b) {
-  return Value_fromBoolean(Value_asInteger(a) <= Value_asInteger(b));
-}
-inline static Value opGreaterThan(Value a, Value b) {
-  return Value_fromBoolean(Value_asInteger(a) > Value_asInteger(b));
-}
-inline static Value opGreaterThanEqual(Value a, Value b) {
-  return Value_fromBoolean(Value_asInteger(a) >= Value_asInteger(b));
-}
-inline static Value opEqual(Value a, Value b) {
-  /*
-   * We have already checked that the types are the same, so we can infer the
-   * type of b from a.
-   */
-  switch(a.type) {
-    case VALUE_BOOLEAN:
-      return Value_fromBoolean(Value_asBoolean(a) == Value_asBoolean(b));
-
-    case VALUE_INTEGER:
-      return Value_fromBoolean(Value_asInteger(a) == Value_asInteger(b));
-
-    case VALUE_NIL:
-      return Value_fromBoolean(true);
-  }
-}
-inline static Value opNotEqual(Value a, Value b) {
-  /*
-   * We have already checked that the types are the same, so we can infer the
-   * type of b from a.
-   */
-  switch(a.type) {
-    case VALUE_BOOLEAN:
-      return Value_fromBoolean(Value_asBoolean(a) != Value_asBoolean(b));
-
-    case VALUE_INTEGER:
-      return Value_fromBoolean(Value_asInteger(a) != Value_asInteger(b));
-
-    case VALUE_NIL:
-      return Value_fromBoolean(false);
-  }
-}
-
 Value Thread_run(Thread* self) {
   // TODO Consider copying the pc into a register
   ValueStack* stack = &(self->stack);
@@ -132,8 +163,8 @@ Value Thread_run(Thread* self) {
    * pointer from the index, but *everywhere* that we exit from this function,
    * we have to sync the index with InstructionList_index().
    *
-   * Another implication of this is that we can't modify the index on while
-   * another thread while Thread_run() is running.
+   * Another implication of this is that we can't modify the index on another
+   * thread while Thread_run() is running.
    */
   register uint8_t* pc = InstructionList_pc(self->instructionList, self->pcIndex);
 
@@ -160,80 +191,223 @@ Value Thread_run(Thread* self) {
         break;
 
       case OP_NEGATE:
-        // TODO Check that the argument type is integer
-        ValueStack_unary(stack, opNegate);
+        {
+          Value operand = ValueStack_pop(stack);
+
+          if(!(operand.type == VALUE_INTEGER)) {
+            return Thread_error(self, ERROR_UNARY_OP_TYPE, pc, operand.type);
+          }
+
+          ValueStack_push(stack, Value_fromInteger(-Value_asInteger(operand)));
+        }
         break;
 
       case OP_NOT:
-        // TODO Check that the argument type is boolean
-        ValueStack_unary(stack, opNot);
+        {
+          Value operand = ValueStack_pop(stack);
+
+          if(operand.type == VALUE_BOOLEAN) {
+            return Thread_error(self, ERROR_UNARY_OP_TYPE, pc, operand.type);
+          }
+
+          ValueStack_push(stack, Value_fromBoolean(!Value_asBoolean(operand)));
+        }
         break;
 
       case OP_ADD:
-        // TODO Check that the argument type is integer
-        ValueStack_binary(stack, opAdd);
+        {
+          Value operand1 = ValueStack_pop(stack);
+          Value operand0 = ValueStack_pop(stack);
+
+          if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
+            return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
+          }
+
+          ValueStack_push(
+            stack,
+            Value_fromInteger(Value_asInteger(operand0) + Value_asInteger(operand1))
+          );
+        }
         break;
 
       case OP_SUBTRACT:
-        // TODO Check that the argument type is integer
-        ValueStack_binary(stack, opSubtract);
+        {
+          Value operand1 = ValueStack_pop(stack);
+          Value operand0 = ValueStack_pop(stack);
+
+          if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
+            return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
+          }
+
+          ValueStack_push(
+            stack,
+            Value_fromInteger(Value_asInteger(operand0) - Value_asInteger(operand1))
+          );
+        }
         break;
 
       case OP_MULTIPLY:
-        // TODO Check that the argument type is integer
-        ValueStack_binary(stack, opMultiply);
+        {
+          Value operand1 = ValueStack_pop(stack);
+          Value operand0 = ValueStack_pop(stack);
+
+          if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
+            return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
+          }
+
+          ValueStack_push(
+            stack,
+            Value_fromInteger(Value_asInteger(operand0) * Value_asInteger(operand1))
+          );
+        }
         break;
 
       case OP_IDIVIDE:
-        // TODO Check that the argument type is integer
         {
-          int32_t denominator = Value_asInteger(ValueStack_peek(stack));
-          if(denominator == 0) {
+          Value operand1 = ValueStack_pop(stack);
+          Value operand0 = ValueStack_pop(stack);
+
+          if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
+            return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
+          }
+
+          if(Value_asInteger(operand1) == 0) {
             return Thread_error(self, ERROR_DIVISON_BY_ZERO, pc);
           }
+
+          ValueStack_push(
+            stack,
+            Value_fromInteger(Value_asInteger(operand0) / Value_asInteger(operand1))
+          );
         }
-        ValueStack_binary(stack, opIDivide);
         break;
 
       case OP_LESS_THAN:
-        if(ValueStack_peekN(stack, 1).type != VALUE_INTEGER
-            || ValueStack_peek(stack).type != VALUE_INTEGER) {
-          return Thread_error(self, ERROR_COMPARISON_TYPE_ERROR, pc);
+        {
+          Value operand1 = ValueStack_pop(stack);
+          Value operand0 = ValueStack_pop(stack);
+
+          if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
+            return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
+          }
+
+          ValueStack_push(
+            stack,
+            Value_fromBoolean(Value_asInteger(operand0) < Value_asInteger(operand1))
+          );
         }
-        ValueStack_binary(stack, opLessThan);
         break;
+
       case OP_LESS_THAN_EQUAL:
-        if(ValueStack_peekN(stack, 1).type != VALUE_INTEGER
-            || ValueStack_peek(stack).type != VALUE_INTEGER) {
-          return Thread_error(self, ERROR_COMPARISON_TYPE_ERROR, pc);
+        {
+          Value operand1 = ValueStack_pop(stack);
+          Value operand0 = ValueStack_pop(stack);
+
+          if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
+            return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
+          }
+
+          ValueStack_push(
+            stack,
+            Value_fromBoolean(Value_asInteger(operand0) <= Value_asInteger(operand1))
+          );
         }
-        ValueStack_binary(stack, opLessThanEqual);
         break;
+
       case OP_GREATER_THAN:
-        if(ValueStack_peekN(stack, 1).type != VALUE_INTEGER
-            || ValueStack_peek(stack).type != VALUE_INTEGER) {
-          return Thread_error(self, ERROR_COMPARISON_TYPE_ERROR, pc);
+        {
+          Value operand1 = ValueStack_pop(stack);
+          Value operand0 = ValueStack_pop(stack);
+
+          if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
+            return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
+          }
+
+          ValueStack_push(
+            stack,
+            Value_fromBoolean(Value_asInteger(operand0) > Value_asInteger(operand1))
+          );
         }
-        ValueStack_binary(stack, opGreaterThan);
         break;
+
       case OP_GREATER_THAN_EQUAL:
-        if(ValueStack_peekN(stack, 1).type != VALUE_INTEGER
-            || ValueStack_peek(stack).type != VALUE_INTEGER) {
-          return Thread_error(self, ERROR_COMPARISON_TYPE_ERROR, pc);
+        {
+          Value operand1 = ValueStack_pop(stack);
+          Value operand0 = ValueStack_pop(stack);
+
+          if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
+            return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
+          }
+
+          ValueStack_push(
+            stack,
+            Value_fromBoolean(Value_asInteger(operand0) >= Value_asInteger(operand1))
+          );
         }
-        ValueStack_binary(stack, opGreaterThanEqual);
         break;
+
       case OP_EQUAL:
-        if(ValueStack_peekN(stack, 1).type != ValueStack_peek(stack).type) {
-          return Thread_error(self, ERROR_COMPARISON_TYPE_ERROR, pc);
+        {
+          Value operand1 = ValueStack_pop(stack);
+          Value operand0 = ValueStack_pop(stack);
+
+          if(operand0.type != operand1.type) {
+            return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
+          }
+
+          switch(operand0.type) {
+            case VALUE_NIL:
+              // If both types are nil, that implies both values are nil
+              ValueStack_push(stack, Value_fromBoolean(true));
+              break;
+
+            case VALUE_BOOLEAN:
+              ValueStack_push(
+                stack,
+                Value_fromBoolean(Value_asBoolean(operand0) == Value_asBoolean(operand1))
+              );
+              break;
+
+            case VALUE_INTEGER:
+              ValueStack_push(
+                stack,
+                Value_fromBoolean(Value_asInteger(operand0) == Value_asInteger(operand1))
+              );
+              break;
+          }
         }
-        ValueStack_binary(stack, opEqual);
         break;
+
       case OP_NOT_EQUAL:
-        if(ValueStack_peekN(stack, 1).type != ValueStack_peek(stack).type) {
-          return Thread_error(self, ERROR_COMPARISON_TYPE_ERROR, pc);
+        {
+          Value operand1 = ValueStack_pop(stack);
+          Value operand0 = ValueStack_pop(stack);
+
+          if(operand0.type != operand1.type) {
+            return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
+          }
+
+          switch(operand0.type) {
+            case VALUE_NIL:
+              // If both types are nil, that implies both values are nil
+              ValueStack_push(stack, Value_fromBoolean(false));
+              break;
+
+            case VALUE_BOOLEAN:
+              ValueStack_push(
+                stack,
+                Value_fromBoolean(Value_asBoolean(operand0) != Value_asBoolean(operand1))
+              );
+              break;
+
+            case VALUE_INTEGER:
+              ValueStack_push(
+                stack,
+                Value_fromBoolean(Value_asInteger(operand0) != Value_asInteger(operand1))
+              );
+              break;
+          }
         }
-        ValueStack_binary(stack, opNotEqual);
         break;
 
       case OP_DROP:
