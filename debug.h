@@ -2,6 +2,7 @@
 #define DEBUG_H
 
 #include "tokenizer.h"
+#include "node.h"
 
 #include <stdio.h>
 
@@ -35,7 +36,7 @@ inline static void Token_println(Token token) {
     PRINT_CASE(TOKEN_FALSE);
     PRINT_CASE(TOKEN_NOT);
 
-    PRINT_CASE(TOKEN_IDENTIFIER);
+    PRINT_CASE(TOKEN_SYMBOL);
 
     PRINT_CASE(TOKEN_ERROR);
     PRINT_CASE(TOKEN_EOF);
@@ -73,7 +74,7 @@ inline static void TokenType_println(TokenType tokenType) {
     PRINT_CASE(TOKEN_FALSE);
     PRINT_CASE(TOKEN_NOT);
 
-    PRINT_CASE(TOKEN_IDENTIFIER);
+    PRINT_CASE(TOKEN_SYMBOL);
 
     PRINT_CASE(TOKEN_ERROR);
     PRINT_CASE(TOKEN_EOF);
@@ -81,6 +82,37 @@ inline static void TokenType_println(TokenType tokenType) {
     PRINT_CASE(NO_TOKEN);
   }
 }
+#undef PRINT_CASE
+
+#define PRINT_CASE(nt) case nt: printf("NodeType: " #nt "\n"); break
+inline static void NodeType_println(NodeType nodeType) {
+  switch(nodeType) {
+    PRINT_CASE(NODE_INTEGER_LITERAL);
+    PRINT_CASE(NODE_BOOLEAN_LITERAL);
+    PRINT_CASE(NODE_SYMBOL);
+
+    PRINT_CASE(NODE_ASSIGN);
+
+    PRINT_CASE(NODE_NEGATE);
+    PRINT_CASE(NODE_LOGICAL_NOT);
+
+    PRINT_CASE(NODE_ADD);
+    PRINT_CASE(NODE_SUBTRACT);
+    PRINT_CASE(NODE_MULTIPLY);
+    PRINT_CASE(NODE_INTEGER_DIVIDE);
+
+    PRINT_CASE(NODE_LESS_THAN);
+    PRINT_CASE(NODE_LESS_THAN_EQUAL);
+    PRINT_CASE(NODE_GREATER_THAN);
+    PRINT_CASE(NODE_GREATER_THAN_EQUAL);
+    PRINT_CASE(NODE_EQUAL);
+    PRINT_CASE(NODE_NOT_EQUAL);
+
+    PRINT_CASE(NODE_ERROR);
+    PRINT_CASE(NODE_EOF);
+  }
+}
+
 #undef PRINT_CASE
 
 #endif

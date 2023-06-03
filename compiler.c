@@ -74,6 +74,12 @@ void Compiler_emitNode(InstructionList* out, Node* node) {
     case NODE_BOOLEAN_LITERAL:
       return Compiler_emitBoolean(out, (AtomNode*)node);
 
+    case NODE_SYMBOL:
+      assert(false);
+
+    case NODE_ASSIGN:
+      assert(false);
+
     case NODE_NEGATE:
       Compiler_emitNode(out, ((UnaryNode*)node)->arg0);
       return Compiler_emitOp(out, OP_NEGATE, node->line);

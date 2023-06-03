@@ -74,7 +74,7 @@ Token Tokenizer_keywordOrIdentifier(Tokenizer* self, const char* lexeme, const c
 
   while(isIdentifierChar(*(self->current))) self->current++;
 
-  return Token_create(TOKEN_IDENTIFIER, lexeme, self->current - lexeme, self->line);
+  return Token_create(TOKEN_SYMBOL, lexeme, self->current - lexeme, self->line);
 }
 
 Token Tokenizer_scan(Tokenizer* self) {
@@ -444,7 +444,7 @@ void test_Tokenizer_scan_identifier() {
   Tokenizer_init(&tokenizer, source);
 
   Token token = Tokenizer_scan(&tokenizer);
-  assert(token.type == TOKEN_IDENTIFIER);
+  assert(token.type == TOKEN_SYMBOL);
   assert(token.lexeme == source);
   assert(token.length == 3);
   assert(token.line == 1);
@@ -480,25 +480,25 @@ void test_Tokenizer_scan_differentiateKeywords() {
   Token token;
 
   token = Tokenizer_scan(&tokenizer);
-  assert(token.type == TOKEN_IDENTIFIER);
+  assert(token.type == TOKEN_SYMBOL);
   assert(token.lexeme == source);
   assert(token.length == 3);
   assert(token.line == 1);
 
   token = Tokenizer_scan(&tokenizer);
-  assert(token.type == TOKEN_IDENTIFIER);
+  assert(token.type == TOKEN_SYMBOL);
   assert(token.lexeme == source + 4);
   assert(token.length == 4);
   assert(token.line == 1);
 
   token = Tokenizer_scan(&tokenizer);
-  assert(token.type == TOKEN_IDENTIFIER);
+  assert(token.type == TOKEN_SYMBOL);
   assert(token.lexeme == source + 9);
   assert(token.length == 5);
   assert(token.line == 1);
 
   token = Tokenizer_scan(&tokenizer);
-  assert(token.type == TOKEN_IDENTIFIER);
+  assert(token.type == TOKEN_SYMBOL);
   assert(token.lexeme == source + 15);
   assert(token.length == 6);
   assert(token.line == 1);

@@ -108,9 +108,10 @@ static Value Thread_error(Thread* self, RuntimeError error, uint8_t* pc, ...) {
       {
         va_start(varargs, pc);
 
+        // Currently all unary operations are prefix operators
         fprintf(
           stderr,
-          "Cannot apply unary operator `%s` to value of type `%s`.",
+          "Cannot apply prefix operator `%s` to value of type `%s`.",
           Instruction_toOperatorCString(pc),
           ValueType_toCString(va_arg(varargs, ValueType))
         );
@@ -123,9 +124,10 @@ static Value Thread_error(Thread* self, RuntimeError error, uint8_t* pc, ...) {
       {
         va_start(varargs, pc);
 
+        // Currently all binary operations are infix operators
         fprintf(
           stderr,
-          "Cannot apply unary operator `%s` to values of type `%s` and `%s`.",
+          "Cannot apply infix operator `%s` to values of type `%s` and `%s`.",
           Instruction_toOperatorCString(pc),
           ValueType_toCString(va_arg(varargs, ValueType)),
           ValueType_toCString(va_arg(varargs, ValueType))

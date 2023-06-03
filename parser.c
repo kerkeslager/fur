@@ -62,7 +62,7 @@ const PrecedenceRule PRECEDENCE[] = {
   [TOKEN_FALSE] =               { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
   [TOKEN_NOT] =                 { PREC_LOGICAL_NOT, PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
-  [TOKEN_IDENTIFIER] =          { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_SYMBOL] =              { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
   [TOKEN_EOF] =                 { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
   [TOKEN_ERROR] =               { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
@@ -97,6 +97,7 @@ inline static NodeType mapInfix(Token token) {
   assert(token.type != NO_TOKEN);
 
   switch(token.type) {
+    case TOKEN_EQUALS: return NODE_ASSIGN;
     case TOKEN_PLUS: return NODE_ADD;
     case TOKEN_MINUS: return NODE_SUBTRACT;
     case TOKEN_ASTERISK: return NODE_MULTIPLY;
@@ -138,6 +139,10 @@ Node* Parser_parseAtom(Parser* self) {
     case TOKEN_FALSE:
       Tokenizer_scan(tokenizer);
       return AtomNode_new(NODE_BOOLEAN_LITERAL, token.line, token.lexeme, token.length);
+
+    case TOKEN_SYMBOL:
+      Tokenizer_scan(tokenizer);
+      return AtomNode_new(NODE_SYMBOL, token.line, token.lexeme, token.length);
 
     default:
       // TODO More specific error
@@ -896,6 +901,22 @@ void test_Parser_parseExpression_infixRightError() {
   assert(eNode->token.type == TOKEN_EOF);
   assert(eNode->auxToken.type = NO_TOKEN);
   assert(eNode->previous == NULL);
+
+  Node_free(node);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseExpression_assignment() {
+  const char* source = "foo = 42";
+
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* node = Parser_parseExpression(&parser);
+
+  assert(node->type == NODE_ASSIGN);
+  assert(((BinaryNode*)node)->arg0->type == NODE_SYMBOL);
+  assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
 
   Node_free(node);
   Parser_free(&parser);

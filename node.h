@@ -9,12 +9,14 @@ typedef enum {
   // Atom Nodes
   NODE_INTEGER_LITERAL,
   NODE_BOOLEAN_LITERAL,
+  NODE_SYMBOL,
 
   // Unary Nodes
   NODE_NEGATE,
   NODE_LOGICAL_NOT,
 
   // Binary Nodes
+  NODE_ASSIGN,
   NODE_ADD,
   NODE_SUBTRACT,
   NODE_MULTIPLY,

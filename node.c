@@ -12,7 +12,9 @@ inline static void Node_init(Node* self, NodeType type, size_t line) {
 }
 
 inline static void AtomNode_init(AtomNode* self, NodeType type, size_t line, const char* text, size_t length) {
-  assert(type == NODE_INTEGER_LITERAL || type == NODE_BOOLEAN_LITERAL);
+  assert(type == NODE_INTEGER_LITERAL
+      || type == NODE_BOOLEAN_LITERAL
+      || type == NODE_SYMBOL);
   Node_init(&(self->node), type, line);
   self->text = text;
   self->length = length;
@@ -26,7 +28,9 @@ Node* Node_new(NodeType type, size_t line) {
 }
 
 Node* AtomNode_new(NodeType type, size_t line, const char* text, size_t length) {
-  assert(type == NODE_INTEGER_LITERAL || type == NODE_BOOLEAN_LITERAL);
+  assert(type == NODE_INTEGER_LITERAL
+      || type == NODE_BOOLEAN_LITERAL
+      || type == NODE_SYMBOL);
   AtomNode* node = malloc(sizeof(AtomNode));
   AtomNode_init(node, type, line, text, length);
   return (Node*)node;
@@ -55,7 +59,8 @@ inline static void UnaryNode_free(UnaryNode* self) {
 }
 
 inline static void BinaryNode_init(BinaryNode* self, NodeType type, size_t line, Node* arg0, Node* arg1) {
-  assert(type == NODE_ADD
+  assert(type == NODE_ASSIGN
+      || type == NODE_ADD
       || type == NODE_SUBTRACT
       || type == NODE_MULTIPLY
       || type == NODE_INTEGER_DIVIDE
@@ -115,6 +120,7 @@ void Node_free(Node* self) {
 
     case NODE_INTEGER_LITERAL:
     case NODE_BOOLEAN_LITERAL:
+    case NODE_SYMBOL:
       AtomNode_free((AtomNode*)self);
       return;
 
@@ -123,6 +129,7 @@ void Node_free(Node* self) {
       UnaryNode_free((UnaryNode*)self);
       return;
 
+    case NODE_ASSIGN:
     case NODE_ADD:
     case NODE_SUBTRACT:
     case NODE_MULTIPLY:
