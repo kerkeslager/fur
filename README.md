@@ -2,6 +2,38 @@
 
 ## Ideas
 
+### A design for avoiding GC bugs
+A lot of GC bugs consist of the following pattern:
+
+1. You perform some operation which either allocates an object, or removes a
+   reference to an object.
+2. Before you reference or re-reference the object, you perform an allocation
+   which might trigger a GC.
+3. Because the object in step 1 is not referenced from any roots, it is
+   collected out from under you mid-operation.
+
+Solutions to this vary, from placing the object in the roots temporarily, to
+reordering code to avoid the gap where the object isn't referenced, etc. But
+since these solutions have to be applied on a case-by-case basis, they are
+error-prone.
+
+My idea for Fur is to place a limitation on Fur such that Fur ops (instructions)
+are atomic with regards to GC: GC cannot occur in the middle of an instruction.
+Instead, when the allocator decides to GC during an instruction, it schedules a
+GC for after the current instruction has completed. It does this by changing the
+program counter to point to a two-instruction bytecode chunk stored on the
+thread.  These two instructions are an OP_GC instruction (which runs the GC) and
+an OP_JMP instructon which jumps back to the location of the program counter
+from when the GC was scheduled. Essential in this is the idea that GC is an
+instruction, between two other instructions, which it cannot interrupt. It is
+still the responsibility of all other instructions to leave memory in a state
+such that GC can run, so this isn't a panacea. However, his avoids the most
+common form of GC bugs described above.
+
+There is some runtime performance cost to this approach, but it's notble that
+the *other* solutions to the above problem are *also* not without runtime
+performance costs.
+
 ### n-ary Comparison operators
 
 ```
@@ -53,6 +85,19 @@ a != b == c < d > e <= f >= g
 ```
 
 ...are legal, although of questionable utility.
+
+*Note: If we're going to implement this, we should do so before much code is
+written in Fur, because there exist "false ternary" situations with comparison
+operators, and we want this implemented before people use those. For example:*
+
+```
+false == true == false
+```
+
+*...returns `true` at the time of this writing, because `false == true` returns
+`false`, which is then compared to the `false` on the right. But with n-ary
+comparisons this would evaluate to false because the three are not all equal
+to each other.*
 
 ### Function declaration syntax
 Declaring a function is just a type of destructured assignment:
