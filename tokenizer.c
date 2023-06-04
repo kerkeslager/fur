@@ -50,20 +50,20 @@ inline static void Tokenizer_handleWhitespace(Tokenizer* self) {
   }
 }
 
-bool isIdentifierChar(char c) {
-  // TODO Allow more charcters in identifiers
+bool isSymbolChar(char c) {
+  // TODO Allow more charcters in symbols
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9');
 }
 
-Token Tokenizer_completeIdentifier(Tokenizer* self, const char* lexeme) {
-  while(isIdentifierChar(*(self->current))) self->current++;
+Token Tokenizer_completeSymbol(Tokenizer* self, const char* lexeme) {
+  while(isSymbolChar(*(self->current))) self->current++;
   return Token_create(TOKEN_SYMBOL, lexeme, self->current - lexeme, self->line);
 }
 
-Token Tokenizer_keywordOrIdentifier(Tokenizer* self, const char* lexeme, const char* suffix, TokenType type) {
+Token Tokenizer_keywordOrSymbol(Tokenizer* self, const char* lexeme, const char* suffix, TokenType type) {
   for(;;) {
     if(*suffix == '\0') {
-      if(isIdentifierChar(*(self->current))) {
+      if(isSymbolChar(*(self->current))) {
         self->current++;
         break;
       } else {
@@ -77,7 +77,7 @@ Token Tokenizer_keywordOrIdentifier(Tokenizer* self, const char* lexeme, const c
     }
   }
 
-  return Tokenizer_completeIdentifier(self, lexeme);
+  return Tokenizer_completeSymbol(self, lexeme);
 }
 
 Token Tokenizer_scan(Tokenizer* self) {
@@ -228,28 +228,28 @@ Token Tokenizer_scan(Tokenizer* self) {
       {
         const char* lexeme = self->current;
         self->current++;
-        return Tokenizer_completeIdentifier(self, lexeme);
+        return Tokenizer_completeSymbol(self, lexeme);
       }
 
     case 'f':
       {
         const char* lexeme = self->current;
         self->current++;
-        return Tokenizer_keywordOrIdentifier(self, lexeme, "alse", TOKEN_FALSE);
+        return Tokenizer_keywordOrSymbol(self, lexeme, "alse", TOKEN_FALSE);
       }
 
     case 'n':
       {
         const char* lexeme = self->current;
         self->current++;
-        return Tokenizer_keywordOrIdentifier(self, lexeme, "ot", TOKEN_NOT);
+        return Tokenizer_keywordOrSymbol(self, lexeme, "ot", TOKEN_NOT);
       }
 
     case 't':
       {
         const char* lexeme = self->current;
         self->current++;
-        return Tokenizer_keywordOrIdentifier(self, lexeme, "rue", TOKEN_TRUE);
+        return Tokenizer_keywordOrSymbol(self, lexeme, "rue", TOKEN_TRUE);
       }
 
     default:
@@ -497,7 +497,7 @@ void test_Tokenizer_scan_parentheses() {
   assert(token.line == 1);
 }
 
-void test_Tokenizer_scan_identifier() {
+void test_Tokenizer_scan_symbol() {
   const char* source = "foo";
 
   Tokenizer tokenizer;

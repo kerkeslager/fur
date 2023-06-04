@@ -72,7 +72,7 @@ void test_Tokenizer_peek_returnsScan();
 void test_Tokenizer_peek_doesNotProgress();
 void test_Tokenizer_scan_after_Tokenizer_peek();
 void test_Tokenizer_scan_parentheses();
-void test_Tokenizer_scan_identifier();
+void test_Tokenizer_scan_symbol();
 void test_Tokenizer_scan_booleans();
 void test_Tokenizer_scan_differentiateKeywords();
 void test_Tokenizer_scan_not();
