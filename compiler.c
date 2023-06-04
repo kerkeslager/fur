@@ -31,6 +31,9 @@ inline static void Compiler_emitOp(InstructionList* out, Instruction op, size_t 
   InstructionList_append(out, (uint8_t)op, line);
 }
 
+inline static void Compiler_emitUInt16(InstructionList* out, uint16_t i, size_t line) {
+  InstructionList_appendUInt16(out, i, line);
+}
 inline static void Compiler_emitInt32(InstructionList* out, int32_t i, size_t line) {
   InstructionList_appendInt32(out, i, line);
 }
@@ -102,7 +105,24 @@ void Compiler_emitNode(Compiler* self, InstructionList* out, Node* node) {
       return Compiler_emitBoolean(out, (AtomNode*)node);
 
     case NODE_SYMBOL:
-      assert(false);
+      {
+        AtomNode* aNode = (AtomNode*)node;
+        Symbol* symbol = SymbolTable_getOrCreate(&(self->symbolTable), aNode->text, aNode->length);
+        size_t index;
+
+        if(SymbolList_find(&(self->symbolList), &index, symbol)) {
+          /*
+           * TODO
+           * This means that there are more than UINT16_MAX symbols in the system.
+           * Handle this unlikely case better.
+           */
+          assert(index <= UINT16_MAX);
+        }
+
+        Compiler_emitOp(out, OP_GET, node->line);
+        Compiler_emitUInt16(out, index, node->line);
+        return;
+      }
 
     case NODE_ASSIGN:
       Compiler_emitAssignment(self, out, ((BinaryNode*)node));

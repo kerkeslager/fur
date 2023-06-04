@@ -95,8 +95,19 @@ void InstructionList_append(InstructionList* self, uint8_t item, size_t line) {
   InstructionList_updateLineRuns(self, line, 1);
 }
 
+void InstructionList_appendUInt16(InstructionList* self, uint16_t i, size_t line) {
+  if(!InstructionList_canInsert(self, sizeof(uint16_t))) {
+    InstructionList_grow(self);
+  }
+
+  *((uint16_t*)&(self->items[self->count])) = i;
+  self->count += sizeof(uint16_t);
+
+  InstructionList_updateLineRuns(self, line, sizeof(uint16_t) / sizeof(uint8_t));
+}
+
 void InstructionList_appendInt32(InstructionList* self, int32_t i, size_t line) {
-  if(InstructionList_canInsert(self, sizeof(int32_t))) {
+  if(!InstructionList_canInsert(self, sizeof(int32_t))) {
     InstructionList_grow(self);
   }
 

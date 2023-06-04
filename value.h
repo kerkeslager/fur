@@ -67,6 +67,19 @@ inline static void Value_println(Value v) {
   assert(false);
 }
 
+inline static Value Value_copy(Value* self) {
+  /*
+   * None of these types require updating reference counts, but future types
+   * will.
+   */
+  switch(self->type) {
+    case VALUE_BOOLEAN:
+    case VALUE_NIL:
+    case VALUE_INTEGER:
+      return *self;
+  }
+}
+
 #ifdef TEST
 
 #endif

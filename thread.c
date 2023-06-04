@@ -30,6 +30,7 @@ static const char* Instruction_toOperatorCString(uint8_t* pc) {
     case OP_TRUE:
     case OP_FALSE:
     case OP_INTEGER:
+    case OP_GET:
     case OP_DROP:
     case OP_RETURN:
       assert(false);
@@ -191,6 +192,18 @@ Value Thread_run(Thread* self) {
         ValueStack_push(stack, Value_fromInteger(*((int32_t*)pc)));
         pc += sizeof(int32_t);
         break;
+
+      case OP_GET:
+        {
+          uint16_t index = *((uint16_t*)pc);
+          pc += sizeof(uint16_t);
+
+          /*
+           * TODO Move this into Stack once we have a "frame" concept.
+           */
+          ValueStack_push(stack, Value_copy(&(stack->items[index])));
+          break;
+        }
 
       case OP_NEGATE:
         {
