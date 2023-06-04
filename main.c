@@ -10,6 +10,9 @@
 #include "value_stack.h"
 
 int main() {
+  Compiler compiler;
+  Compiler_init(&compiler, true /* Init in REPL mode */);
+
   for(;;) {
     char* buffer = readline("> ");
 
@@ -19,8 +22,6 @@ int main() {
       InstructionList byteCode;
       InstructionList_init(&byteCode);
 
-      Compiler compiler;
-      Compiler_init(&compiler, true /* Init in REPL mode */);
 
       bool success = Compiler_compile(&compiler, &byteCode, (const char*)buffer);
 
@@ -46,9 +47,10 @@ int main() {
         }
       }
 
-      Compiler_free(&compiler);
     }
   }
+
+  Compiler_free(&compiler);
 
   return 0;
 }
