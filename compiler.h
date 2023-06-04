@@ -4,13 +4,17 @@
 #include <stdbool.h>
 
 #include "instruction.h"
+#include "symbol.h"
 
 typedef struct {
+  SymbolTable symbolTable;
+  SymbolList symbolList;
   bool hasErrors;
   bool repl;
 } Compiler;
 
 void Compiler_init(Compiler*, bool repl);
+void Compiler_free(Compiler*);
 bool Compiler_compile(Compiler*, InstructionList* out, const char* source);
 
 #ifdef TEST

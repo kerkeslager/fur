@@ -7,8 +7,15 @@
 #include "parser.h"
 
 void Compiler_init(Compiler* self, bool repl) {
+  SymbolTable_init(&(self->symbolTable));
+  SymbolList_init(&(self->symbolList));
   self->repl = repl;
   self->hasErrors = false;
+}
+
+void Compiler_free(Compiler* self) {
+  SymbolTable_free(&(self->symbolTable));
+  SymbolList_free(&(self->symbolList));
 }
 
 void Compiler_error(Compiler* self, Node* errorNode) {
@@ -57,16 +64,36 @@ inline static void Compiler_emitBoolean(InstructionList* out, AtomNode* node) {
   }
 }
 
-void Compiler_emitNode(InstructionList* out, Node* node);
+void Compiler_emitNode(Compiler* self, InstructionList* out, Node* node);
 
-inline static void Compiler_emitBinaryNode(InstructionList* out, Instruction op, Node* node) {
-  Compiler_emitNode(out, ((BinaryNode*)node)->arg0);
-  Compiler_emitNode(out, ((BinaryNode*)node)->arg1);
+inline static void Compiler_emitBinaryNode(Compiler* self, InstructionList* out, Instruction op, Node* node) {
+  Compiler_emitNode(self, out, ((BinaryNode*)node)->arg0);
+  Compiler_emitNode(self, out, ((BinaryNode*)node)->arg1);
   InstructionList_append(out, op, node->line);
 }
 
+inline static void Compiler_emitSymbol(Compiler* self, AtomNode* node) {
+  Symbol* symbol = SymbolTable_getOrCreate(&(self->symbolTable), node->text, node->length);
+  bool success = SymbolList_append(&(self->symbolList), symbol);
+
+  // TODO If it was not inserted, the symbol already exists in this scope, so handle
+  // that error.
+  assert(success);
+}
+
+inline static void Compiler_emitAssignment(Compiler* self, InstructionList* out, BinaryNode* node) {
+  Compiler_emitNode(self, out, node->arg1);
+
+  if(node->arg0->type == NODE_SYMBOL) {
+    Compiler_emitSymbol(self, ((AtomNode*)(node->arg0)));
+  } else {
+    // TODO Handle assigning to other kinds of nodes
+    assert(false);
+  }
+}
+
 // TODO Switch arguments
-void Compiler_emitNode(InstructionList* out, Node* node) {
+void Compiler_emitNode(Compiler* self, InstructionList* out, Node* node) {
   switch(node->type) {
     case NODE_INTEGER_LITERAL:
       return Compiler_emitInteger(out, (AtomNode*)node);
@@ -78,27 +105,29 @@ void Compiler_emitNode(InstructionList* out, Node* node) {
       assert(false);
 
     case NODE_ASSIGN:
-      assert(false);
+      Compiler_emitAssignment(self, out, ((BinaryNode*)node));
+      Compiler_emitOp(out, OP_NIL, node->line);
+      return;
 
     case NODE_NEGATE:
-      Compiler_emitNode(out, ((UnaryNode*)node)->arg0);
+      Compiler_emitNode(self, out, ((UnaryNode*)node)->arg0);
       return Compiler_emitOp(out, OP_NEGATE, node->line);
 
     case NODE_LOGICAL_NOT:
-      Compiler_emitNode(out, ((UnaryNode*)node)->arg0);
+      Compiler_emitNode(self, out, ((UnaryNode*)node)->arg0);
       return Compiler_emitOp(out, OP_NOT, node->line);
 
-    case NODE_ADD:            Compiler_emitBinaryNode(out, OP_ADD, node);       return;
-    case NODE_SUBTRACT:       Compiler_emitBinaryNode(out, OP_SUBTRACT, node);  return;
-    case NODE_MULTIPLY:       Compiler_emitBinaryNode(out, OP_MULTIPLY, node);  return;
-    case NODE_INTEGER_DIVIDE: Compiler_emitBinaryNode(out, OP_IDIVIDE, node);   return;
+    case NODE_ADD:            Compiler_emitBinaryNode(self, out, OP_ADD, node);       return;
+    case NODE_SUBTRACT:       Compiler_emitBinaryNode(self, out, OP_SUBTRACT, node);  return;
+    case NODE_MULTIPLY:       Compiler_emitBinaryNode(self, out, OP_MULTIPLY, node);  return;
+    case NODE_INTEGER_DIVIDE: Compiler_emitBinaryNode(self, out, OP_IDIVIDE, node);   return;
 
-    case NODE_LESS_THAN:          Compiler_emitBinaryNode(out, OP_LESS_THAN, node);   return;
-    case NODE_LESS_THAN_EQUAL:    Compiler_emitBinaryNode(out, OP_LESS_THAN_EQUAL, node);   return;
-    case NODE_GREATER_THAN:       Compiler_emitBinaryNode(out, OP_GREATER_THAN, node);   return;
-    case NODE_GREATER_THAN_EQUAL: Compiler_emitBinaryNode(out, OP_GREATER_THAN_EQUAL, node);   return;
-    case NODE_EQUAL:              Compiler_emitBinaryNode(out, OP_EQUAL, node);   return;
-    case NODE_NOT_EQUAL:          Compiler_emitBinaryNode(out, OP_NOT_EQUAL, node);   return;
+    case NODE_LESS_THAN:          Compiler_emitBinaryNode(self, out, OP_LESS_THAN, node);   return;
+    case NODE_LESS_THAN_EQUAL:    Compiler_emitBinaryNode(self, out, OP_LESS_THAN_EQUAL, node);   return;
+    case NODE_GREATER_THAN:       Compiler_emitBinaryNode(self, out, OP_GREATER_THAN, node);   return;
+    case NODE_GREATER_THAN_EQUAL: Compiler_emitBinaryNode(self, out, OP_GREATER_THAN_EQUAL, node);   return;
+    case NODE_EQUAL:              Compiler_emitBinaryNode(self, out, OP_EQUAL, node);   return;
+    case NODE_NOT_EQUAL:          Compiler_emitBinaryNode(self, out, OP_NOT_EQUAL, node);   return;
 
     case NODE_ERROR:
     case NODE_EOF:
@@ -123,7 +152,7 @@ bool Compiler_compile(Compiler* self, InstructionList* out, const char* source) 
   } else if(statement->type == NODE_ERROR) {
     Compiler_error(self, statement);
   } else {
-    Compiler_emitNode(out, statement);
+    Compiler_emitNode(self, out, statement);
   }
 
   Node_free(statement);
@@ -145,7 +174,7 @@ bool Compiler_compile(Compiler* self, InstructionList* out, const char* source) 
        * the line number of the previous statement.
        */
       Compiler_emitOp(out, OP_DROP, statement->line);
-      Compiler_emitNode(out, statement);
+      Compiler_emitNode(self, out, statement);
     }
 
     Node_free(statement);
@@ -161,12 +190,15 @@ bool Compiler_compile(Compiler* self, InstructionList* out, const char* source) 
 #ifdef TEST
 
 void test_Compiler_emitNode_emitsIntegerLiteral() {
+  Compiler compiler;
+  Compiler_init(&compiler, false);
+
   const char* text = "42";
   Node* node = AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 2);
   InstructionList out;
   InstructionList_init(&out);
 
-  Compiler_emitNode(&out, node);
+  Compiler_emitNode(&compiler, &out, node);
 
   assert(out.count == 5);
   assert(out.items[0] == OP_INTEGER);
@@ -174,9 +206,13 @@ void test_Compiler_emitNode_emitsIntegerLiteral() {
 
   Node_free(node);
   InstructionList_free(&out);
+  Compiler_free(&compiler);
 }
 
 void test_Compiler_emitNode_emitsNegate() {
+  Compiler compiler;
+  Compiler_init(&compiler, false);
+
   const char* text = "42";
   Node* node = UnaryNode_new(
       NODE_NEGATE,
@@ -186,7 +222,7 @@ void test_Compiler_emitNode_emitsNegate() {
   InstructionList out;
   InstructionList_init(&out);
 
-  Compiler_emitNode(&out, node);
+  Compiler_emitNode(&compiler, &out, node);
 
   assert(out.count == 6);
   assert(out.items[0] == OP_INTEGER);
@@ -195,9 +231,13 @@ void test_Compiler_emitNode_emitsNegate() {
 
   Node_free(node);
   InstructionList_free(&out);
+  Compiler_free(&compiler);
 }
 
 void test_Compiler_emitNode_emitsNot() {
+  Compiler compiler;
+  Compiler_init(&compiler, false);
+
   const char* text = "true";
   Node* node = UnaryNode_new(
       NODE_LOGICAL_NOT,
@@ -207,7 +247,7 @@ void test_Compiler_emitNode_emitsNot() {
   InstructionList out;
   InstructionList_init(&out);
 
-  Compiler_emitNode(&out, node);
+  Compiler_emitNode(&compiler, &out, node);
 
   assert(out.count == 2);
   assert(out.items[0] == OP_TRUE);
@@ -215,11 +255,16 @@ void test_Compiler_emitNode_emitsNot() {
 
   Node_free(node);
   InstructionList_free(&out);
+
+  Compiler_free(&compiler);
 }
 
 #include<stdio.h>
 
 void test_Compiler_emitNode_emitsAdd() {
+  Compiler compiler;
+  Compiler_init(&compiler, false);
+
   const char* text = "1";
   Node* node = BinaryNode_new(
       NODE_ADD,
@@ -230,7 +275,7 @@ void test_Compiler_emitNode_emitsAdd() {
   InstructionList out;
   InstructionList_init(&out);
 
-  Compiler_emitNode(&out, node);
+  Compiler_emitNode(&compiler, &out, node);
 
   assert(out.count == 11);
   assert(out.items[0] == OP_INTEGER);
@@ -239,9 +284,13 @@ void test_Compiler_emitNode_emitsAdd() {
 
   Node_free(node);
   InstructionList_free(&out);
+  Compiler_free(&compiler);
 }
 
 void test_Compiler_emitNode_emitsSubtract() {
+  Compiler compiler;
+  Compiler_init(&compiler, false);
+
   const char* text = "1";
   Node* node = BinaryNode_new(
       NODE_SUBTRACT,
@@ -252,7 +301,7 @@ void test_Compiler_emitNode_emitsSubtract() {
   InstructionList out;
   InstructionList_init(&out);
 
-  Compiler_emitNode(&out, node);
+  Compiler_emitNode(&compiler, &out, node);
 
   assert(out.count == 11);
   assert(out.items[0] == OP_INTEGER);
@@ -261,9 +310,14 @@ void test_Compiler_emitNode_emitsSubtract() {
 
   Node_free(node);
   InstructionList_free(&out);
+
+  Compiler_free(&compiler);
 }
 
 void test_Compiler_emitNode_emitsMultiply() {
+  Compiler compiler;
+  Compiler_init(&compiler, false);
+
   const char* text = "1";
   Node* node = BinaryNode_new(
       NODE_MULTIPLY,
@@ -274,7 +328,7 @@ void test_Compiler_emitNode_emitsMultiply() {
   InstructionList out;
   InstructionList_init(&out);
 
-  Compiler_emitNode(&out, node);
+  Compiler_emitNode(&compiler, &out, node);
 
   assert(out.count == 11);
   assert(out.items[0] == OP_INTEGER);
@@ -283,9 +337,14 @@ void test_Compiler_emitNode_emitsMultiply() {
 
   Node_free(node);
   InstructionList_free(&out);
+
+  Compiler_free(&compiler);
 }
 
 void test_Compiler_emitNode_emitsIntegerDivide() {
+  Compiler compiler;
+  Compiler_init(&compiler, false);
+
   const char* text = "1";
   Node* node = BinaryNode_new(
       NODE_INTEGER_DIVIDE,
@@ -296,7 +355,7 @@ void test_Compiler_emitNode_emitsIntegerDivide() {
   InstructionList out;
   InstructionList_init(&out);
 
-  Compiler_emitNode(&out, node);
+  Compiler_emitNode(&compiler, &out, node);
 
   assert(out.count == 11);
   assert(out.items[0] == OP_INTEGER);
@@ -305,9 +364,13 @@ void test_Compiler_emitNode_emitsIntegerDivide() {
 
   Node_free(node);
   InstructionList_free(&out);
+  Compiler_free(&compiler);
 }
 
 void test_Compiler_emitNode_emitsComparisons() {
+  Compiler compiler;
+  Compiler_init(&compiler, false);
+
   NodeType COMPARISON_NODE_TYPES[] = {
     NODE_LESS_THAN,
     NODE_LESS_THAN_EQUAL,
@@ -337,7 +400,7 @@ void test_Compiler_emitNode_emitsComparisons() {
     InstructionList out;
     InstructionList_init(&out);
 
-    Compiler_emitNode(&out, node);
+    Compiler_emitNode(&compiler, &out, node);
 
     assert(out.count == 11);
     assert(out.items[0] == OP_INTEGER);
@@ -347,14 +410,17 @@ void test_Compiler_emitNode_emitsComparisons() {
     Node_free(node);
     InstructionList_free(&out);
   }
+
+  Compiler_free(&compiler);
 }
 
 void test_Compiler_compile_emitsNilOnEmptyInput() {
+  Compiler compiler;
+  Compiler_init(&compiler, false);
+
   const char* text = "";
   InstructionList out;
   InstructionList_init(&out);
-  Compiler compiler;
-  Compiler_init(&compiler, false);
 
   bool success = Compiler_compile(&compiler, &out, text);
 
@@ -364,14 +430,17 @@ void test_Compiler_compile_emitsNilOnEmptyInput() {
   assert(out.items[1] == OP_RETURN);
 
   InstructionList_free(&out);
+
+  Compiler_free(&compiler);
 }
 
 void test_Compiler_compile_emitsNilOnBlankInput() {
+  Compiler compiler;
+  Compiler_init(&compiler, false);
+
   const char* text = " \t \n \r";
   InstructionList out;
   InstructionList_init(&out);
-  Compiler compiler;
-  Compiler_init(&compiler, false);
 
   bool success = Compiler_compile(&compiler, &out, text);
 
@@ -381,6 +450,8 @@ void test_Compiler_compile_emitsNilOnBlankInput() {
   assert(out.items[1] == OP_RETURN);
 
   InstructionList_free(&out);
+
+  Compiler_free(&compiler);
 }
 
 #endif

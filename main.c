@@ -45,6 +45,8 @@ int main() {
           fprintf(stderr, "Error in compilation\n");
         }
       }
+
+      Compiler_free(&compiler);
     }
   }
 
