@@ -95,7 +95,6 @@ inline static void Compiler_emitAssignment(Compiler* self, InstructionList* out,
   }
 }
 
-// TODO Switch arguments
 void Compiler_emitNode(Compiler* self, InstructionList* out, Node* node) {
   switch(node->type) {
     case NODE_INTEGER_LITERAL:
@@ -117,6 +116,11 @@ void Compiler_emitNode(Compiler* self, InstructionList* out, Node* node) {
            * Handle this unlikely case better.
            */
           assert(index <= UINT16_MAX);
+        } else {
+          /*
+           * TODO This means the symbol wasn't found. Handle this better.
+           */
+          assert(false);
         }
 
         Compiler_emitOp(out, OP_GET, node->line);

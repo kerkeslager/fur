@@ -11,6 +11,34 @@
 
 #include <stdio.h>
 
+typedef struct {
+  const char** items;
+  size_t count;
+  size_t capacity;
+} BufferList;
+
+void BufferList_init(BufferList* self) {
+  self->count = 0;
+  self->capacity = 16;
+  self->items = malloc(sizeof(char*) * self->capacity);
+}
+
+void BufferList_free(BufferList* self) {
+  for(size_t i = 0; i < self->count; i++) {
+    free((void*)(self->items[i]));
+  }
+  free(self->items);
+}
+
+void BufferList_append(BufferList* self, const char* buffer) {
+  if(self->count == self->capacity) {
+    self->capacity *= 2;
+    self->items = realloc(self->items, self->capacity * sizeof(char*));
+  }
+
+  self->items[self->count++] = buffer;
+}
+
 int main() {
   Compiler compiler;
   Compiler_init(&compiler, true /* Init in REPL mode */);
@@ -18,14 +46,16 @@ int main() {
   InstructionList_init(&byteCode);
   Thread thread;
   Thread_init(&thread, &byteCode);
+  BufferList bufferList;
+  BufferList_init(&bufferList);
 
   for(;;) {
-    char* buffer = readline("> ");
+    const char* buffer = readline("> ");
 
     if (buffer && *buffer) {
       add_history(buffer);
 
-      bool success = Compiler_compile(&compiler, &byteCode, (const char*)buffer);
+      bool success = Compiler_compile(&compiler, &byteCode, buffer);
 
       if(success) {
         Value result = Thread_run(&thread);
@@ -35,12 +65,6 @@ int main() {
         } else {
           Value_println(result);
         }
-
-        /*
-         *  TODO
-         *  We can't call free(buffer); here because it's the source that
-         *  all our symbols point to, so for the moment we're just leaking memory.
-         */
       } else {
         if(isColorAllowed()) {
           fprintf(stderr, ANSI_COLOR_RED "Error in compilation\n" ANSI_COLOR_RESET);
@@ -49,8 +73,15 @@ int main() {
         }
       }
     }
+
+    /*
+     * Save off buffers because they contain the memory locations to which
+     * all of our symbols point.
+     */
+    if(buffer != NULL) BufferList_append(&bufferList, buffer);
   }
 
+  BufferList_free(&bufferList);
   Thread_free(&thread);
   InstructionList_free(&byteCode);
   Compiler_free(&compiler);
