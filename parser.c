@@ -144,8 +144,12 @@ Node* Parser_parseAtom(Parser* self) {
       Tokenizer_scan(tokenizer);
       return AtomNode_new(NODE_SYMBOL, token.line, token.lexeme, token.length);
 
+    case TOKEN_CLOSE_PAREN:
+      return ErrorNode_new(ERROR_UNEXPECTED_TOKEN, token);
+
     default:
       // TODO More specific error
+      Tokenizer_scan(tokenizer);
       return ErrorNode_new(ERROR_UNEXPECTED_TOKEN, token);
   }
 }

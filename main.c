@@ -9,9 +9,15 @@
 #include "value.h"
 #include "value_stack.h"
 
+#include <stdio.h>
+
 int main() {
   Compiler compiler;
   Compiler_init(&compiler, true /* Init in REPL mode */);
+  InstructionList byteCode;
+  InstructionList_init(&byteCode);
+  Thread thread;
+  Thread_init(&thread, &byteCode);
 
   for(;;) {
     char* buffer = readline("> ");
@@ -19,15 +25,9 @@ int main() {
     if (buffer && *buffer) {
       add_history(buffer);
 
-      InstructionList byteCode;
-      InstructionList_init(&byteCode);
-
-
       bool success = Compiler_compile(&compiler, &byteCode, (const char*)buffer);
 
       if(success) {
-        Thread thread;
-        Thread_init(&thread, &byteCode);
         Value result = Thread_run(&thread);
 
         if(thread.panic) {
@@ -36,9 +36,11 @@ int main() {
           Value_println(result);
         }
 
-        Thread_free(&thread);
-        InstructionList_free(&byteCode);
-        free(buffer);
+        /*
+         *  TODO
+         *  We can't call free(buffer); here because it's the source that
+         *  all our symbols point to, so for the moment we're just leaking memory.
+         */
       } else {
         if(isColorAllowed()) {
           fprintf(stderr, ANSI_COLOR_RED "Error in compilation\n" ANSI_COLOR_RESET);
@@ -46,10 +48,11 @@ int main() {
           fprintf(stderr, "Error in compilation\n");
         }
       }
-
     }
   }
 
+  Thread_free(&thread);
+  InstructionList_free(&byteCode);
   Compiler_free(&compiler);
 
   return 0;

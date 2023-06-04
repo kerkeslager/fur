@@ -52,7 +52,12 @@ inline static void Tokenizer_handleWhitespace(Tokenizer* self) {
 
 bool isIdentifierChar(char c) {
   // TODO Allow more charcters in identifiers
-  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9');
+}
+
+Token Tokenizer_completeIdentifier(Tokenizer* self, const char* lexeme) {
+  while(isIdentifierChar(*(self->current))) self->current++;
+  return Token_create(TOKEN_SYMBOL, lexeme, self->current - lexeme, self->line);
 }
 
 Token Tokenizer_keywordOrIdentifier(Tokenizer* self, const char* lexeme, const char* suffix, TokenType type) {
@@ -72,9 +77,7 @@ Token Tokenizer_keywordOrIdentifier(Tokenizer* self, const char* lexeme, const c
     }
   }
 
-  while(isIdentifierChar(*(self->current))) self->current++;
-
-  return Token_create(TOKEN_SYMBOL, lexeme, self->current - lexeme, self->line);
+  return Tokenizer_completeIdentifier(self, lexeme);
 }
 
 Token Tokenizer_scan(Tokenizer* self) {
@@ -103,6 +106,7 @@ Token Tokenizer_scan(Tokenizer* self) {
       if(self->current[1] == '/') {
         return Tokenizer_consume(self, TOKEN_SLASH_SLASH, 2);
       } else {
+        self->current++;
         return Token_create(TOKEN_ERROR, "Not implemented", strlen("Not implemented"), self->line);
       }
 
@@ -172,6 +176,61 @@ Token Tokenizer_scan(Tokenizer* self) {
         }
       }
 
+    case 'a':
+    case 'b':
+    case 'c':
+    case 'd':
+    case 'e':
+    case 'g':
+    case 'h':
+    case 'i':
+    case 'j':
+    case 'k':
+    case 'l':
+    case 'm':
+    case 'o':
+    case 'p':
+    case 'q':
+    case 'r':
+    case 's':
+    case 'u':
+    case 'v':
+    case 'w':
+    case 'x':
+    case 'y':
+    case 'z':
+    case 'A':
+    case 'B':
+    case 'C':
+    case 'D':
+    case 'E':
+    case 'F':
+    case 'G':
+    case 'H':
+    case 'I':
+    case 'J':
+    case 'K':
+    case 'L':
+    case 'M':
+    case 'N':
+    case 'O':
+    case 'P':
+    case 'Q':
+    case 'R':
+    case 'S':
+    case 'T':
+    case 'U':
+    case 'V':
+    case 'W':
+    case 'X':
+    case 'Y':
+    case 'Z':
+      {
+        const char* lexeme = self->current;
+        self->current++;
+        return Tokenizer_completeIdentifier(self, lexeme);
+      }
+
     case 'f':
       {
         const char* lexeme = self->current;
@@ -194,6 +253,7 @@ Token Tokenizer_scan(Tokenizer* self) {
       }
 
     default:
+      self->current++;
       return Token_create(TOKEN_ERROR, "Unexpected character", strlen("Unexpected character"), self->line);
   }
 }

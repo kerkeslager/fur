@@ -259,8 +259,6 @@ void test_Compiler_emitNode_emitsNot() {
   Compiler_free(&compiler);
 }
 
-#include<stdio.h>
-
 void test_Compiler_emitNode_emitsAdd() {
   Compiler compiler;
   Compiler_init(&compiler, false);
