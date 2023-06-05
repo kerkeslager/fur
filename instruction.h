@@ -38,38 +38,38 @@ typedef struct {
   size_t lineRunCount;
   size_t lineRunCapacity;
   LineRun* lineRuns;
-} InstructionList;
+} ByteCode;
 
-void InstructionList_init(InstructionList*);
-void InstructionList_free(InstructionList*);
-void InstructionList_append(InstructionList*, uint8_t, size_t line);
-void InstructionList_appendUInt16(InstructionList*, uint16_t, size_t line);
-void InstructionList_appendInt32(InstructionList*, int32_t, size_t line);
-size_t InstructionList_getLine(InstructionList*, uint8_t* instruction);
+void ByteCode_init(ByteCode*);
+void ByteCode_free(ByteCode*);
+void ByteCode_append(ByteCode*, uint8_t, size_t line);
+void ByteCode_appendUInt16(ByteCode*, uint16_t, size_t line);
+void ByteCode_appendInt32(ByteCode*, int32_t, size_t line);
+size_t ByteCode_getLine(ByteCode*, uint8_t* instruction);
 
-inline static size_t InstructionList_count(InstructionList* self) {
+inline static size_t ByteCode_count(ByteCode* self) {
   return self->count;
 }
 
 /*
  * The following functions allow us to maintain program counters when compiling
- * onto the end of an InstructionList that is already being referenced by a
- * thread. If InstructionList_append() resizes the InstructionList, the thread
+ * onto the end of an ByteCode that is already being referenced by a
+ * thread. If ByteCode_append() resizes the ByteCode, the thread
  * pc is likely no longer valid. To solve this, we save the pc off as an index before
  * compilation, and then restore the pc using the index after compilation.
  */
-inline static uint8_t* InstructionList_pc(InstructionList* self, size_t index) {
+inline static uint8_t* ByteCode_pc(ByteCode* self, size_t index) {
   return &(self->items[index]);
 }
 
-inline static size_t InstructionList_index(InstructionList* self, uint8_t* pc) {
+inline static size_t ByteCode_index(ByteCode* self, uint8_t* pc) {
   return pc - (self->items);
 }
 
 #ifdef TEST
 
-void test_InstructionList_append_basic();
-void test_InstructionList_append_lines();
+void test_ByteCode_append_basic();
+void test_ByteCode_append_lines();
 
 #endif
 

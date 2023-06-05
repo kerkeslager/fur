@@ -4,7 +4,7 @@
 
 #include "instruction.h"
 
-void InstructionList_init(InstructionList* self) {
+void ByteCode_init(ByteCode* self) {
   self->count = 0;
   self->capacity = 256;
   self->items = malloc(sizeof(uint8_t) * self->capacity);
@@ -25,18 +25,18 @@ void InstructionList_init(InstructionList* self) {
   self->lineRuns[0] = lineRun;
 }
 
-void InstructionList_free(InstructionList* self) {
+void ByteCode_free(ByteCode* self) {
   free(self->items);
   free(self->lineRuns);
 }
 
-inline static bool InstructionList_canInsert(InstructionList* self, size_t i) {
+inline static bool ByteCode_canInsert(ByteCode* self, size_t i) {
   // TODO Handle different item sizes before using this function
   // for other lists.
   return self->capacity > self->count + i - 1;
 }
 
-inline static void InstructionList_grow(InstructionList* self) {
+inline static void ByteCode_grow(ByteCode* self) {
 #define GROWTH_FACTOR 2
   self->capacity *= GROWTH_FACTOR;
   self->items = realloc(self->items, self->capacity * sizeof(uint8_t));
@@ -46,11 +46,11 @@ inline static void InstructionList_grow(InstructionList* self) {
 #undef GROWTH_FACTOR
 }
 
-inline static bool InstructionList_canInsertLineRun(InstructionList* self) {
+inline static bool ByteCode_canInsertLineRun(ByteCode* self) {
   return self->lineRunCapacity > self->lineRunCount;
 }
 
-inline static void InstructionList_growLineRuns(InstructionList* self) {
+inline static void ByteCode_growLineRuns(ByteCode* self) {
 #define GROWTH_FACTOR 2
   self->lineRunCapacity *= GROWTH_FACTOR;
   self->lineRuns = realloc(self->lineRuns, self->lineRunCapacity * sizeof(LineRun));
@@ -60,7 +60,7 @@ inline static void InstructionList_growLineRuns(InstructionList* self) {
 #undef GROWTH_FACTOR
 }
 
-inline static void InstructionList_updateLineRuns(InstructionList* self, size_t line, size_t count) {
+inline static void ByteCode_updateLineRuns(ByteCode* self, size_t line, size_t count) {
   /*
    * We don't have to check for lineRunCount == 0 here because we initialize
    * lineRuns with a single LineRun.
@@ -72,8 +72,8 @@ inline static void InstructionList_updateLineRuns(InstructionList* self, size_t 
     return;
   }
 
-  if(!InstructionList_canInsertLineRun(self)) {
-    InstructionList_growLineRuns(self);
+  if(!ByteCode_canInsertLineRun(self)) {
+    ByteCode_growLineRuns(self);
   }
 
   LineRun newLineRun;
@@ -85,39 +85,39 @@ inline static void InstructionList_updateLineRuns(InstructionList* self, size_t 
 }
 
 // TODO Can we inline this?
-void InstructionList_append(InstructionList* self, uint8_t item, size_t line) {
-  if(!InstructionList_canInsert(self, sizeof(uint8_t))) {
-    InstructionList_grow(self);
+void ByteCode_append(ByteCode* self, uint8_t item, size_t line) {
+  if(!ByteCode_canInsert(self, sizeof(uint8_t))) {
+    ByteCode_grow(self);
   }
   self->items[self->count] = item;
   self->count++;
 
-  InstructionList_updateLineRuns(self, line, 1);
+  ByteCode_updateLineRuns(self, line, 1);
 }
 
-void InstructionList_appendUInt16(InstructionList* self, uint16_t i, size_t line) {
-  if(!InstructionList_canInsert(self, sizeof(uint16_t))) {
-    InstructionList_grow(self);
+void ByteCode_appendUInt16(ByteCode* self, uint16_t i, size_t line) {
+  if(!ByteCode_canInsert(self, sizeof(uint16_t))) {
+    ByteCode_grow(self);
   }
 
   *((uint16_t*)&(self->items[self->count])) = i;
   self->count += sizeof(uint16_t);
 
-  InstructionList_updateLineRuns(self, line, sizeof(uint16_t) / sizeof(uint8_t));
+  ByteCode_updateLineRuns(self, line, sizeof(uint16_t) / sizeof(uint8_t));
 }
 
-void InstructionList_appendInt32(InstructionList* self, int32_t i, size_t line) {
-  if(!InstructionList_canInsert(self, sizeof(int32_t))) {
-    InstructionList_grow(self);
+void ByteCode_appendInt32(ByteCode* self, int32_t i, size_t line) {
+  if(!ByteCode_canInsert(self, sizeof(int32_t))) {
+    ByteCode_grow(self);
   }
 
   *((int32_t*)&(self->items[self->count])) = i;
   self->count += sizeof(int32_t);
 
-  InstructionList_updateLineRuns(self, line, sizeof(int32_t) / sizeof(uint8_t));
+  ByteCode_updateLineRuns(self, line, sizeof(int32_t) / sizeof(uint8_t));
 }
 
-size_t InstructionList_getLine(InstructionList* self, uint8_t* instruction) {
+size_t ByteCode_getLine(ByteCode* self, uint8_t* instruction) {
   assert(instruction >= self->items);
   assert(instruction < self->items + self->count);
 
@@ -147,27 +147,27 @@ size_t InstructionList_getLine(InstructionList* self, uint8_t* instruction) {
 
 #ifdef TEST
 
-void test_InstructionList_append_basic() {
-  InstructionList instructionList;
-  InstructionList_init(&instructionList);
+void test_ByteCode_append_basic() {
+  ByteCode byteCode;
+  ByteCode_init(&byteCode);
 
-  InstructionList_append(&instructionList, OP_RETURN, 1);
+  ByteCode_append(&byteCode, OP_RETURN, 1);
 
-  assert(InstructionList_count(&instructionList) == 1);
-  assert(*InstructionList_pc(&instructionList, 0) == OP_RETURN);
+  assert(ByteCode_count(&byteCode) == 1);
+  assert(*ByteCode_pc(&byteCode, 0) == OP_RETURN);
 
-  InstructionList_free(&instructionList);
+  ByteCode_free(&byteCode);
 }
 
-void test_InstructionList_append_lines() {
-  InstructionList instructionList;
-  InstructionList_init(&instructionList);
+void test_ByteCode_append_lines() {
+  ByteCode byteCode;
+  ByteCode_init(&byteCode);
 
-  InstructionList_append(&instructionList, OP_RETURN, 42);
+  ByteCode_append(&byteCode, OP_RETURN, 42);
 
-  assert(InstructionList_getLine(&instructionList, InstructionList_pc(&instructionList, 0)) == 42);
+  assert(ByteCode_getLine(&byteCode, ByteCode_pc(&byteCode, 0)) == 42);
 
-  InstructionList_free(&instructionList);
+  ByteCode_free(&byteCode);
 }
 
 #endif

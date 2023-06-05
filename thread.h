@@ -7,13 +7,13 @@
 #include "value_stack.h"
 
 typedef struct {
-  InstructionList* instructionList;
+  ByteCode* byteCode;
   size_t pcIndex;
   ValueStack stack;
   bool panic;
 } Thread;
 
-void Thread_init(Thread*, InstructionList*);
+void Thread_init(Thread*, ByteCode*);
 void Thread_free(Thread*);
 
 Value Thread_run(Thread*);
@@ -22,7 +22,7 @@ inline static void Thread_clearPanic(Thread* self) {
   assert(self->panic); // No reason to call this if not in panic
 
   self->panic = false;
-  self->pcIndex = InstructionList_count(self->instructionList);
+  self->pcIndex = ByteCode_count(self->byteCode);
 }
 
 #ifdef TEST

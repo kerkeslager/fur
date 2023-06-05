@@ -27,18 +27,18 @@ void Compiler_error(Compiler* self, Node* errorNode) {
   ErrorNode_print(errorNode);
 }
 
-inline static void Compiler_emitOp(InstructionList* out, Instruction op, size_t line) {
-  InstructionList_append(out, (uint8_t)op, line);
+inline static void Compiler_emitOp(ByteCode* out, Instruction op, size_t line) {
+  ByteCode_append(out, (uint8_t)op, line);
 }
 
-inline static void Compiler_emitUInt16(InstructionList* out, uint16_t i, size_t line) {
-  InstructionList_appendUInt16(out, i, line);
+inline static void Compiler_emitUInt16(ByteCode* out, uint16_t i, size_t line) {
+  ByteCode_appendUInt16(out, i, line);
 }
-inline static void Compiler_emitInt32(InstructionList* out, int32_t i, size_t line) {
-  InstructionList_appendInt32(out, i, line);
+inline static void Compiler_emitInt32(ByteCode* out, int32_t i, size_t line) {
+  ByteCode_appendInt32(out, i, line);
 }
 
-inline static void Compiler_emitInteger(InstructionList* out, AtomNode* node) {
+inline static void Compiler_emitInteger(ByteCode* out, AtomNode* node) {
   // TODO Handle overflows
 
   int32_t result = 0;
@@ -52,7 +52,7 @@ inline static void Compiler_emitInteger(InstructionList* out, AtomNode* node) {
   Compiler_emitInt32(out, result, node->node.line);
 }
 
-inline static void Compiler_emitBoolean(InstructionList* out, AtomNode* node) {
+inline static void Compiler_emitBoolean(ByteCode* out, AtomNode* node) {
   /*
    * Since there are only two possibilities which should have been matched
    * by the tokenizer, it should be sufficient to check only the first character.
@@ -67,12 +67,12 @@ inline static void Compiler_emitBoolean(InstructionList* out, AtomNode* node) {
   }
 }
 
-void Compiler_emitNode(Compiler* self, InstructionList* out, Node* node);
+void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node);
 
-inline static void Compiler_emitBinaryNode(Compiler* self, InstructionList* out, Instruction op, Node* node) {
+inline static void Compiler_emitBinaryNode(Compiler* self, ByteCode* out, Instruction op, Node* node) {
   Compiler_emitNode(self, out, ((BinaryNode*)node)->arg0);
   Compiler_emitNode(self, out, ((BinaryNode*)node)->arg1);
-  InstructionList_append(out, op, node->line);
+  ByteCode_append(out, op, node->line);
 }
 
 inline static void Compiler_emitSymbol(Compiler* self, AtomNode* node) {
@@ -84,7 +84,7 @@ inline static void Compiler_emitSymbol(Compiler* self, AtomNode* node) {
   assert(success);
 }
 
-inline static void Compiler_emitAssignment(Compiler* self, InstructionList* out, BinaryNode* node) {
+inline static void Compiler_emitAssignment(Compiler* self, ByteCode* out, BinaryNode* node) {
   Compiler_emitNode(self, out, node->arg1);
 
   if(node->arg0->type == NODE_SYMBOL) {
@@ -95,7 +95,7 @@ inline static void Compiler_emitAssignment(Compiler* self, InstructionList* out,
   }
 }
 
-void Compiler_emitNode(Compiler* self, InstructionList* out, Node* node) {
+void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
   switch(node->type) {
     case NODE_INTEGER_LITERAL:
       return Compiler_emitInteger(out, (AtomNode*)node);
@@ -159,7 +159,7 @@ void Compiler_emitNode(Compiler* self, InstructionList* out, Node* node) {
   }
 }
 
-bool Compiler_compile(Compiler* self, InstructionList* out, const char* source) {
+bool Compiler_compile(Compiler* self, ByteCode* out, const char* source) {
   Parser parser;
   Parser_init(&parser, source, self->repl);
 
@@ -219,8 +219,8 @@ void test_Compiler_emitNode_emitsIntegerLiteral() {
 
   const char* text = "42";
   Node* node = AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 2);
-  InstructionList out;
-  InstructionList_init(&out);
+  ByteCode out;
+  ByteCode_init(&out);
 
   Compiler_emitNode(&compiler, &out, node);
 
@@ -229,7 +229,7 @@ void test_Compiler_emitNode_emitsIntegerLiteral() {
   assert(*(int32_t*)(out.items + 1) == 42);
 
   Node_free(node);
-  InstructionList_free(&out);
+  ByteCode_free(&out);
   Compiler_free(&compiler);
 }
 
@@ -243,8 +243,8 @@ void test_Compiler_emitNode_emitsNegate() {
       1,
       AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 2)
   );
-  InstructionList out;
-  InstructionList_init(&out);
+  ByteCode out;
+  ByteCode_init(&out);
 
   Compiler_emitNode(&compiler, &out, node);
 
@@ -254,7 +254,7 @@ void test_Compiler_emitNode_emitsNegate() {
   assert(out.items[5] == OP_NEGATE);
 
   Node_free(node);
-  InstructionList_free(&out);
+  ByteCode_free(&out);
   Compiler_free(&compiler);
 }
 
@@ -268,8 +268,8 @@ void test_Compiler_emitNode_emitsNot() {
       1,
       AtomNode_new(NODE_BOOLEAN_LITERAL, 1, text, 4)
   );
-  InstructionList out;
-  InstructionList_init(&out);
+  ByteCode out;
+  ByteCode_init(&out);
 
   Compiler_emitNode(&compiler, &out, node);
 
@@ -278,7 +278,7 @@ void test_Compiler_emitNode_emitsNot() {
   assert(out.items[1] == OP_NOT);
 
   Node_free(node);
-  InstructionList_free(&out);
+  ByteCode_free(&out);
 
   Compiler_free(&compiler);
 }
@@ -294,8 +294,8 @@ void test_Compiler_emitNode_emitsAdd() {
       AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1),
       AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1)
   );
-  InstructionList out;
-  InstructionList_init(&out);
+  ByteCode out;
+  ByteCode_init(&out);
 
   Compiler_emitNode(&compiler, &out, node);
 
@@ -305,7 +305,7 @@ void test_Compiler_emitNode_emitsAdd() {
   assert(out.items[10] == OP_ADD);
 
   Node_free(node);
-  InstructionList_free(&out);
+  ByteCode_free(&out);
   Compiler_free(&compiler);
 }
 
@@ -320,8 +320,8 @@ void test_Compiler_emitNode_emitsSubtract() {
       AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1),
       AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1)
   );
-  InstructionList out;
-  InstructionList_init(&out);
+  ByteCode out;
+  ByteCode_init(&out);
 
   Compiler_emitNode(&compiler, &out, node);
 
@@ -331,7 +331,7 @@ void test_Compiler_emitNode_emitsSubtract() {
   assert(out.items[10] == OP_SUBTRACT);
 
   Node_free(node);
-  InstructionList_free(&out);
+  ByteCode_free(&out);
 
   Compiler_free(&compiler);
 }
@@ -347,8 +347,8 @@ void test_Compiler_emitNode_emitsMultiply() {
       AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1),
       AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1)
   );
-  InstructionList out;
-  InstructionList_init(&out);
+  ByteCode out;
+  ByteCode_init(&out);
 
   Compiler_emitNode(&compiler, &out, node);
 
@@ -358,7 +358,7 @@ void test_Compiler_emitNode_emitsMultiply() {
   assert(out.items[10] == OP_MULTIPLY);
 
   Node_free(node);
-  InstructionList_free(&out);
+  ByteCode_free(&out);
 
   Compiler_free(&compiler);
 }
@@ -374,8 +374,8 @@ void test_Compiler_emitNode_emitsIntegerDivide() {
       AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1),
       AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1)
   );
-  InstructionList out;
-  InstructionList_init(&out);
+  ByteCode out;
+  ByteCode_init(&out);
 
   Compiler_emitNode(&compiler, &out, node);
 
@@ -385,7 +385,7 @@ void test_Compiler_emitNode_emitsIntegerDivide() {
   assert(out.items[10] == OP_IDIVIDE);
 
   Node_free(node);
-  InstructionList_free(&out);
+  ByteCode_free(&out);
   Compiler_free(&compiler);
 }
 
@@ -419,8 +419,8 @@ void test_Compiler_emitNode_emitsComparisons() {
         AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1),
         AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1)
     );
-    InstructionList out;
-    InstructionList_init(&out);
+    ByteCode out;
+    ByteCode_init(&out);
 
     Compiler_emitNode(&compiler, &out, node);
 
@@ -430,7 +430,7 @@ void test_Compiler_emitNode_emitsComparisons() {
     assert(out.items[10] == COMPARISON_INSTRUCTIONS[i]);
 
     Node_free(node);
-    InstructionList_free(&out);
+    ByteCode_free(&out);
   }
 
   Compiler_free(&compiler);
@@ -441,8 +441,8 @@ void test_Compiler_compile_emitsNilOnEmptyInput() {
   Compiler_init(&compiler, false);
 
   const char* text = "";
-  InstructionList out;
-  InstructionList_init(&out);
+  ByteCode out;
+  ByteCode_init(&out);
 
   bool success = Compiler_compile(&compiler, &out, text);
 
@@ -451,7 +451,7 @@ void test_Compiler_compile_emitsNilOnEmptyInput() {
   assert(out.items[0] == OP_NIL);
   assert(out.items[1] == OP_RETURN);
 
-  InstructionList_free(&out);
+  ByteCode_free(&out);
 
   Compiler_free(&compiler);
 }
@@ -461,8 +461,8 @@ void test_Compiler_compile_emitsNilOnBlankInput() {
   Compiler_init(&compiler, false);
 
   const char* text = " \t \n \r";
-  InstructionList out;
-  InstructionList_init(&out);
+  ByteCode out;
+  ByteCode_init(&out);
 
   bool success = Compiler_compile(&compiler, &out, text);
 
@@ -471,7 +471,7 @@ void test_Compiler_compile_emitsNilOnBlankInput() {
   assert(out.items[0] == OP_NIL);
   assert(out.items[1] == OP_RETURN);
 
-  InstructionList_free(&out);
+  ByteCode_free(&out);
 
   Compiler_free(&compiler);
 }

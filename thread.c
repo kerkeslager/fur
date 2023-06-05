@@ -11,8 +11,8 @@ typedef enum {
   ERROR_BINARY_OP_TYPE,
 } RuntimeError;
 
-void Thread_init(Thread* self, InstructionList* instructionList) {
-  self->instructionList = instructionList;
+void Thread_init(Thread* self, ByteCode* byteCode) {
+  self->byteCode = byteCode;
   self->pcIndex = 0;
   ValueStack_init(&(self->stack));
   self->panic = false;
@@ -101,7 +101,7 @@ static Value Thread_error(Thread* self, RuntimeError error, uint8_t* pc, ...) {
     fprintf(stderr, ANSI_COLOR_RED);
   }
 
-  size_t line = InstructionList_getLine(self->instructionList, pc);
+  size_t line = ByteCode_getLine(self->byteCode, pc);
   fprintf(stderr, "Error (line %zu): ", line);
 
   switch(error) {
@@ -151,7 +151,7 @@ static Value Thread_error(Thread* self, RuntimeError error, uint8_t* pc, ...) {
 
   self->panic = true;
 
-  self->pcIndex = InstructionList_index(self->instructionList, pc);
+  self->pcIndex = ByteCode_index(self->byteCode, pc);
   return NIL;
 }
 
@@ -161,15 +161,15 @@ Value Thread_run(Thread* self) {
 
   /*
    * The program counter is stored on the thread as an index, rather than a
-   * pointer, so that resizing the InstructionList with realloc doesn't leave
+   * pointer, so that resizing the ByteCode with realloc doesn't leave
    * the program counter hanging. This line restores the program counter
    * pointer from the index, but *everywhere* that we exit from this function,
-   * we have to sync the index with InstructionList_index().
+   * we have to sync the index with ByteCode_index().
    *
    * Another implication of this is that we can't modify the index on another
    * thread while Thread_run() is running.
    */
-  register uint8_t* pc = InstructionList_pc(self->instructionList, self->pcIndex);
+  register uint8_t* pc = ByteCode_pc(self->byteCode, self->pcIndex);
 
   for(;;) {
     Instruction instruction = *pc;
@@ -430,7 +430,7 @@ Value Thread_run(Thread* self) {
         break;
 
       case OP_RETURN:
-        self->pcIndex = InstructionList_index(self->instructionList, pc);
+        self->pcIndex = ByteCode_index(self->byteCode, pc);
         return ValueStack_pop(stack);
 
       default:
@@ -463,23 +463,23 @@ void test_Thread_run_executesIntegerMathOps() {
   };
 
   for(int i = 0; i < TEST_COUNT; i++) {
-    InstructionList instructionList;
-    InstructionList_init(&instructionList);
-    InstructionList_append(&instructionList, OP_INTEGER, 1);
-    InstructionList_appendInt32(&instructionList, tests[i].operand0, 1);
-    InstructionList_append(&instructionList, OP_INTEGER, 1);
-    InstructionList_appendInt32(&instructionList, tests[i].operand1, 1);
-    InstructionList_append(&instructionList, tests[i].instruction, 1);
-    InstructionList_append(&instructionList, OP_RETURN, 1);
+    ByteCode byteCode;
+    ByteCode_init(&byteCode);
+    ByteCode_append(&byteCode, OP_INTEGER, 1);
+    ByteCode_appendInt32(&byteCode, tests[i].operand0, 1);
+    ByteCode_append(&byteCode, OP_INTEGER, 1);
+    ByteCode_appendInt32(&byteCode, tests[i].operand1, 1);
+    ByteCode_append(&byteCode, tests[i].instruction, 1);
+    ByteCode_append(&byteCode, OP_RETURN, 1);
     Thread thread;
-    Thread_init(&thread, &instructionList);
+    Thread_init(&thread, &byteCode);
 
     Value result = Thread_run(&thread);
 
     assert(result.type == VALUE_INTEGER);
     assert(Value_asInteger(result) == tests[i].result);
 
-    InstructionList_free(&instructionList);
+    ByteCode_free(&byteCode);
     Thread_free(&thread);
   }
 }
@@ -520,36 +520,36 @@ void test_Thread_run_integerComparison() {
   };
 
   for(int i = 0; i < TEST_COUNT; i++) {
-    InstructionList instructionList;
-    InstructionList_init(&instructionList);
-    InstructionList_append(&instructionList, OP_INTEGER, 1);
-    InstructionList_appendInt32(&instructionList, tests[i].operand0, 1);
-    InstructionList_append(&instructionList, OP_INTEGER, 1);
-    InstructionList_appendInt32(&instructionList, tests[i].operand1, 1);
-    InstructionList_append(&instructionList, tests[i].instruction, 1);
-    InstructionList_append(&instructionList, OP_RETURN, 1);
+    ByteCode byteCode;
+    ByteCode_init(&byteCode);
+    ByteCode_append(&byteCode, OP_INTEGER, 1);
+    ByteCode_appendInt32(&byteCode, tests[i].operand0, 1);
+    ByteCode_append(&byteCode, OP_INTEGER, 1);
+    ByteCode_appendInt32(&byteCode, tests[i].operand1, 1);
+    ByteCode_append(&byteCode, tests[i].instruction, 1);
+    ByteCode_append(&byteCode, OP_RETURN, 1);
     Thread thread;
-    Thread_init(&thread, &instructionList);
+    Thread_init(&thread, &byteCode);
 
     Value result = Thread_run(&thread);
 
     assert(result.type == VALUE_BOOLEAN);
     assert(Value_asBoolean(result) == tests[i].result);
 
-    InstructionList_free(&instructionList);
+    ByteCode_free(&byteCode);
     Thread_free(&thread);
   }
 }
 
 void test_Thread_clearPanic_setsPanicFalse() {
-  InstructionList instructionList;
-  InstructionList_init(&instructionList);
+  ByteCode byteCode;
+  ByteCode_init(&byteCode);
 
-  InstructionList_append(&instructionList, OP_NIL, 1);
-  InstructionList_append(&instructionList, OP_RETURN, 2);
+  ByteCode_append(&byteCode, OP_NIL, 1);
+  ByteCode_append(&byteCode, OP_RETURN, 2);
 
   Thread thread;
-  Thread_init(&thread, &instructionList);
+  Thread_init(&thread, &byteCode);
   thread.panic = true;
 
   Thread_clearPanic(&thread);
@@ -558,14 +558,14 @@ void test_Thread_clearPanic_setsPanicFalse() {
 }
 
 void test_Thread_clearPanic_setsPCIndexToEnd() {
-  InstructionList instructionList;
-  InstructionList_init(&instructionList);
+  ByteCode byteCode;
+  ByteCode_init(&byteCode);
 
-  InstructionList_append(&instructionList, OP_NIL, 1);
-  InstructionList_append(&instructionList, OP_RETURN, 2);
+  ByteCode_append(&byteCode, OP_NIL, 1);
+  ByteCode_append(&byteCode, OP_RETURN, 2);
 
   Thread thread;
-  Thread_init(&thread, &instructionList);
+  Thread_init(&thread, &byteCode);
   thread.panic = true;
 
   Thread_clearPanic(&thread);

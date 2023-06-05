@@ -15,7 +15,7 @@ typedef struct {
 
 void Compiler_init(Compiler*, bool repl);
 void Compiler_free(Compiler*);
-bool Compiler_compile(Compiler*, InstructionList* out, const char* source);
+bool Compiler_compile(Compiler*, ByteCode* out, const char* source);
 
 #ifdef TEST
 

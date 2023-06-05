@@ -42,8 +42,8 @@ void BufferList_append(BufferList* self, const char* buffer) {
 int main() {
   Compiler compiler;
   Compiler_init(&compiler, true /* Init in REPL mode */);
-  InstructionList byteCode;
-  InstructionList_init(&byteCode);
+  ByteCode byteCode;
+  ByteCode_init(&byteCode);
   Thread thread;
   Thread_init(&thread, &byteCode);
   BufferList bufferList;
@@ -83,7 +83,7 @@ int main() {
 
   BufferList_free(&bufferList);
   Thread_free(&thread);
-  InstructionList_free(&byteCode);
+  ByteCode_free(&byteCode);
   Compiler_free(&compiler);
 
   return 0;
