@@ -4,6 +4,7 @@
 
 Symbol* Symbol_new(const char* text, size_t length, uint32_t hash) {
   Symbol* result = malloc(sizeof(Symbol));
+  assert(result != NULL); // TODO Handle this
   result->text = text;
   result->length = length;
   result->hash = hash;

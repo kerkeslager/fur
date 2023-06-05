@@ -77,11 +77,16 @@ inline static void Compiler_emitBinaryNode(Compiler* self, ByteCode* out, Instru
 
 inline static void Compiler_emitSymbol(Compiler* self, AtomNode* node) {
   Symbol* symbol = SymbolTable_getOrCreate(&(self->symbolTable), node->text, node->length);
-  bool success = SymbolList_append(&(self->symbolList), symbol);
 
-  // TODO If it was not inserted, the symbol already exists in this scope, so handle
-  // that error.
-  assert(success);
+  int32_t index = SymbolList_find(&self->symbolList, symbol);
+
+  /*
+   * TODO If it's found in the list, they symbol already exists in this
+   * scope. Handle this better.
+   */
+  assert(index == -1);
+
+  SymbolList_append(&(self->symbolList), symbol);
 }
 
 inline static void Compiler_emitAssignment(Compiler* self, ByteCode* out, BinaryNode* node) {
@@ -107,22 +112,14 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
       {
         AtomNode* aNode = (AtomNode*)node;
         Symbol* symbol = SymbolTable_getOrCreate(&(self->symbolTable), aNode->text, aNode->length);
-        size_t index;
+        int32_t index = SymbolList_find(&(self->symbolList), symbol);
 
-        if(SymbolList_find(&(self->symbolList), &index, symbol)) {
-          /*
-           * TODO
-           * This means that there are more than UINT16_MAX symbols in the system.
-           * Handle this unlikely case better.
-           */
-          assert(index <= UINT16_MAX);
-        } else {
-          /*
-           * TODO This means the symbol wasn't found. Handle this better.
-           */
-          assert(false);
-        }
+        /*
+         * TODO This means the symbol wasn't found. Handle this better.
+         */
+        assert(index != -1);
 
+        assert(0 <= index && index <= UINT16_MAX);
         Compiler_emitOp(out, OP_GET, node->line);
         Compiler_emitUInt16(out, index, node->line);
         return;

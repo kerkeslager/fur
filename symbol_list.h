@@ -5,8 +5,8 @@
 
 typedef struct {
   Symbol** items;
-  size_t length;
-  size_t capacity;
+  uint16_t length;
+  uint16_t capacity;
 } SymbolList;
 
 inline static void SymbolList_init(SymbolList* self) {
@@ -19,10 +19,14 @@ inline static void SymbolList_free(SymbolList* self) {
   free(self->items);
 }
 
-bool SymbolList_append(SymbolList* self, Symbol* symbol);
-bool SymbolList_find(SymbolList* self, size_t* out, Symbol* symbol);
+void SymbolList_append(SymbolList* self, Symbol* symbol);
+int32_t SymbolList_find(SymbolList* self, Symbol* symbol);
 
 #ifdef TEST
+
+void test_SymbolList_init();
+void test_SymbolList_append_many();
+void test_SymbolList_append_allowsUpToUINT16_MAXsymbols();
 
 #endif
 
