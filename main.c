@@ -5,6 +5,7 @@
 
 #include "compiler.h"
 #include "error.h"
+#include "parser.h"
 #include "thread.h"
 #include "value.h"
 
@@ -54,7 +55,12 @@ int main() {
     if (buffer && *buffer) {
       add_history(buffer);
 
-      bool success = Compiler_compile(&compiler, &byteCode, buffer);
+      Parser parser;
+      Parser_init(&parser, buffer, true);
+
+      bool success = Compiler_compile(&compiler, &byteCode, &parser);
+
+      Parser_free(&parser);
 
       if(success) {
         Value result = Thread_run(&thread);

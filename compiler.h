@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include "instruction.h"
-#include "symbol.h"
+#include "parser.h"
 #include "symbol_list.h"
 #include "symbol_table.h"
 
@@ -17,7 +17,7 @@ typedef struct {
 
 void Compiler_init(Compiler*, bool repl);
 void Compiler_free(Compiler*);
-bool Compiler_compile(Compiler*, ByteCode* out, const char* source);
+bool Compiler_compile(Compiler*, ByteCode* out, Parser*);
 
 #ifdef TEST
 

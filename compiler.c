@@ -156,11 +156,8 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
   }
 }
 
-bool Compiler_compile(Compiler* self, ByteCode* out, const char* source) {
-  Parser parser;
-  Parser_init(&parser, source, self->repl);
-
-  Node* statement = Parser_parseStatement(&parser);
+bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
+  Node* statement = Parser_parseStatement(parser);
 
   if(statement->type == NODE_EOF) {
     /*
@@ -178,7 +175,7 @@ bool Compiler_compile(Compiler* self, ByteCode* out, const char* source) {
 
   Node_free(statement);
 
-  while((statement = Parser_parseStatement(&parser))->type != NODE_EOF) {
+  while((statement = Parser_parseStatement(parser))->type != NODE_EOF) {
     if(statement->type == NODE_ERROR) {
       Compiler_error(self, statement);
     } else {
@@ -202,8 +199,6 @@ bool Compiler_compile(Compiler* self, ByteCode* out, const char* source) {
   }
 
   Compiler_emitOp(out, OP_RETURN, statement->line);
-
-  Parser_free(&parser);
 
   return !(self->hasErrors);
 }
@@ -438,18 +433,21 @@ void test_Compiler_compile_emitsNilOnEmptyInput() {
   Compiler_init(&compiler, false);
 
   const char* text = "";
+  Parser parser;
+  Parser_init(&parser, text, false);
+
   ByteCode out;
   ByteCode_init(&out);
 
-  bool success = Compiler_compile(&compiler, &out, text);
+  bool success = Compiler_compile(&compiler, &out, &parser);
 
   assert(success);
   assert(out.count == 2);
   assert(out.items[0] == OP_NIL);
   assert(out.items[1] == OP_RETURN);
 
+  Parser_free(&parser);
   ByteCode_free(&out);
-
   Compiler_free(&compiler);
 }
 
@@ -458,18 +456,21 @@ void test_Compiler_compile_emitsNilOnBlankInput() {
   Compiler_init(&compiler, false);
 
   const char* text = " \t \n \r";
+  Parser parser;
+  Parser_init(&parser, text, false);
+
   ByteCode out;
   ByteCode_init(&out);
 
-  bool success = Compiler_compile(&compiler, &out, text);
+  bool success = Compiler_compile(&compiler, &out, &parser);
 
   assert(success);
   assert(out.count == 2);
   assert(out.items[0] == OP_NIL);
   assert(out.items[1] == OP_RETURN);
 
+  Parser_free(&parser);
   ByteCode_free(&out);
-
   Compiler_free(&compiler);
 }
 
