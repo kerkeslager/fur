@@ -6,25 +6,14 @@
 #include "node.h"
 #include "parser.h"
 
-void Compiler_init(Compiler* self, bool repl) {
+void Compiler_init(Compiler* self) {
   SymbolTable_init(&(self->symbolTable));
   SymbolList_init(&(self->symbolList));
-  self->repl = repl;
-  self->hasErrors = false;
 }
 
 void Compiler_free(Compiler* self) {
   SymbolTable_free(&(self->symbolTable));
   SymbolList_free(&(self->symbolList));
-}
-
-void Compiler_error(Compiler* self, Node* errorNode) {
-  assert(errorNode != NULL);
-  assert(errorNode->type == NODE_ERROR);
-
-  self->hasErrors = true;
-
-  ErrorNode_print(errorNode);
 }
 
 inline static void Compiler_emitOp(ByteCode* out, Instruction op, size_t line) {
@@ -158,6 +147,7 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
 
 bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
   Node* statement = Parser_parseStatement(parser);
+  bool hasErrors = false;
 
   if(statement->type == NODE_EOF) {
     /*
@@ -168,7 +158,8 @@ bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
     Compiler_emitOp(out, OP_RETURN, statement->line);
     return true;
   } else if(statement->type == NODE_ERROR) {
-    Compiler_error(self, statement);
+    ErrorNode_print(statement);
+    hasErrors = true;
   } else {
     Compiler_emitNode(self, out, statement);
   }
@@ -177,7 +168,8 @@ bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
 
   while((statement = Parser_parseStatement(parser))->type != NODE_EOF) {
     if(statement->type == NODE_ERROR) {
-      Compiler_error(self, statement);
+      ErrorNode_print(statement);
+      hasErrors = true;
     } else {
       // Drop the result of previous statement
       /*
@@ -200,14 +192,14 @@ bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
 
   Compiler_emitOp(out, OP_RETURN, statement->line);
 
-  return !(self->hasErrors);
+  return !hasErrors;
 }
 
 #ifdef TEST
 
 void test_Compiler_emitNode_emitsIntegerLiteral() {
   Compiler compiler;
-  Compiler_init(&compiler, false);
+  Compiler_init(&compiler);
 
   const char* text = "42";
   Node* node = AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 2);
@@ -227,7 +219,7 @@ void test_Compiler_emitNode_emitsIntegerLiteral() {
 
 void test_Compiler_emitNode_emitsNegate() {
   Compiler compiler;
-  Compiler_init(&compiler, false);
+  Compiler_init(&compiler);
 
   const char* text = "42";
   Node* node = UnaryNode_new(
@@ -252,7 +244,7 @@ void test_Compiler_emitNode_emitsNegate() {
 
 void test_Compiler_emitNode_emitsNot() {
   Compiler compiler;
-  Compiler_init(&compiler, false);
+  Compiler_init(&compiler);
 
   const char* text = "true";
   Node* node = UnaryNode_new(
@@ -277,7 +269,7 @@ void test_Compiler_emitNode_emitsNot() {
 
 void test_Compiler_emitNode_emitsAdd() {
   Compiler compiler;
-  Compiler_init(&compiler, false);
+  Compiler_init(&compiler);
 
   const char* text = "1";
   Node* node = BinaryNode_new(
@@ -303,7 +295,7 @@ void test_Compiler_emitNode_emitsAdd() {
 
 void test_Compiler_emitNode_emitsSubtract() {
   Compiler compiler;
-  Compiler_init(&compiler, false);
+  Compiler_init(&compiler);
 
   const char* text = "1";
   Node* node = BinaryNode_new(
@@ -330,7 +322,7 @@ void test_Compiler_emitNode_emitsSubtract() {
 
 void test_Compiler_emitNode_emitsMultiply() {
   Compiler compiler;
-  Compiler_init(&compiler, false);
+  Compiler_init(&compiler);
 
   const char* text = "1";
   Node* node = BinaryNode_new(
@@ -357,7 +349,7 @@ void test_Compiler_emitNode_emitsMultiply() {
 
 void test_Compiler_emitNode_emitsIntegerDivide() {
   Compiler compiler;
-  Compiler_init(&compiler, false);
+  Compiler_init(&compiler);
 
   const char* text = "1";
   Node* node = BinaryNode_new(
@@ -383,7 +375,7 @@ void test_Compiler_emitNode_emitsIntegerDivide() {
 
 void test_Compiler_emitNode_emitsComparisons() {
   Compiler compiler;
-  Compiler_init(&compiler, false);
+  Compiler_init(&compiler);
 
   NodeType COMPARISON_NODE_TYPES[] = {
     NODE_LESS_THAN,
@@ -430,7 +422,7 @@ void test_Compiler_emitNode_emitsComparisons() {
 
 void test_Compiler_compile_emitsNilOnEmptyInput() {
   Compiler compiler;
-  Compiler_init(&compiler, false);
+  Compiler_init(&compiler);
 
   const char* text = "";
   Parser parser;
@@ -453,7 +445,7 @@ void test_Compiler_compile_emitsNilOnEmptyInput() {
 
 void test_Compiler_compile_emitsNilOnBlankInput() {
   Compiler compiler;
-  Compiler_init(&compiler, false);
+  Compiler_init(&compiler);
 
   const char* text = " \t \n \r";
   Parser parser;

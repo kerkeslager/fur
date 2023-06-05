@@ -11,11 +11,9 @@
 typedef struct {
   SymbolTable symbolTable;
   SymbolList symbolList;
-  bool hasErrors;
-  bool repl;
 } Compiler;
 
-void Compiler_init(Compiler*, bool repl);
+void Compiler_init(Compiler*);
 void Compiler_free(Compiler*);
 bool Compiler_compile(Compiler*, ByteCode* out, Parser*);
 

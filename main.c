@@ -41,7 +41,7 @@ void BufferList_append(BufferList* self, const char* buffer) {
 
 int main() {
   Compiler compiler;
-  Compiler_init(&compiler, true /* Init in REPL mode */);
+  Compiler_init(&compiler);
   ByteCode byteCode;
   ByteCode_init(&byteCode);
   Thread thread;
@@ -56,7 +56,7 @@ int main() {
       add_history(buffer);
 
       Parser parser;
-      Parser_init(&parser, buffer, true);
+      Parser_init(&parser, buffer, true /* REPL mode */);
 
       bool success = Compiler_compile(&compiler, &byteCode, &parser);
 
