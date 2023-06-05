@@ -9,23 +9,8 @@ typedef struct{
   size_t capacity;
 } SymbolTable;
 
-inline static void SymbolTable_init(SymbolTable* self) {
-  self->items = NULL;
-  self->load = 0;
-  self->capacity = 0;
-}
-
-inline static void SymbolTable_free(SymbolTable* self) {
-  if(self->capacity == 0) return;
-
-  assert(self->items != NULL);
-
-  for(size_t i = 0; i < self->capacity; i++) {
-    if(self->items[i] != NULL) Symbol_del(self->items[i]);
-  }
-
-  free(self->items);
-}
+void SymbolTable_init(SymbolTable*);
+void SymbolTable_free(SymbolTable*);
 
 Symbol* SymbolTable_getOrCreate(SymbolTable*, const char*, size_t);
 
