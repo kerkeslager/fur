@@ -1,49 +1,61 @@
+#include <stdlib.h>
+
 #include "stack.h"
+
+void Stack_init(Stack* self) {
+  self->items = malloc(sizeof(Value) * 8);
+  self->top = self->items - 1;
+  self->maxTop = self->items + 7;
+}
+
+void Stack_free(Stack* self) {
+  free(self->items);
+}
 
 #ifdef TEST
 
-#include <assert.h>
+void test_Stack_init_empty() {
+  Stack stack;
+  Stack_init(&stack);
 
-STACK_IMPLEMENT(int, 4);
+  assert(Stack_isEmpty(&stack));
 
-void test_Stack_startsEmpty() {
-  intStack stack;
-  intStack_init(&stack);
-
-  assert(intStack_isEmpty(&stack));
-
-  intStack_free(&stack);
+  Stack_free(&stack);
 }
 
-void test_Stack_pushPop() {
-  intStack stack;
-  intStack_init(&stack);
+void test_Stack_lifo() {
+  Stack stack;
+  Stack_init(&stack);
 
-  int toPush = 42;
+  for(int i = 999; i >= 0; i--) {
+    Stack_push(&stack, Value_fromInteger(i));
+  }
 
-  intStack_push(&stack, toPush);
+  for(int i = 0; i < 1000; i++) {
+    assert(Value_asInteger(Stack_pop(&stack)) == i);
+  }
 
-  int popped = intStack_pop(&stack);
+  assert(Stack_isEmpty(&stack));
 
-  assert(toPush == popped);
-
-  intStack_free(&stack);
+  Stack_free(&stack);
 }
 
-void test_Stack_peek() {
-  intStack stack;
-  intStack_init(&stack);
+void test_Stack_pushIndex() {
+  Stack stack;
+  Stack_init(&stack);
 
-  int toPush = 42;
+  for(int i = 0; i < 1000; i++) {
+    Stack_push(&stack, Value_fromInteger(i));
+  }
 
-  intStack_push(&stack, toPush);
+  for(int i = 0; i < 1000; i++) {
+    Stack_pushIndex(&stack, i);
+    assert(Value_asInteger(Stack_pop(&stack)) == i);
+  }
 
-  int peeked = intStack_peek(&stack);
-  int popped = intStack_pop(&stack);
+  assert(!Stack_isEmpty(&stack));
 
-  assert(peeked == popped);
-
-  intStack_free(&stack);
+  Stack_free(&stack);
 }
 
 #endif

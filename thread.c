@@ -14,12 +14,12 @@ typedef enum {
 void Thread_init(Thread* self, ByteCode* byteCode) {
   self->byteCode = byteCode;
   self->pcIndex = 0;
-  ValueStack_init(&(self->stack));
+  Stack_init(&(self->stack));
   self->panic = false;
 }
 
 void Thread_free(Thread* self) {
-  ValueStack_free(&(self->stack));
+  Stack_free(&(self->stack));
 }
 
 static const char* Instruction_toOperatorCString(uint8_t* pc) {
@@ -157,7 +157,7 @@ static Value Thread_error(Thread* self, RuntimeError error, uint8_t* pc, ...) {
 
 Value Thread_run(Thread* self) {
   // TODO Consider copying the pc into a register
-  ValueStack* stack = &(self->stack);
+  Stack* stack = &(self->stack);
 
   /*
    * The program counter is stored on the thread as an index, rather than a
@@ -177,19 +177,19 @@ Value Thread_run(Thread* self) {
 
     switch(instruction) {
       case OP_NIL:
-        ValueStack_push(stack, NIL);
+        Stack_push(stack, NIL);
         break;
 
       case OP_TRUE:
-        ValueStack_push(stack, TRUE);
+        Stack_push(stack, TRUE);
         break;
 
       case OP_FALSE:
-        ValueStack_push(stack, FALSE);
+        Stack_push(stack, FALSE);
         break;
 
       case OP_INTEGER:
-        ValueStack_push(stack, Value_fromInteger(*((int32_t*)pc)));
+        Stack_push(stack, Value_fromInteger(*((int32_t*)pc)));
         pc += sizeof(int32_t);
         break;
 
@@ -197,48 +197,44 @@ Value Thread_run(Thread* self) {
         {
           uint16_t index = *((uint16_t*)pc);
           pc += sizeof(uint16_t);
-
-          /*
-           * TODO Move this into Stack once we have a "frame" concept.
-           */
-          ValueStack_push(stack, Value_copy(&(stack->items[index])));
+          Stack_pushIndex(stack, index);
           break;
         }
 
       case OP_NEGATE:
         {
-          Value operand = ValueStack_pop(stack);
+          Value operand = Stack_pop(stack);
 
           if(!(operand.type == VALUE_INTEGER)) {
             return Thread_error(self, ERROR_UNARY_OP_TYPE, pc, operand.type);
           }
 
-          ValueStack_push(stack, Value_fromInteger(-Value_asInteger(operand)));
+          Stack_push(stack, Value_fromInteger(-Value_asInteger(operand)));
         }
         break;
 
       case OP_NOT:
         {
-          Value operand = ValueStack_pop(stack);
+          Value operand = Stack_pop(stack);
 
           if(operand.type == VALUE_BOOLEAN) {
             return Thread_error(self, ERROR_UNARY_OP_TYPE, pc, operand.type);
           }
 
-          ValueStack_push(stack, Value_fromBoolean(!Value_asBoolean(operand)));
+          Stack_push(stack, Value_fromBoolean(!Value_asBoolean(operand)));
         }
         break;
 
       case OP_ADD:
         {
-          Value operand1 = ValueStack_pop(stack);
-          Value operand0 = ValueStack_pop(stack);
+          Value operand1 = Stack_pop(stack);
+          Value operand0 = Stack_pop(stack);
 
           if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
             return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
           }
 
-          ValueStack_push(
+          Stack_push(
             stack,
             Value_fromInteger(Value_asInteger(operand0) + Value_asInteger(operand1))
           );
@@ -247,14 +243,14 @@ Value Thread_run(Thread* self) {
 
       case OP_SUBTRACT:
         {
-          Value operand1 = ValueStack_pop(stack);
-          Value operand0 = ValueStack_pop(stack);
+          Value operand1 = Stack_pop(stack);
+          Value operand0 = Stack_pop(stack);
 
           if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
             return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
           }
 
-          ValueStack_push(
+          Stack_push(
             stack,
             Value_fromInteger(Value_asInteger(operand0) - Value_asInteger(operand1))
           );
@@ -263,14 +259,14 @@ Value Thread_run(Thread* self) {
 
       case OP_MULTIPLY:
         {
-          Value operand1 = ValueStack_pop(stack);
-          Value operand0 = ValueStack_pop(stack);
+          Value operand1 = Stack_pop(stack);
+          Value operand0 = Stack_pop(stack);
 
           if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
             return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
           }
 
-          ValueStack_push(
+          Stack_push(
             stack,
             Value_fromInteger(Value_asInteger(operand0) * Value_asInteger(operand1))
           );
@@ -279,8 +275,8 @@ Value Thread_run(Thread* self) {
 
       case OP_IDIVIDE:
         {
-          Value operand1 = ValueStack_pop(stack);
-          Value operand0 = ValueStack_pop(stack);
+          Value operand1 = Stack_pop(stack);
+          Value operand0 = Stack_pop(stack);
 
           if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
             return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
@@ -290,7 +286,7 @@ Value Thread_run(Thread* self) {
             return Thread_error(self, ERROR_DIVISON_BY_ZERO, pc);
           }
 
-          ValueStack_push(
+          Stack_push(
             stack,
             Value_fromInteger(Value_asInteger(operand0) / Value_asInteger(operand1))
           );
@@ -299,14 +295,14 @@ Value Thread_run(Thread* self) {
 
       case OP_LESS_THAN:
         {
-          Value operand1 = ValueStack_pop(stack);
-          Value operand0 = ValueStack_pop(stack);
+          Value operand1 = Stack_pop(stack);
+          Value operand0 = Stack_pop(stack);
 
           if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
             return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
           }
 
-          ValueStack_push(
+          Stack_push(
             stack,
             Value_fromBoolean(Value_asInteger(operand0) < Value_asInteger(operand1))
           );
@@ -315,14 +311,14 @@ Value Thread_run(Thread* self) {
 
       case OP_LESS_THAN_EQUAL:
         {
-          Value operand1 = ValueStack_pop(stack);
-          Value operand0 = ValueStack_pop(stack);
+          Value operand1 = Stack_pop(stack);
+          Value operand0 = Stack_pop(stack);
 
           if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
             return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
           }
 
-          ValueStack_push(
+          Stack_push(
             stack,
             Value_fromBoolean(Value_asInteger(operand0) <= Value_asInteger(operand1))
           );
@@ -331,14 +327,14 @@ Value Thread_run(Thread* self) {
 
       case OP_GREATER_THAN:
         {
-          Value operand1 = ValueStack_pop(stack);
-          Value operand0 = ValueStack_pop(stack);
+          Value operand1 = Stack_pop(stack);
+          Value operand0 = Stack_pop(stack);
 
           if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
             return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
           }
 
-          ValueStack_push(
+          Stack_push(
             stack,
             Value_fromBoolean(Value_asInteger(operand0) > Value_asInteger(operand1))
           );
@@ -347,14 +343,14 @@ Value Thread_run(Thread* self) {
 
       case OP_GREATER_THAN_EQUAL:
         {
-          Value operand1 = ValueStack_pop(stack);
-          Value operand0 = ValueStack_pop(stack);
+          Value operand1 = Stack_pop(stack);
+          Value operand0 = Stack_pop(stack);
 
           if(operand0.type != VALUE_INTEGER || operand1.type != VALUE_INTEGER) {
             return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
           }
 
-          ValueStack_push(
+          Stack_push(
             stack,
             Value_fromBoolean(Value_asInteger(operand0) >= Value_asInteger(operand1))
           );
@@ -363,8 +359,8 @@ Value Thread_run(Thread* self) {
 
       case OP_EQUAL:
         {
-          Value operand1 = ValueStack_pop(stack);
-          Value operand0 = ValueStack_pop(stack);
+          Value operand1 = Stack_pop(stack);
+          Value operand0 = Stack_pop(stack);
 
           if(operand0.type != operand1.type) {
             return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
@@ -373,18 +369,18 @@ Value Thread_run(Thread* self) {
           switch(operand0.type) {
             case VALUE_NIL:
               // If both types are nil, that implies both values are nil
-              ValueStack_push(stack, Value_fromBoolean(true));
+              Stack_push(stack, Value_fromBoolean(true));
               break;
 
             case VALUE_BOOLEAN:
-              ValueStack_push(
+              Stack_push(
                 stack,
                 Value_fromBoolean(Value_asBoolean(operand0) == Value_asBoolean(operand1))
               );
               break;
 
             case VALUE_INTEGER:
-              ValueStack_push(
+              Stack_push(
                 stack,
                 Value_fromBoolean(Value_asInteger(operand0) == Value_asInteger(operand1))
               );
@@ -395,8 +391,8 @@ Value Thread_run(Thread* self) {
 
       case OP_NOT_EQUAL:
         {
-          Value operand1 = ValueStack_pop(stack);
-          Value operand0 = ValueStack_pop(stack);
+          Value operand1 = Stack_pop(stack);
+          Value operand0 = Stack_pop(stack);
 
           if(operand0.type != operand1.type) {
             return Thread_error(self, ERROR_BINARY_OP_TYPE, pc, operand0.type, operand1.type);
@@ -405,18 +401,18 @@ Value Thread_run(Thread* self) {
           switch(operand0.type) {
             case VALUE_NIL:
               // If both types are nil, that implies both values are nil
-              ValueStack_push(stack, Value_fromBoolean(false));
+              Stack_push(stack, Value_fromBoolean(false));
               break;
 
             case VALUE_BOOLEAN:
-              ValueStack_push(
+              Stack_push(
                 stack,
                 Value_fromBoolean(Value_asBoolean(operand0) != Value_asBoolean(operand1))
               );
               break;
 
             case VALUE_INTEGER:
-              ValueStack_push(
+              Stack_push(
                 stack,
                 Value_fromBoolean(Value_asInteger(operand0) != Value_asInteger(operand1))
               );
@@ -426,12 +422,12 @@ Value Thread_run(Thread* self) {
         break;
 
       case OP_DROP:
-        ValueStack_pop(stack);
+        Stack_pop(stack);
         break;
 
       case OP_RETURN:
         self->pcIndex = ByteCode_index(self->byteCode, pc);
-        return ValueStack_pop(stack);
+        return Stack_pop(stack);
 
       default:
         assert(false);

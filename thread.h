@@ -4,12 +4,12 @@
 #include <stdbool.h>
 
 #include "instruction.h"
-#include "value_stack.h"
+#include "stack.h"
 
 typedef struct {
   ByteCode* byteCode;
   size_t pcIndex;
-  ValueStack stack;
+  Stack stack;
   bool panic;
 } Thread;
 

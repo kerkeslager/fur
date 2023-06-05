@@ -7,7 +7,6 @@
 #include "error.h"
 #include "thread.h"
 #include "value.h"
-#include "value_stack.h"
 
 #include <stdio.h>
 
