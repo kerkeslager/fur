@@ -4,6 +4,8 @@
 #include <stdbool.h>
 
 #include "instruction.h"
+#include "symbol.h"
+#include "symbol_list.h"
 #include "symbol_table.h"
 
 typedef struct {
