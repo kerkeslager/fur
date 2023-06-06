@@ -78,17 +78,6 @@ inline static void Compiler_emitSymbol(Compiler* self, AtomNode* node) {
   SymbolList_append(&(self->symbolList), symbol);
 }
 
-inline static void Compiler_emitAssignment(Compiler* self, ByteCode* out, BinaryNode* node) {
-  Compiler_emitNode(self, out, node->arg1);
-
-  if(node->arg0->type == NODE_SYMBOL) {
-    Compiler_emitSymbol(self, ((AtomNode*)(node->arg0)));
-  } else {
-    // TODO Handle assigning to other kinds of nodes
-    assert(false);
-  }
-}
-
 void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
   switch(node->type) {
     case NODE_INTEGER_LITERAL:
@@ -115,8 +104,20 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
       }
 
     case NODE_ASSIGN:
-      Compiler_emitAssignment(self, out, ((BinaryNode*)node));
-      Compiler_emitOp(out, OP_NIL, node->line);
+      {
+        BinaryNode* assignNode = (BinaryNode*)node;
+        Compiler_emitNode(self, out, assignNode->arg1);
+
+        if(assignNode->arg0->type == NODE_SYMBOL) {
+          Compiler_emitSymbol(self, ((AtomNode*)(assignNode->arg0)));
+        } else {
+          // TODO Handle assigning to other kinds of nodes
+          assert(false);
+        }
+
+        // An assignment statement returns NIL
+        Compiler_emitOp(out, OP_NIL, node->line);
+      }
       return;
 
     case NODE_NEGATE:

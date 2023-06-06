@@ -45,26 +45,32 @@ inline static int32_t Value_asInteger(Value v) {
   return v.as.integer;
 }
 
-inline static void Value_println(Value v) {
+inline static void Value_print(Value v) {
   switch(v.type) {
     case VALUE_BOOLEAN:
       if(Value_asBoolean(v)) {
-        printf("  true\n");
+        printf("true");
       } else {
-        printf("  false\n");
+        printf("false");
       }
       return;
 
     case VALUE_NIL:
-      printf("  nil\n");
+      printf("nil");
       return;
 
     case VALUE_INTEGER:
-      printf("  %i\n", v.as.integer);
+      printf("%i", v.as.integer);
       return;
   }
 
   assert(false);
+}
+
+inline static void Value_println(Value v) {
+  printf("  ");
+  Value_print(v);
+  printf("\n");
 }
 
 inline static Value Value_copy(Value* self) {
