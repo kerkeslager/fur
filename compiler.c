@@ -3,12 +3,17 @@
 #include <string.h>
 
 #include "compiler.h"
+#include "error.h"
 #include "node.h"
 #include "parser.h"
 
 void Compiler_init(Compiler* self) {
   SymbolTable_init(&(self->symbolTable));
   SymbolList_init(&(self->symbolList));
+  /*
+   * We don't need to initialize hasErrors, because it's initialialized
+   * in the only place that it should be used, in Compiler_compile().
+   */
 }
 
 void Compiler_free(Compiler* self) {
@@ -95,7 +100,18 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         /*
          * TODO This means the symbol wasn't found. Handle this better.
          */
-        assert(index != -1);
+        if(index == -1) {
+          self->hasErrors = true;
+
+          printError(
+            node->line,
+            "Symbol `%.*s` referenced before assignment.",
+            symbol->length,
+            symbol->text
+          );
+
+          return;
+        }
 
         assert(0 <= index && index <= UINT16_MAX);
         Compiler_emitOp(out, OP_GET, node->line);
@@ -148,7 +164,7 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
 
 bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
   Node* statement = Parser_parseStatement(parser);
-  bool hasErrors = false;
+  self->hasErrors = false;
 
   /*
    * Take some checkpoints so we can back out what we've emitted if there are
@@ -167,7 +183,7 @@ bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
     return true;
   } else if(statement->type == NODE_ERROR) {
     ErrorNode_print(statement);
-    hasErrors = true;
+    self->hasErrors = true;
   } else {
     Compiler_emitNode(self, out, statement);
   }
@@ -177,7 +193,7 @@ bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
   while((statement = Parser_parseStatement(parser))->type != NODE_EOF) {
     if(statement->type == NODE_ERROR) {
       ErrorNode_print(statement);
-      hasErrors = true;
+      self->hasErrors = true;
     } else {
       // Drop the result of previous statement
       /*
@@ -201,14 +217,14 @@ bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
   /*
    * Rewind the emitted code if there were errors.
    */
-  if(hasErrors) {
+  if(self->hasErrors) {
     ByteCode_rewind(out, byteCodeCheckpoint);
     SymbolList_rewind(&(self->symbolList), symbolListCheckpoint);
   } else {
     Compiler_emitOp(out, OP_RETURN, statement->line);
   }
 
-  return !hasErrors;
+  return !(self->hasErrors);
 }
 
 #ifdef TEST

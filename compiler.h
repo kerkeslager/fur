@@ -11,6 +11,7 @@
 typedef struct {
   SymbolTable symbolTable;
   SymbolList symbolList;
+  bool hasErrors;
 } Compiler;
 
 void Compiler_init(Compiler*);
