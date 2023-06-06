@@ -150,6 +150,12 @@ bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
   Node* statement = Parser_parseStatement(parser);
   bool hasErrors = false;
 
+  /*
+   * Take a checkpoint of how much bytecode there is so we can rewind to that
+   * point if there are errors.
+   */
+  size_t byteCodeCheckpoint = ByteCode_count(out);
+
   if(statement->type == NODE_EOF) {
     /*
      * This is so that empty files or repl lines emit a return value, since
@@ -191,7 +197,15 @@ bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
     Node_free(statement);
   }
 
-  Compiler_emitOp(out, OP_RETURN, statement->line);
+  /*
+   * Rewind the emitted code if there were errors.
+   */
+  if(hasErrors) {
+    ByteCode_rewind(out, byteCodeCheckpoint);
+    // TODO Also rewind the symbol list
+  } else {
+    Compiler_emitOp(out, OP_RETURN, statement->line);
+  }
 
   return !hasErrors;
 }

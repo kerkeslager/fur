@@ -145,6 +145,23 @@ size_t ByteCode_getLine(ByteCode* self, uint8_t* instruction) {
   assert(false);
 }
 
+void ByteCode_rewind(ByteCode* self, size_t count) {
+  size_t run = 0;
+
+  for(size_t i = 0; i < self->lineRunCount; i++) {
+    run += self->lineRuns[i].run;
+
+    if(run >= count) {
+      self->count = count;
+      self->lineRuns[i].run -= run - count;
+      self->lineRunCount = i + 1;
+      return;
+    }
+  }
+
+  assert(count == self->count);
+}
+
 #ifdef TEST
 
 void test_ByteCode_append_basic() {

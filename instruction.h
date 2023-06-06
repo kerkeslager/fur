@@ -51,6 +51,8 @@ inline static size_t ByteCode_count(ByteCode* self) {
   return self->count;
 }
 
+void ByteCode_rewind(ByteCode* self, size_t count);
+
 /*
  * The following functions allow us to maintain program counters when compiling
  * onto the end of an ByteCode that is already being referenced by a
