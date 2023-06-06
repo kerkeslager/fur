@@ -180,22 +180,17 @@ Token Tokenizer_scan(Tokenizer* self) {
     case 'b':
     case 'c':
     case 'd':
-    case 'e':
     case 'g':
     case 'h':
-    case 'i':
     case 'j':
     case 'k':
-    case 'l':
     case 'm':
     case 'o':
     case 'p':
     case 'q':
     case 'r':
     case 's':
-    case 'u':
     case 'v':
-    case 'w':
     case 'x':
     case 'y':
     case 'z':
@@ -231,11 +226,32 @@ Token Tokenizer_scan(Tokenizer* self) {
         return Tokenizer_completeSymbol(self, lexeme);
       }
 
+    case 'e':
+      {
+        const char* lexeme = self->current;
+        self->current++;
+        return Tokenizer_keywordOrSymbol(self, lexeme, "lse", TOKEN_ELSE);
+      }
+
     case 'f':
       {
         const char* lexeme = self->current;
         self->current++;
         return Tokenizer_keywordOrSymbol(self, lexeme, "alse", TOKEN_FALSE);
+      }
+
+    case 'i':
+      {
+        const char* lexeme = self->current;
+        self->current++;
+        return Tokenizer_keywordOrSymbol(self, lexeme, "f", TOKEN_IF);
+      }
+
+    case 'l':
+      {
+        const char* lexeme = self->current;
+        self->current++;
+        return Tokenizer_keywordOrSymbol(self, lexeme, "oop", TOKEN_LOOP);
       }
 
     case 'n':
@@ -250,6 +266,20 @@ Token Tokenizer_scan(Tokenizer* self) {
         const char* lexeme = self->current;
         self->current++;
         return Tokenizer_keywordOrSymbol(self, lexeme, "rue", TOKEN_TRUE);
+      }
+
+    case 'u':
+      {
+        const char* lexeme = self->current;
+        self->current++;
+        return Tokenizer_keywordOrSymbol(self, lexeme, "ntil", TOKEN_UNTIL);
+      }
+
+    case 'w':
+      {
+        const char* lexeme = self->current;
+        self->current++;
+        return Tokenizer_keywordOrSymbol(self, lexeme, "hile", TOKEN_WHILE);
       }
 
     default:
@@ -573,6 +603,45 @@ void test_Tokenizer_scan_comparisonOperators() {
   assert(token.type == TOKEN_BANG_EQUALS);
   assert(token.lexeme == source + 13);
   assert(token.length == 2);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_jumpKeywords() {
+  const char* source = "loop if else while until";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Token token;
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_LOOP);
+  assert(token.lexeme == source);
+  assert(token.length == 4);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_IF);
+  assert(token.lexeme == source + 5);
+  assert(token.length == 2);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_ELSE);
+  assert(token.lexeme == source + 8);
+  assert(token.length == 4);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_WHILE);
+  assert(token.lexeme == source + 13);
+  assert(token.length == 5);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_UNTIL);
+  assert(token.lexeme == source + 19);
+  assert(token.length == 5);
   assert(token.line == 1);
 }
 
