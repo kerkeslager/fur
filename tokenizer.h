@@ -24,6 +24,9 @@ typedef enum {
   TOKEN_OPEN_PAREN,
   TOKEN_CLOSE_PAREN,
 
+  TOKEN_OPEN_BRACE,
+  TOKEN_CLOSE_BRACE,
+
   TOKEN_TRUE,
   TOKEN_FALSE,
   TOKEN_NOT,
@@ -76,6 +79,7 @@ void test_Tokenizer_scan_semicolon();
 void test_Tokenizer_scan_equals();
 void test_Tokenizer_scan_after_Tokenizer_peek();
 void test_Tokenizer_scan_parentheses();
+void test_Tokenizer_scan_braces();
 void test_Tokenizer_scan_symbol();
 void test_Tokenizer_scan_booleans();
 void test_Tokenizer_scan_differentiateKeywords();
