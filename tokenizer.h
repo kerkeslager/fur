@@ -68,8 +68,6 @@ void test_Tokenizer_scan_linebreaks_increment_line();
 void test_Tokenizer_scan_integerMathOperators();
 void test_Tokenizer_scan_semicolon();
 void test_Tokenizer_scan_equals();
-void test_Tokenizer_peek_returnsScan();
-void test_Tokenizer_peek_doesNotProgress();
 void test_Tokenizer_scan_after_Tokenizer_peek();
 void test_Tokenizer_scan_parentheses();
 void test_Tokenizer_scan_symbol();
@@ -77,6 +75,9 @@ void test_Tokenizer_scan_booleans();
 void test_Tokenizer_scan_differentiateKeywords();
 void test_Tokenizer_scan_not();
 void test_Tokenizer_scan_comparisonOperators();
+
+void test_Tokenizer_peek_returnsScan();
+void test_Tokenizer_peek_doesNotProgress();
 
 #endif
 

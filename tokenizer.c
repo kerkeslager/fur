@@ -397,52 +397,6 @@ void test_Tokenizer_scan_equals() {
   assert(token.line == 1);
 }
 
-void test_Tokenizer_peek_returnsScan() {
-  const char* source = "+ - * //";
-
-  Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
-
-  Token token = Tokenizer_peek(&tokenizer);
-  assert(token.type == TOKEN_PLUS);
-  assert(token.lexeme == source);
-  assert(token.length == 1);
-  assert(token.line == 1);
-}
-
-void test_Tokenizer_peek_doesNotProgress() {
-  const char* source = "+ - * //";
-
-  Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
-
-  Token token;
-
-  token = Tokenizer_peek(&tokenizer);
-  assert(token.type == TOKEN_PLUS);
-  assert(token.lexeme == source);
-  assert(token.length == 1);
-  assert(token.line == 1);
-
-  token = Tokenizer_peek(&tokenizer);
-  assert(token.type == TOKEN_PLUS);
-  assert(token.lexeme == source);
-  assert(token.length == 1);
-  assert(token.line == 1);
-
-  token = Tokenizer_peek(&tokenizer);
-  assert(token.type == TOKEN_PLUS);
-  assert(token.lexeme == source);
-  assert(token.length == 1);
-  assert(token.line == 1);
-
-  token = Tokenizer_peek(&tokenizer);
-  assert(token.type == TOKEN_PLUS);
-  assert(token.lexeme == source);
-  assert(token.length == 1);
-  assert(token.line == 1);
-}
-
 void test_Tokenizer_scan_after_Tokenizer_peek() {
   const char* source = "+ - * //";
 
@@ -619,6 +573,52 @@ void test_Tokenizer_scan_comparisonOperators() {
   assert(token.type == TOKEN_BANG_EQUALS);
   assert(token.lexeme == source + 13);
   assert(token.length == 2);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_peek_returnsScan() {
+  const char* source = "+ - * //";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Token token = Tokenizer_peek(&tokenizer);
+  assert(token.type == TOKEN_PLUS);
+  assert(token.lexeme == source);
+  assert(token.length == 1);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_peek_doesNotProgress() {
+  const char* source = "+ - * //";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Token token;
+
+  token = Tokenizer_peek(&tokenizer);
+  assert(token.type == TOKEN_PLUS);
+  assert(token.lexeme == source);
+  assert(token.length == 1);
+  assert(token.line == 1);
+
+  token = Tokenizer_peek(&tokenizer);
+  assert(token.type == TOKEN_PLUS);
+  assert(token.lexeme == source);
+  assert(token.length == 1);
+  assert(token.line == 1);
+
+  token = Tokenizer_peek(&tokenizer);
+  assert(token.type == TOKEN_PLUS);
+  assert(token.lexeme == source);
+  assert(token.length == 1);
+  assert(token.line == 1);
+
+  token = Tokenizer_peek(&tokenizer);
+  assert(token.type == TOKEN_PLUS);
+  assert(token.lexeme == source);
+  assert(token.length == 1);
   assert(token.line == 1);
 }
 
