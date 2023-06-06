@@ -72,6 +72,9 @@ inline static size_t ByteCode_index(ByteCode* self, uint8_t* pc) {
 
 void test_ByteCode_append_basic();
 void test_ByteCode_append_lines();
+void test_ByteCode_append_many();
+void test_ByteCode_rewind_toLineBoundary();
+void test_ByteCode_rewind_toMiddleOfLine();
 
 #endif
 

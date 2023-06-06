@@ -5,18 +5,26 @@
 
 typedef struct {
   Symbol** items;
-  uint16_t length;
+  uint16_t count;
   uint16_t capacity;
 } SymbolList;
 
 inline static void SymbolList_init(SymbolList* self) {
   self->items = NULL;
-  self->length = 0;
+  self->count = 0;
   self->capacity = 0;
 }
 
 inline static void SymbolList_free(SymbolList* self) {
   free(self->items);
+}
+
+inline static size_t SymbolList_count(SymbolList* self) {
+  return self->count;
+}
+
+inline static void SymbolList_rewind(SymbolList* self, size_t checkpoint) {
+  self->count = checkpoint;
 }
 
 void SymbolList_append(SymbolList* self, Symbol* symbol);

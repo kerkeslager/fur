@@ -4,7 +4,7 @@
 #include "symbol_list.h"
 
 int32_t SymbolList_find(SymbolList* self, Symbol* symbol) {
-  for(size_t i = 0; i < self->length; i++) {
+  for(size_t i = 0; i < self->count; i++) {
     if(self->items[i] == symbol) {
       return i;
     }
@@ -17,7 +17,7 @@ void SymbolList_append(SymbolList* self, Symbol* symbol) {
   // TODO Handle this better
   assert(SymbolList_find(self, symbol) == -1);
 
-  if(self->length == self->capacity) {
+  if(self->count == self->capacity) {
     uint32_t capacity = self->capacity;
 
     // TODO Handle this better
@@ -35,7 +35,7 @@ void SymbolList_append(SymbolList* self, Symbol* symbol) {
     assert(self->items != NULL);
   }
 
-  self->items[self->length++] = symbol;
+  self->items[self->count++] = symbol;
 }
 
 #ifdef TEST
@@ -47,7 +47,7 @@ void test_SymbolList_init() {
   SymbolList_init(&symbolList);
 
   assert(symbolList.items == NULL);
-  assert(symbolList.length == 0);
+  assert(symbolList.count == 0);
   assert(symbolList.capacity == 0);
 
   SymbolList_free(&symbolList);
@@ -174,7 +174,7 @@ void test_SymbolList_append_many() {
     assert(SymbolList_find(&symbolList, symbols[i]) == i);
   }
 
-  assert(symbolList.length == 100);
+  assert(symbolList.count == 100);
   assert(symbolList.capacity == 128);
 
   SymbolList_free(&symbolList);
@@ -186,7 +186,7 @@ void test_SymbolList_append_allowsUpToUINT16_MAXsymbols() {
 
   // This is a hack to avoid inserting this many symbols into the list
   uint16_t capacity = UINT16_MAX / 2 + 1;
-  symbolList.length = capacity;
+  symbolList.count = capacity;
   symbolList.capacity = capacity;
 
   /*
@@ -200,7 +200,7 @@ void test_SymbolList_append_allowsUpToUINT16_MAXsymbols() {
 
   SymbolList_append(&symbolList, symbol);
 
-  assert(symbolList.length = capacity + 1);
+  assert(symbolList.count = capacity + 1);
   assert(symbolList.capacity = UINT16_MAX);
 
   // Can't use SymbolList_free() due to previous hack

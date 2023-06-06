@@ -151,10 +151,11 @@ bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
   bool hasErrors = false;
 
   /*
-   * Take a checkpoint of how much bytecode there is so we can rewind to that
-   * point if there are errors.
+   * Take some checkpoints so we can back out what we've emitted if there are
+   * errors point if there are errors.
    */
   size_t byteCodeCheckpoint = ByteCode_count(out);
+  size_t symbolListCheckpoint = SymbolList_count(&(self->symbolList));
 
   if(statement->type == NODE_EOF) {
     /*
@@ -202,7 +203,7 @@ bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
    */
   if(hasErrors) {
     ByteCode_rewind(out, byteCodeCheckpoint);
-    // TODO Also rewind the symbol list
+    SymbolList_rewind(&(self->symbolList), symbolListCheckpoint);
   } else {
     Compiler_emitOp(out, OP_RETURN, statement->line);
   }

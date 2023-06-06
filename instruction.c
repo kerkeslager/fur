@@ -187,4 +187,107 @@ void test_ByteCode_append_lines() {
   ByteCode_free(&byteCode);
 }
 
+void test_ByteCode_append_many() {
+  ByteCode byteCode;
+  ByteCode_init(&byteCode);
+
+  for(int i = 0; i < 1000; i++) {
+    ByteCode_append(&byteCode, i % 256, i / 10);
+  }
+
+  assert(ByteCode_count(&byteCode) == (size_t)1000);
+
+  for(int i = 0; i < 1000; i++) {
+    uint8_t* instruction = ByteCode_pc(&byteCode, i);
+    assert(*instruction == i % 256);
+    assert(ByteCode_getLine(&byteCode, instruction) == (size_t)(i / 10));
+
+    /*
+     * This could be a separate test--tests that instruction/pc are inverses
+     * of each other.
+     */
+    assert(ByteCode_index(&byteCode, instruction) == (size_t)i);
+  }
+
+  ByteCode_free(&byteCode);
+}
+
+void test_ByteCode_rewind_toLineBoundary() {
+  ByteCode byteCode;
+  ByteCode_init(&byteCode);
+
+  for(int i = 0; i < 10; i++) {
+    ByteCode_append(&byteCode, i, 1);
+  }
+
+  size_t checkpoint = ByteCode_count(&byteCode);
+
+  for(int i = 0; i < 10; i++) {
+    ByteCode_append(&byteCode, i + 10, 2);
+  }
+
+  assert(ByteCode_count(&byteCode) == (size_t)20);
+
+  ByteCode_rewind(&byteCode, checkpoint);
+
+  assert(ByteCode_count(&byteCode) == (size_t)10);
+
+  for(int i = 0; i < 10; i++) {
+    ByteCode_append(&byteCode, i + 20, 3);
+  }
+
+  assert(ByteCode_count(&byteCode) == (size_t)20);
+
+  uint8_t* instruction = ByteCode_pc(&byteCode, checkpoint);
+
+  for(int i = 0; i < 10; i++) {
+    assert(*instruction == i + 20);
+    assert(ByteCode_getLine(&byteCode, instruction) == 3);
+    instruction++;
+  }
+
+  ByteCode_free(&byteCode);
+}
+
+void test_ByteCode_rewind_toMiddleOfLine() {
+  ByteCode byteCode;
+  ByteCode_init(&byteCode);
+
+  for(int i = 0; i < 10; i++) {
+    ByteCode_append(&byteCode, i, 1);
+  }
+
+  for(int i = 0; i < 5; i++) {
+    ByteCode_append(&byteCode, i + 10, 2);
+  }
+
+  size_t checkpoint = ByteCode_count(&byteCode);
+
+  for(int i = 5; i < 10; i++) {
+    ByteCode_append(&byteCode, i + 10, 2);
+  }
+
+  assert(ByteCode_count(&byteCode) == (size_t)20);
+
+  ByteCode_rewind(&byteCode, checkpoint);
+
+  assert(ByteCode_count(&byteCode) == (size_t)15);
+
+  for(int i = 0; i < 10; i++) {
+    ByteCode_append(&byteCode, i + 20, 3);
+  }
+
+  assert(ByteCode_count(&byteCode) == (size_t)25);
+
+  uint8_t* instruction = ByteCode_pc(&byteCode, checkpoint);
+
+  for(int i = 0; i < 10; i++) {
+    assert(*instruction == i + 20);
+    assert(ByteCode_getLine(&byteCode, instruction) == 3);
+    instruction++;
+  }
+
+  ByteCode_free(&byteCode);
+}
+
 #endif
