@@ -81,56 +81,52 @@ const char* ValueType_toCString(ValueType type) {
 }
 
 Value Thread_run(Thread* self) {
-  // TODO Consider copying the pc into a register
   Stack* stack = &(self->stack);
 
   /*
    * The program counter is stored on the thread as an index, rather than a
    * pointer, so that resizing the ByteCode with realloc doesn't leave
    * the program counter hanging. This line restores the program counter
-   * pointer from the index, but *everywhere* that we exit from this function,
-   * we have to sync the index with ByteCode_index().
+   * pointer from the index to a register pointer for speed.
    *
-   * Another implication of this is that we can't modify the index on another
+   * One implication of this is that we can't modify the index on another
    * thread while Thread_run() is running.
    */
   register uint8_t* pc = ByteCode_pc(self->byteCode, self->pcIndex);
 
-  #define UNARY_TYPE_CHECK(tt) \
+  #define THREAD_ERROR(...) \
+    printError(__VA_ARGS__); \
+    self->panic = true; \
+    return NIL
+
+  #define CHECK_UNARY_TYPE(tt) \
     if(operand.type != tt) { \
-      printError( \
+      THREAD_ERROR( \
         ByteCode_getLine(self->byteCode, pc - 1), \
         "Cannot apply prefix operator '%s' to value of type '%s'.", \
         Instruction_toOperatorCString(pc - 1), \
         ValueType_toCString(operand.type) \
       ); \
-      self->panic = true; \
-      return NIL; \
     }
-  #define BINARY_TYPE_CHECK(t0, t1) \
+  #define CHECK_BINARY_TYPE(t0, t1) \
     if(operand0.type != t0 || operand1.type != t1) { \
-      printError( \
+      THREAD_ERROR( \
         ByteCode_getLine(self->byteCode, pc - 1), \
         "Cannot apply infix operator `%s` to values of type `%s` and `%s`.", \
         Instruction_toOperatorCString(pc - 1), \
         ValueType_toCString(operand0.type), \
         ValueType_toCString(operand1.type) \
       ); \
-      self->panic = true; \
-      return NIL; \
     }
-
-  #define BINARY_SAME_TYPE_CHECK() \
+  #define CHECK_SAME_TYPE() \
     if(operand0.type != operand1.type) { \
-      printError( \
+      THREAD_ERROR( \
         ByteCode_getLine(self->byteCode, pc - 1), \
         "Cannot apply infix operator `%s` to values of type `%s` and `%s`.", \
         Instruction_toOperatorCString(pc - 1), \
         ValueType_toCString(operand0.type), \
         ValueType_toCString(operand1.type) \
       ); \
-      self->panic = true; \
-      return NIL; \
     }
 
   for(;;) {
@@ -166,7 +162,7 @@ Value Thread_run(Thread* self) {
       case OP_NEGATE:
         {
           Value operand = Stack_pop(stack);
-          UNARY_TYPE_CHECK(VALUE_INTEGER);
+          CHECK_UNARY_TYPE(VALUE_INTEGER);
           Stack_push(stack, Value_fromInteger(-Value_asInteger(operand)));
         }
         break;
@@ -174,7 +170,7 @@ Value Thread_run(Thread* self) {
       case OP_NOT:
         {
           Value operand = Stack_pop(stack);
-          UNARY_TYPE_CHECK(VALUE_BOOLEAN);
+          CHECK_UNARY_TYPE(VALUE_BOOLEAN);
           Stack_push(stack, Value_fromBoolean(!Value_asBoolean(operand)));
         }
         break;
@@ -184,7 +180,7 @@ Value Thread_run(Thread* self) {
           Value operand1 = Stack_pop(stack);
           Value operand0 = Stack_pop(stack);
 
-          BINARY_TYPE_CHECK(VALUE_INTEGER, VALUE_INTEGER);
+          CHECK_BINARY_TYPE(VALUE_INTEGER, VALUE_INTEGER);
 
           Stack_push(
             stack,
@@ -198,7 +194,7 @@ Value Thread_run(Thread* self) {
           Value operand1 = Stack_pop(stack);
           Value operand0 = Stack_pop(stack);
 
-          BINARY_TYPE_CHECK(VALUE_INTEGER, VALUE_INTEGER);
+          CHECK_BINARY_TYPE(VALUE_INTEGER, VALUE_INTEGER);
 
           Stack_push(
             stack,
@@ -212,7 +208,7 @@ Value Thread_run(Thread* self) {
           Value operand1 = Stack_pop(stack);
           Value operand0 = Stack_pop(stack);
 
-          BINARY_TYPE_CHECK(VALUE_INTEGER, VALUE_INTEGER);
+          CHECK_BINARY_TYPE(VALUE_INTEGER, VALUE_INTEGER);
 
           Stack_push(
             stack,
@@ -226,15 +222,13 @@ Value Thread_run(Thread* self) {
           Value operand1 = Stack_pop(stack);
           Value operand0 = Stack_pop(stack);
 
-          BINARY_TYPE_CHECK(VALUE_INTEGER, VALUE_INTEGER);
+          CHECK_BINARY_TYPE(VALUE_INTEGER, VALUE_INTEGER);
 
           if(Value_asInteger(operand1) == 0) {
-            printError(
+            THREAD_ERROR(
               ByteCode_getLine(self->byteCode, pc - 1),
               "Division by 0."
             );
-            self->panic = true;
-            return NIL;
           }
 
           Stack_push(
@@ -249,7 +243,7 @@ Value Thread_run(Thread* self) {
           Value operand1 = Stack_pop(stack);
           Value operand0 = Stack_pop(stack);
 
-          BINARY_TYPE_CHECK(VALUE_INTEGER, VALUE_INTEGER);
+          CHECK_BINARY_TYPE(VALUE_INTEGER, VALUE_INTEGER);
 
           Stack_push(
             stack,
@@ -263,7 +257,7 @@ Value Thread_run(Thread* self) {
           Value operand1 = Stack_pop(stack);
           Value operand0 = Stack_pop(stack);
 
-          BINARY_TYPE_CHECK(VALUE_INTEGER, VALUE_INTEGER);
+          CHECK_BINARY_TYPE(VALUE_INTEGER, VALUE_INTEGER);
 
           Stack_push(
             stack,
@@ -277,7 +271,7 @@ Value Thread_run(Thread* self) {
           Value operand1 = Stack_pop(stack);
           Value operand0 = Stack_pop(stack);
 
-          BINARY_TYPE_CHECK(VALUE_INTEGER, VALUE_INTEGER);
+          CHECK_BINARY_TYPE(VALUE_INTEGER, VALUE_INTEGER);
 
           Stack_push(
             stack,
@@ -291,7 +285,7 @@ Value Thread_run(Thread* self) {
           Value operand1 = Stack_pop(stack);
           Value operand0 = Stack_pop(stack);
 
-          BINARY_TYPE_CHECK(VALUE_INTEGER, VALUE_INTEGER);
+          CHECK_BINARY_TYPE(VALUE_INTEGER, VALUE_INTEGER);
 
           Stack_push(
             stack,
@@ -305,7 +299,7 @@ Value Thread_run(Thread* self) {
           Value operand1 = Stack_pop(stack);
           Value operand0 = Stack_pop(stack);
 
-          BINARY_SAME_TYPE_CHECK();
+          CHECK_SAME_TYPE();
 
           switch(operand0.type) {
             case VALUE_NIL:
@@ -335,7 +329,7 @@ Value Thread_run(Thread* self) {
           Value operand1 = Stack_pop(stack);
           Value operand0 = Stack_pop(stack);
 
-          BINARY_SAME_TYPE_CHECK();
+          CHECK_SAME_TYPE();
 
           switch(operand0.type) {
             case VALUE_NIL:
@@ -372,6 +366,11 @@ Value Thread_run(Thread* self) {
         assert(false);
     }
   }
+
+  #undef CHECK_UNARY_TYPE
+  #undef CHECK_BINARY_TYPE
+  #undef CHECK_SAME_TYPE
+  #undef THREAD_ERROR
 }
 
 #ifdef TEST
