@@ -75,10 +75,20 @@ inline static void Compiler_emitSymbol(Compiler* self, AtomNode* node) {
   int32_t index = SymbolList_find(&self->symbolList, symbol);
 
   /*
-   * TODO If it's found in the list, they symbol already exists in this
-   * scope. Handle this better.
+   * If it's found in the list, the symbol already exists in this scope.
    */
-  assert(index == -1);
+  if(index != -1) {
+    self->hasErrors = true;
+
+    printError(
+      node->node.line,
+      "Reassigned immutable variable `%.*s` after definition.",
+      symbol->length,
+      symbol->text
+    );
+
+    return;
+  }
 
   SymbolList_append(&(self->symbolList), symbol);
 }
@@ -98,7 +108,7 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         int32_t index = SymbolList_find(&(self->symbolList), symbol);
 
         /*
-         * TODO This means the symbol wasn't found. Handle this better.
+         * This means the symbol wasn't found.
          */
         if(index == -1) {
           self->hasErrors = true;
