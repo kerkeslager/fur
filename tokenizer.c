@@ -51,7 +51,6 @@ inline static void Tokenizer_handleWhitespace(Tokenizer* self) {
 }
 
 bool isSymbolChar(char c) {
-  // TODO Allow more charcters in symbols
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9');
 }
 
