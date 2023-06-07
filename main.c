@@ -4,7 +4,6 @@
 #include <readline/readline.h>
 
 #include "compiler.h"
-#include "error.h"
 #include "parser.h"
 #include "thread.h"
 #include "value.h"
@@ -69,12 +68,6 @@ int main() {
           Thread_clearPanic(&thread);
         } else {
           Value_println(result);
-        }
-      } else {
-        if(isColorAllowed()) {
-          fprintf(stderr, ANSI_COLOR_RED "Error in compilation\n" ANSI_COLOR_RESET);
-        } else {
-          fprintf(stderr, "Error in compilation\n");
         }
       }
     }
