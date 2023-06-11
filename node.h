@@ -14,6 +14,7 @@ typedef enum {
   // Unary Nodes
   NODE_NEGATE,
   NODE_LOGICAL_NOT,
+  NODE_LOOP,
 
   // Binary Nodes
   NODE_ASSIGN,
@@ -27,6 +28,11 @@ typedef enum {
   NODE_GREATER_THAN_EQUAL,
   NODE_EQUAL,
   NODE_NOT_EQUAL,
+
+  // Ternary Nodes
+  NODE_IF,
+  NODE_WHILE,
+  NODE_UNTIL,
 
   // Auxiliary nodes
   NODE_ERROR,
@@ -62,6 +68,15 @@ typedef struct {
 } BinaryNode;
 
 Node* BinaryNode_new(NodeType type, size_t line, Node* arg0, Node* arg1);
+
+typedef struct {
+  Node node;
+  Node* arg0;
+  Node* arg1;
+  Node* arg2;
+} TernaryNode;
+
+Node* TernaryNode_new(NodeType type, size_t line, Node* arg0, Node* arg1, Node* arg2);
 
 typedef enum {
   ERROR_MISSING_SEMICOLON,

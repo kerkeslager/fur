@@ -42,7 +42,8 @@ inline static void AtomNode_free(AtomNode* self) {
 
 inline static void UnaryNode_init(UnaryNode* self, NodeType type, size_t line, Node* arg0) {
   assert(type == NODE_NEGATE
-      || type == NODE_LOGICAL_NOT);
+      || type == NODE_LOGICAL_NOT
+      || type == NODE_LOOP);
   Node_init(&(self->node), type, line);
   self->arg0 = arg0;
 }
@@ -87,6 +88,29 @@ inline static void BinaryNode_free(BinaryNode* self) {
   free(self);
 }
 
+inline static void TernaryNode_init(TernaryNode* self, NodeType type, size_t line, Node* arg0, Node* arg1, Node* arg2) {
+  assert(type == NODE_IF
+      || type == NODE_WHILE
+      || type == NODE_UNTIL);
+  Node_init(&(self->node), type, line);
+  self->arg0 = arg0;
+  self->arg1 = arg1;
+  self->arg2 = arg2;
+}
+
+Node* TernaryNode_new(NodeType type, size_t line, Node* arg0, Node* arg1, Node* arg2) {
+  TernaryNode* node = malloc(sizeof(TernaryNode));
+  TernaryNode_init(node, type, line, arg0, arg1, arg2);
+  return (Node*)node;
+}
+
+inline static void TernaryNode_free(TernaryNode* self) {
+  Node_free(self->arg0);
+  Node_free(self->arg1);
+  Node_free(self->arg2);
+  free(self);
+}
+
 inline static void ErrorNode_init(ErrorNode* self, ParseErrorType type, Token token, Token auxToken, Node* previous) {
   Node_init(&(self->node), NODE_ERROR, token.line);
   self->type = type;
@@ -113,6 +137,8 @@ inline static void ErrorNode_free(ErrorNode* self) {
 }
 
 void Node_free(Node* self) {
+  if(self == NULL) return;
+
   switch(self->type) {
     case NODE_EOF:
       free(self);
@@ -126,6 +152,7 @@ void Node_free(Node* self) {
 
     case NODE_NEGATE:
     case NODE_LOGICAL_NOT:
+    case NODE_LOOP:
       UnaryNode_free((UnaryNode*)self);
       return;
 
@@ -141,6 +168,12 @@ void Node_free(Node* self) {
     case NODE_EQUAL:
     case NODE_NOT_EQUAL:
       BinaryNode_free((BinaryNode*)self);
+      return;
+
+    case NODE_IF:
+    case NODE_WHILE:
+    case NODE_UNTIL:
+      TernaryNode_free((TernaryNode*)self);
       return;
 
     case NODE_ERROR:

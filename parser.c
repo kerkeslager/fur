@@ -64,6 +64,12 @@ const PrecedenceRule PRECEDENCE[] = {
 
   [TOKEN_SYMBOL] =              { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
+  [TOKEN_LOOP] =                { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_IF] =                  { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_ELSE] =                { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_WHILE] =               { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_UNTIL] =               { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+
   [TOKEN_EOF] =                 { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
   [TOKEN_ERROR] =               { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
@@ -154,6 +160,8 @@ Node* Parser_parseAtom(Parser* self) {
   }
 }
 
+Node* Parser_parseStatement(Parser*);
+Node* Parser_parseExpression(Parser*);
 Node* Parser_parseExpressionWithPrecedence(Parser*, Precedence minPrecedence);
 
 /*
@@ -179,7 +187,7 @@ Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
     Tokenizer_scan(tokenizer);
 
     // TODO Should we set a minPrecedence for opened "environments"?
-    Node* result = Parser_parseExpressionWithPrecedence(self, PREC_ANY);
+    Node* result = Parser_parseExpression(self);
 
     Token closeToken = Tokenizer_peek(tokenizer);
 
@@ -252,15 +260,136 @@ Node* Parser_parseExpressionWithPrecedence(Parser* self, Precedence minPrecedenc
   }
 }
 
+inline static NodeType mapKeywordExpression(TokenType tokenType) {
+  switch(tokenType) {
+    case TOKEN_IF:
+      return NODE_IF;
+
+    case TOKEN_WHILE:
+      return NODE_WHILE;
+
+    case TOKEN_UNTIL:
+      return NODE_UNTIL;
+
+    default:
+      // This should never be called this way
+      assert(false);
+      return NODE_ERROR; // This is just here to silence warnings
+  }
+}
+
 Node* Parser_parseExpression(Parser* self) {
-  return Parser_parseExpressionWithPrecedence(self, PREC_ANY);
+  Tokenizer* tokenizer = &(self->tokenizer);
+  Token token = Tokenizer_peek(tokenizer);
+
+  switch(token.type) {
+    case TOKEN_LOOP:
+      Tokenizer_scan(tokenizer);
+      {
+        Node* body = Parser_parseExpression(self);
+
+        if(body->type == NODE_ERROR) {
+          return body;
+        } else {
+          return UnaryNode_new(NODE_LOOP, token.line, body);
+        }
+      }
+
+    case TOKEN_IF:
+    case TOKEN_WHILE:
+    case TOKEN_UNTIL:
+      /*
+       * These three cases have the same form, so we push them through the
+       * same code and emit the structure at the end.
+       */
+      Tokenizer_scan(tokenizer);
+      {
+        // TODO Should we force parens around this?
+        Node* condition = Parser_parseExpression(self);
+
+        if(condition->type == NODE_ERROR) {
+          return condition;
+        }
+
+        Node* ifBranch = Parser_parseExpression(self);
+
+        if(ifBranch->type == NODE_ERROR) {
+          free(condition);
+          return ifBranch;
+        }
+
+        Token semicolonToken = Tokenizer_peek(tokenizer);
+
+        if(semicolonToken.type == TOKEN_SEMICOLON) {
+          Token lookahead = Tokenizer_lookahead(tokenizer, 2);
+
+          /*
+           * This detects if we are NOT at the end of a statement. If we
+           * ARE at the end of a statement, we don't want to consume the
+           * semicolon because Parser_parseStatement() will expect it to be
+           * there.
+           */
+          if(lookahead.type == TOKEN_ELSE
+              || Token_closesOutfix(lookahead) != NO_TOKEN) {
+            Tokenizer_scan(tokenizer);
+          }
+        } else if(semicolonToken.type == TOKEN_ELSE) {
+          Node_free(condition);
+          Node_free(ifBranch);
+          return ErrorNode_new(ERROR_MISSING_SEMICOLON, semicolonToken);
+        }
+
+        Token elseToken = Tokenizer_peek(tokenizer);
+
+        if(elseToken.type != TOKEN_ELSE) {
+          return TernaryNode_new(
+            mapKeywordExpression(token.type),
+            token.line,
+            condition,
+            ifBranch,
+            NULL
+          );
+        }
+
+        Tokenizer_scan(tokenizer);
+
+        Node* elseBranch = Parser_parseStatement(self);
+
+        if(elseBranch->type == NODE_ERROR) {
+          Node_free(condition);
+          Node_free(ifBranch);
+          return elseBranch;
+        }
+
+        semicolonToken = Tokenizer_peek(tokenizer);
+
+        if(semicolonToken.type == TOKEN_SEMICOLON) {
+          Tokenizer_scan(tokenizer);
+        } else if(!(self->repl) || semicolonToken.type != TOKEN_EOF) {
+          Node_free(condition);
+          Node_free(ifBranch);
+          Node_free(elseBranch);
+          return ErrorNode_new(ERROR_MISSING_SEMICOLON, semicolonToken);
+        }
+
+        return TernaryNode_new(
+          mapKeywordExpression(token.type),
+          token.line,
+          condition,
+          ifBranch,
+          elseBranch
+        );
+      }
+
+    default:
+      return Parser_parseExpressionWithPrecedence(self, PREC_ANY);
+  }
 }
 
 Node* Parser_parseStatement(Parser* self) {
   Tokenizer* tokenizer = &(self->tokenizer);
-  Token token;
+  Token token = Tokenizer_peek(tokenizer);
 
-  token = Tokenizer_peek(tokenizer);
   if(token.type == TOKEN_EOF) {
     return Node_new(NODE_EOF, token.line);
   }
@@ -924,6 +1053,90 @@ void test_Parser_parseExpression_assignment() {
 
   Node_free(node);
   Parser_free(&parser);
+}
+
+void test_Parser_parseStatement_parsesJumpStatementsWithoutElse() {
+  const char* sources[3] = {
+    "if(true) 42;",
+    "while(true) 42;",
+    "until(true) 42;",
+  };
+
+  NodeType nodeTypes[3] = {
+    NODE_IF,
+    NODE_WHILE,
+    NODE_UNTIL,
+  };
+
+  for(int i = 0; i < 3; i++) {
+    Parser parser;
+    Parser_init(&parser, sources[i], false);
+
+    Node* node = Parser_parseStatement(&parser);
+
+    assert(node->type == nodeTypes[i]);
+    assert(((TernaryNode*)node)->arg0 != NULL);
+    assert(((TernaryNode*)node)->arg0->type == NODE_BOOLEAN_LITERAL);
+    assert(((TernaryNode*)node)->arg1 != NULL);
+    assert(((TernaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
+    assert(((TernaryNode*)node)->arg2 == NULL);
+
+    Node_free(node);
+    Parser_free(&parser);
+  }
+}
+
+void test_Parser_parseStatement_requiresSemicolonsForJumpStatementsOutsideREPL() {
+  const char* sources[3] = {
+    "if(true) 42",
+    "while(true) 42",
+    "until(true) 42",
+  };
+
+  for(int i = 0; i < 3; i++) {
+    Parser parser;
+    Parser_init(&parser, sources[i], false);
+
+    Node* node = Parser_parseStatement(&parser);
+
+    assert(node->type == NODE_ERROR);
+    assert(((ErrorNode*)node)->type == ERROR_MISSING_SEMICOLON);
+
+    Node_free(node);
+    Parser_free(&parser);
+  }
+}
+
+
+void test_Parser_parseStatement_parsesJumpStatementsWithoutElseOrSemicolonInREPL() {
+  const char* sources[3] = {
+    "if(true) 42",
+    "while(true) 42",
+    "until(true) 42",
+  };
+
+  NodeType nodeTypes[3] = {
+    NODE_IF,
+    NODE_WHILE,
+    NODE_UNTIL,
+  };
+
+  for(int i = 0; i < 3; i++) {
+    Parser parser;
+    Parser_init(&parser, sources[i], true);
+
+    Node* node = Parser_parseStatement(&parser);
+
+    assert(node->type == nodeTypes[i]);
+    assert(((TernaryNode*)node)->arg0 != NULL);
+    assert(((TernaryNode*)node)->arg0->type == NODE_BOOLEAN_LITERAL);
+    assert(((TernaryNode*)node)->arg1 != NULL);
+    assert(((TernaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
+    assert(((TernaryNode*)node)->arg2 == NULL);
+
+    Node_free(node);
+    Parser_free(&parser);
+  }
 }
 
 void test_Parser_parseStatement_terminatesAtSemicolon() {

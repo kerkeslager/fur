@@ -48,6 +48,10 @@ void test_Parser_parseExpression_infixRightError();
 
 void test_Parser_parseExpression_assignment();
 
+void test_Parser_parseStatement_parsesJumpStatementsWithoutElse();
+void test_Parser_parseStatement_requiresSemicolonsForJumpStatementsOutsideREPL();
+void test_Parser_parseStatement_parsesJumpStatementsWithoutElseOrSemicolonInREPL();
+
 void test_Parser_parseStatement_terminatesAtSemicolon();
 void test_Parser_parseStatement_elideSemicolonAtEndInReplMode();
 void test_Parser_parseStatement_noElideSemicolonAtEndInModuleMode();

@@ -166,6 +166,12 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
     case NODE_EQUAL:              Compiler_emitBinaryNode(self, out, OP_EQUAL, node);   return;
     case NODE_NOT_EQUAL:          Compiler_emitBinaryNode(self, out, OP_NOT_EQUAL, node);   return;
 
+    case NODE_LOOP:
+    case NODE_IF:
+    case NODE_WHILE:
+    case NODE_UNTIL:
+      assert(false);
+
     case NODE_ERROR:
     case NODE_EOF:
       assert(false);

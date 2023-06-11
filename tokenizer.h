@@ -60,12 +60,14 @@ typedef struct {
   const char* source;
   const char* current;
   size_t line;
-  Token lookahead;
+  Token lookaheads[2];
+  uint8_t lookaheadCount;
 } Tokenizer;
 
-void Tokenizer_init(Tokenizer* self, const char* source);
-Token Tokenizer_scan(Tokenizer* self);
-Token Tokenizer_peek(Tokenizer* self);
+void Tokenizer_init(Tokenizer*, const char* source);
+Token Tokenizer_scan(Tokenizer*);
+Token Tokenizer_peek(Tokenizer*);
+Token Tokenizer_lookahead(Tokenizer*, uint8_t lookahead);
 
 #ifdef TEST
 

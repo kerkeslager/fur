@@ -7,7 +7,7 @@ void Tokenizer_init(Tokenizer* self, const char* source) {
   self->source = source;
   self->current = source;
   self->line = 1;
-  self->lookahead.type = NO_TOKEN;
+  self->lookaheadCount = 0;
 }
 
 inline static Token Token_create(TokenType type, const char* lexeme, size_t length, size_t line) {
@@ -79,13 +79,7 @@ Token Tokenizer_keywordOrSymbol(Tokenizer* self, const char* lexeme, const char*
   return Tokenizer_completeSymbol(self, lexeme);
 }
 
-Token Tokenizer_scan(Tokenizer* self) {
-  if(self->lookahead.type != NO_TOKEN) {
-    Token result = self->lookahead;
-    self->lookahead.type = NO_TOKEN;
-    return result;
-  }
-
+Token Tokenizer_scanInternal(Tokenizer* self) {
   Tokenizer_handleWhitespace(self);
 
   switch(*(self->current)) {
@@ -291,11 +285,34 @@ Token Tokenizer_scan(Tokenizer* self) {
   }
 }
 
-Token Tokenizer_peek(Tokenizer* self) {
-  if(self->lookahead.type == NO_TOKEN) {
-    self->lookahead = Tokenizer_scan(self);
+Token Tokenizer_scan(Tokenizer* self) {
+  if(self->lookaheadCount == 0) {
+    return Tokenizer_scanInternal(self);
   }
-  return self->lookahead;
+
+  Token result = self->lookaheads[0];
+
+  self->lookaheadCount--;
+  for(uint8_t i = 0; i < self->lookaheadCount; i++) {
+    self->lookaheads[i] = self->lookaheads[i + 1];
+  }
+
+  return result;
+}
+
+Token Tokenizer_lookahead(Tokenizer* self, uint8_t lookahead) {
+  // This is all we allocated for
+  assert(lookahead <= 2);
+
+  while(lookahead > self->lookaheadCount) {
+    self->lookaheads[self->lookaheadCount++] = Tokenizer_scanInternal(self);
+  }
+
+  return self->lookaheads[lookahead - 1];
+}
+
+Token Tokenizer_peek(Tokenizer* self) {
+  return Tokenizer_lookahead(self, 1);
 }
 
 #ifdef TEST
