@@ -49,8 +49,8 @@ inline static void Compiler_emitInteger(ByteCode* out, AtomNode* node) {
 inline static void Compiler_emitBoolean(ByteCode* out, AtomNode* node) {
   /*
    * Since there are only two possibilities which should have been matched
-   * by the tokenizer, it should be sufficient to check only the first character.
-   * However, we assert the full values for debug.
+   * by the tokenizer, it should be sufficient to check only the first
+   * character. However, we assert the full values for debug.
    */
   if(*(node->text) == 't') {
     assert(strncmp("true", node->text, node->length) == 0);
@@ -459,6 +459,34 @@ void test_Compiler_emitNode_emitsComparisons() {
     ByteCode_free(&out);
   }
 
+  Compiler_free(&compiler);
+}
+
+void test_Compiler_compile_emitsVariableInstructions() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  const char* text = "answer = 42; answer;";
+  Parser parser;
+  Parser_init(&parser, text, false);
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  bool success = Compiler_compile(&compiler, &out, &parser);
+
+  assert(success);
+  assert(out.count == 11);
+  assert(out.items[0] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 1)) == 42);
+  assert(out.items[5] == OP_NIL);
+  assert(out.items[6] == OP_DROP);
+  assert(out.items[7] == OP_GET);
+  assert(*((uint16_t*)(out.items + 8)) == 0);
+  assert(out.items[10] == OP_RETURN);
+
+  Parser_free(&parser);
+  ByteCode_free(&out);
   Compiler_free(&compiler);
 }
 
