@@ -23,6 +23,7 @@ typedef enum {
   OP_EQUAL,
   OP_NOT_EQUAL,
   OP_DROP,
+  OP_JUMP,
   OP_RETURN,
 } Instruction;
 
@@ -43,6 +44,7 @@ typedef struct {
 void ByteCode_init(ByteCode*);
 void ByteCode_free(ByteCode*);
 void ByteCode_append(ByteCode*, uint8_t, size_t line);
+void ByteCode_appendInt16(ByteCode*, int16_t, size_t line);
 void ByteCode_appendUInt16(ByteCode*, uint16_t, size_t line);
 void ByteCode_appendInt32(ByteCode*, int32_t, size_t line);
 size_t ByteCode_getLine(ByteCode*, uint8_t* instruction);

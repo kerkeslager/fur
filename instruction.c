@@ -95,27 +95,29 @@ void ByteCode_append(ByteCode* self, uint8_t item, size_t line) {
   ByteCode_updateLineRuns(self, line, 1);
 }
 
+#define DEFINE_TYPE_APPENDER(name) \
+  if(!ByteCode_canInsert(self, sizeof(name))) { \
+    ByteCode_grow(self); \
+  } \
+  \
+  *((uint16_t*)&(self->items[self->count])) = i; \
+  self->count += sizeof(name); \
+  \
+  ByteCode_updateLineRuns(self, line, sizeof(name) / sizeof(uint8_t))
+
+void ByteCode_appendInt16(ByteCode* self, int16_t i, size_t line) {
+  DEFINE_TYPE_APPENDER(int16_t);
+}
+
 void ByteCode_appendUInt16(ByteCode* self, uint16_t i, size_t line) {
-  if(!ByteCode_canInsert(self, sizeof(uint16_t))) {
-    ByteCode_grow(self);
-  }
-
-  *((uint16_t*)&(self->items[self->count])) = i;
-  self->count += sizeof(uint16_t);
-
-  ByteCode_updateLineRuns(self, line, sizeof(uint16_t) / sizeof(uint8_t));
+  DEFINE_TYPE_APPENDER(uint16_t);
 }
 
 void ByteCode_appendInt32(ByteCode* self, int32_t i, size_t line) {
-  if(!ByteCode_canInsert(self, sizeof(int32_t))) {
-    ByteCode_grow(self);
-  }
-
-  *((int32_t*)&(self->items[self->count])) = i;
-  self->count += sizeof(int32_t);
-
-  ByteCode_updateLineRuns(self, line, sizeof(int32_t) / sizeof(uint8_t));
+  DEFINE_TYPE_APPENDER(int32_t);
 }
+
+#undef DEFINE_TYPE_APPENDER
 
 size_t ByteCode_getLine(ByteCode* self, uint8_t* instruction) {
   assert(instruction >= self->items);

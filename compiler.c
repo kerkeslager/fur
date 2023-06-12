@@ -25,6 +25,10 @@ inline static void Compiler_emitOp(ByteCode* out, Instruction op, size_t line) {
   ByteCode_append(out, (uint8_t)op, line);
 }
 
+inline static void Compiler_emitInt16(ByteCode* out, int16_t i, size_t line) {
+  ByteCode_appendInt16(out, i, line);
+}
+
 inline static void Compiler_emitUInt16(ByteCode* out, uint16_t i, size_t line) {
   ByteCode_appendUInt16(out, i, line);
 }
@@ -167,6 +171,14 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
     case NODE_NOT_EQUAL:          Compiler_emitBinaryNode(self, out, OP_NOT_EQUAL, node);   return;
 
     case NODE_LOOP:
+      {
+        size_t start = ByteCode_count(out);
+        Compiler_emitNode(self, out, ((UnaryNode*)node)->arg0);
+        Compiler_emitOp(out, OP_JUMP, node->line);
+        // TODO Bounds-check that this fits in an int16_t
+        return Compiler_emitInt16(out, start - ByteCode_count(out), node->line);
+      }
+
     case NODE_IF:
     case NODE_WHILE:
     case NODE_UNTIL:

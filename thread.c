@@ -26,6 +26,7 @@ static const char* Instruction_toOperatorCString(uint8_t* pc) {
     case OP_INTEGER:
     case OP_GET:
     case OP_DROP:
+    case OP_JUMP:
     case OP_RETURN:
       assert(false);
 
@@ -358,12 +359,13 @@ Value Thread_run(Thread* self) {
         Stack_pop(stack);
         break;
 
+      case OP_JUMP:
+        pc += *((int16_t*)pc);
+        break;
+
       case OP_RETURN:
         self->pcIndex = ByteCode_index(self->byteCode, pc);
         return Stack_pop(stack);
-
-      default:
-        assert(false);
     }
   }
 
