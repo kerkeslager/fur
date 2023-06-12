@@ -51,6 +51,11 @@ void test_Parser_parseExpression_assignment();
 void test_Parser_parseStatement_parsesJumpStatementsWithoutElse();
 void test_Parser_parseStatement_requiresSemicolonsForJumpStatementsOutsideREPL();
 void test_Parser_parseStatement_parsesJumpStatementsWithoutElseOrSemicolonInREPL();
+void test_Parser_parseStatement_parsesJumpElse();
+void test_Parser_parseStatement_parsesJumpInAssignment();
+void test_Parser_parseStatement_parsesJumpElseInAssignment();
+void test_Parser_parseStatement_parsesJumpInParens();
+void test_Parser_parseStatement_parsesJumpElseInParens();
 
 void test_Parser_parseStatement_terminatesAtSemicolon();
 void test_Parser_parseStatement_elideSemicolonAtEndInReplMode();
