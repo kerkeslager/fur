@@ -24,6 +24,8 @@ typedef enum {
   OP_NOT_EQUAL,
   OP_DROP,
   OP_JUMP,
+  OP_JUMP_TRUE,
+  OP_JUMP_FALSE,
   OP_RETURN,
 } Instruction;
 

@@ -174,12 +174,45 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
       {
         size_t start = ByteCode_count(out);
         Compiler_emitNode(self, out, ((UnaryNode*)node)->arg0);
+        Compiler_emitOp(out, OP_DROP, node->line);
         Compiler_emitOp(out, OP_JUMP, node->line);
         // TODO Bounds-check that this fits in an int16_t
         return Compiler_emitInt16(out, start - ByteCode_count(out), node->line);
       }
 
     case NODE_IF:
+      {
+        TernaryNode* tNode = (TernaryNode*)node;
+        Compiler_emitNode(self, out, tNode->arg0);
+        Compiler_emitOp(out, OP_JUMP_FALSE, node->line);
+
+        size_t ifJumpStart = ByteCode_count(out);
+        int16_t* ifJumpBackpatch = (int16_t*)ByteCode_pc(out, ifJumpStart);
+        Compiler_emitInt16(out, 0, node->line);
+
+        Compiler_emitNode(self, out, tNode->arg1);
+
+        Compiler_emitOp(out, OP_JUMP, node->line);
+
+        size_t elseJumpStart = ByteCode_count(out);
+        int16_t* elseJumpBackpatch = (int16_t*)ByteCode_pc(out, elseJumpStart);
+        Compiler_emitInt16(out, 0, node->line);
+
+        // TODO Bounds-check fits in an int16_t
+        *ifJumpBackpatch = ByteCode_count(out) - ifJumpStart;
+
+        if(tNode->arg2 == NULL) {
+          Compiler_emitOp(out, OP_NIL, node->line);
+        } else {
+          Compiler_emitNode(self, out, tNode->arg2);
+        }
+
+        // TODO Bounds-check fits in an int16_t
+        *elseJumpBackpatch = ByteCode_count(out) - elseJumpStart;
+
+        return;
+      }
+
     case NODE_WHILE:
     case NODE_UNTIL:
       assert(false);
@@ -477,6 +510,101 @@ void test_Compiler_emitNode_emitsComparisons() {
     ByteCode_free(&out);
   }
 
+  Compiler_free(&compiler);
+}
+
+void test_Compiler_emitNode_loop() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  const char* text = "42";
+  Node* node = UnaryNode_new(
+    NODE_LOOP,
+    1,
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 2)
+  );
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  assert(out.count == 9);
+  assert(out.items[0] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 1)) == 42);
+  assert(out.items[5] == OP_DROP);
+  assert(out.items[6] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 7)) == -7);
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+}
+
+void test_Compiler_emitNode_if() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  const char* text0 = "true";
+  const char* text1 = "42";
+  Node* node = TernaryNode_new(
+    NODE_IF,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, text0, 4),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, text1, 2),
+    NULL
+  );
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  assert(out.count == 13);
+  assert(out.items[0] == OP_TRUE);
+  assert(out.items[1] == OP_JUMP_FALSE);
+  assert(*((int16_t*)(out.items + 2)) == 10);
+  assert(out.items[4] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 5)) == 42);
+  assert(out.items[9] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 10)) == 3);
+  assert(out.items[12] == OP_NIL);
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+}
+
+void test_Compiler_emitNode_ifElse() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  const char* text0 = "true";
+  const char* text1 = "42";
+  const char* text2 = "37";
+  Node* node = TernaryNode_new(
+    NODE_IF,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, text0, 4),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, text1, 2),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, text2, 2)
+  );
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  assert(out.count == 17);
+  assert(out.items[0] == OP_TRUE);
+  assert(out.items[1] == OP_JUMP_FALSE);
+  assert(*((int16_t*)(out.items + 2)) == 10);
+  assert(out.items[4] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 5)) == 42);
+  assert(out.items[9] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 10)) == 7);
+  assert(out.items[12] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 13)) == 37);
+
+  Node_free(node);
+  ByteCode_free(&out);
   Compiler_free(&compiler);
 }
 

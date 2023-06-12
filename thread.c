@@ -27,6 +27,8 @@ static const char* Instruction_toOperatorCString(uint8_t* pc) {
     case OP_GET:
     case OP_DROP:
     case OP_JUMP:
+    case OP_JUMP_TRUE:
+    case OP_JUMP_FALSE:
     case OP_RETURN:
       assert(false);
 
@@ -361,6 +363,36 @@ Value Thread_run(Thread* self) {
 
       case OP_JUMP:
         pc += *((int16_t*)pc);
+        break;
+
+      case OP_JUMP_TRUE:
+        {
+          Value operand = Stack_pop(stack);
+
+          // TODO Handle this
+          assert(operand.type == VALUE_BOOLEAN);
+
+          if(Value_asBoolean(operand)) {
+            pc += *((int16_t*)pc);
+          } else {
+            pc += sizeof(int16_t) / sizeof(uint8_t);
+          }
+        }
+        break;
+
+      case OP_JUMP_FALSE:
+        {
+          Value operand = Stack_pop(stack);
+
+          // TODO Handle this
+          assert(operand.type == VALUE_BOOLEAN);
+
+          if(Value_asBoolean(operand)) {
+            pc += sizeof(int16_t) / sizeof(uint8_t);
+          } else {
+            pc += *((int16_t*)pc);
+          }
+        }
         break;
 
       case OP_RETURN:

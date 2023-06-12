@@ -100,7 +100,7 @@ void ByteCode_append(ByteCode* self, uint8_t item, size_t line) {
     ByteCode_grow(self); \
   } \
   \
-  *((uint16_t*)&(self->items[self->count])) = i; \
+  *((name*)&(self->items[self->count])) = i; \
   self->count += sizeof(name); \
   \
   ByteCode_updateLineRuns(self, line, sizeof(name) / sizeof(uint8_t))
