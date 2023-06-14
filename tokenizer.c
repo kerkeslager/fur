@@ -181,7 +181,6 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
     case 'h':
     case 'j':
     case 'k':
-    case 'm':
     case 'o':
     case 'p':
     case 'q':
@@ -249,6 +248,13 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
         const char* lexeme = self->current;
         self->current++;
         return Tokenizer_keywordOrSymbol(self, lexeme, "oop", TOKEN_LOOP);
+      }
+
+    case 'm':
+      {
+        const char* lexeme = self->current;
+        self->current++;
+        return Tokenizer_keywordOrSymbol(self, lexeme, "ut", TOKEN_MUT);
       }
 
     case 'n':
@@ -683,6 +689,19 @@ void test_Tokenizer_scan_jumpKeywords() {
   assert(token.type == TOKEN_UNTIL);
   assert(token.lexeme == source + 19);
   assert(token.length == 5);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_mut() {
+  const char* source = "mut";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source);
+
+  Token token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_MUT);
+  assert(token.lexeme == source);
+  assert(token.length == 3);
   assert(token.line == 1);
 }
 
