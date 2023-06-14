@@ -34,6 +34,10 @@ void test_Compiler_emitNode_emitsComparisons();
 void test_Compiler_emitNode_loop();
 void test_Compiler_emitNode_if();
 void test_Compiler_emitNode_ifElse();
+void test_Compiler_emitNode_while();
+void test_Compiler_emitNode_whileElse();
+void test_Compiler_emitNode_until();
+void test_Compiler_emitNode_untilElse();
 
 void test_Compiler_compile_emitsVariableInstructions();
 

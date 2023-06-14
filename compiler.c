@@ -130,16 +130,10 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
               node->line,
               false
             );
-
-            // An assignment statement returns NIL
-            Compiler_emitOp(out, OP_NIL, node->line);
           } else {
             if(SymbolList_isMutable(&(self->symbolList), index)) {
               Compiler_emitOp(out, OP_SET, node->line);
               Compiler_emitUInt16(out, index, node->line);
-
-              // An assignment statement returns NIL
-              Compiler_emitOp(out, OP_NIL, node->line);
             } else {
               self->hasErrors = true;
               printError(
@@ -157,6 +151,8 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
           assert(false);
         }
 
+        // An assignment statement returns NIL
+        Compiler_emitOp(out, OP_NIL, node->line);
       }
       return;
 
@@ -181,9 +177,6 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
               node->line,
               true
             );
-
-            // An assignment statement returns NIL
-            Compiler_emitOp(out, OP_NIL, node->line);
           } else {
             self->hasErrors = true;
             printError(
@@ -193,7 +186,6 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
               symbol->text,
               SymbolList_definedOnLine(&(self->symbolList), index)
             );
-            return;
           }
         } else {
           // TODO Handle assigning to other kinds of nodes
@@ -270,7 +262,42 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
 
     case NODE_WHILE:
     case NODE_UNTIL:
-      assert(false);
+      {
+        TernaryNode* tNode = (TernaryNode*)node;
+        size_t beforeLoop = ByteCode_count(out);
+
+        Compiler_emitNode(self, out, tNode->arg0);
+
+        if(node->type == NODE_WHILE) {
+          Compiler_emitOp(out, OP_JUMP_FALSE, node->line);
+        } else if(node->type == NODE_UNTIL) {
+          Compiler_emitOp(out, OP_JUMP_TRUE, node->line);
+        } else {
+          assert(false);
+        }
+
+        size_t loopJumpStart = ByteCode_count(out);
+        int16_t* loopJumpBackpatch = (int16_t*)ByteCode_pc(out, loopJumpStart);
+        Compiler_emitInt16(out, 0, node->line);
+
+        Compiler_emitNode(self, out, tNode->arg1);
+        Compiler_emitOp(out, OP_DROP, node->line);
+
+        // TODO Bounds-check fits in an int16_t
+        Compiler_emitOp(out, OP_JUMP, node->line);
+        Compiler_emitInt16(out, beforeLoop - ByteCode_count(out), node->line);
+
+        // TODO Bounds-check fits in an int16_t
+        *loopJumpBackpatch = ByteCode_count(out) - loopJumpStart;
+
+        if(tNode->arg2 == NULL) {
+          Compiler_emitOp(out, OP_NIL, node->line);
+        } else {
+          Compiler_emitNode(self, out, tNode->arg2);
+        }
+
+        return;
+      }
 
     case NODE_ERROR:
     case NODE_EOF:
@@ -657,6 +684,146 @@ void test_Compiler_emitNode_ifElse() {
   assert(*((int16_t*)(out.items + 10)) == 7);
   assert(out.items[12] == OP_INTEGER);
   assert(*((int32_t*)(out.items + 13)) == 37);
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+}
+
+void test_Compiler_emitNode_while() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  const char* text0 = "true";
+  const char* text1 = "42";
+  Node* node = TernaryNode_new(
+    NODE_WHILE,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, text0, 4),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, text1, 2),
+    NULL
+  );
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  assert(out.count == 14);
+  assert(out.items[0] == OP_TRUE);
+  assert(out.items[1] == OP_JUMP_FALSE);
+  assert(*((int16_t*)(out.items + 2)) == 11);
+  assert(out.items[4] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 5)) == 42);
+  assert(out.items[9] == OP_DROP);
+  assert(out.items[10] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 11)) == -11);
+  assert(out.items[13] == OP_NIL);
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+}
+
+void test_Compiler_emitNode_whileElse() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  const char* text0 = "true";
+  const char* text1 = "42";
+  const char* text2 = "37";
+  Node* node = TernaryNode_new(
+    NODE_WHILE,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, text0, 4),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, text1, 2),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, text2, 2)
+  );
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  assert(out.count == 18);
+  assert(out.items[0] == OP_TRUE);
+  assert(out.items[1] == OP_JUMP_FALSE);
+  assert(*((int16_t*)(out.items + 2)) == 11);
+  assert(out.items[4] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 5)) == 42);
+  assert(out.items[9] == OP_DROP);
+  assert(out.items[10] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 11)) == -11);
+  assert(out.items[13] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 14)) == 37);
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+}
+
+void test_Compiler_emitNode_until() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  const char* text0 = "true";
+  const char* text1 = "42";
+  Node* node = TernaryNode_new(
+    NODE_UNTIL,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, text0, 4),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, text1, 2),
+    NULL
+  );
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  assert(out.count == 14);
+  assert(out.items[0] == OP_TRUE);
+  assert(out.items[1] == OP_JUMP_TRUE);
+  assert(*((int16_t*)(out.items + 2)) == 11);
+  assert(out.items[4] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 5)) == 42);
+  assert(out.items[9] == OP_DROP);
+  assert(out.items[10] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 11)) == -11);
+  assert(out.items[13] == OP_NIL);
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+}
+
+void test_Compiler_emitNode_untilElse() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  const char* text0 = "true";
+  const char* text1 = "42";
+  const char* text2 = "37";
+  Node* node = TernaryNode_new(
+    NODE_UNTIL,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, text0, 4),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, text1, 2),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, text2, 2)
+  );
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  assert(out.count == 18);
+  assert(out.items[0] == OP_TRUE);
+  assert(out.items[1] == OP_JUMP_TRUE);
+  assert(*((int16_t*)(out.items + 2)) == 11);
+  assert(out.items[4] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 5)) == 42);
+  assert(out.items[9] == OP_DROP);
+  assert(out.items[10] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 11)) == -11);
+  assert(out.items[13] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 14)) == 37);
 
   Node_free(node);
   ByteCode_free(&out);
