@@ -73,38 +73,6 @@ inline static void Compiler_emitBinaryNode(Compiler* self, ByteCode* out, Instru
   ByteCode_append(out, op, node->line);
 }
 
-inline static void Compiler_emitSymbol(Compiler* self, AtomNode* node) {
-  Symbol* symbol = SymbolTable_getOrCreate(&(self->symbolTable), node->text, node->length);
-
-  int32_t index = SymbolList_find(&(self->symbolList), symbol);
-
-  /*
-   * If it's found in the list, the symbol already exists in this scope.
-   */
-  if(index != -1) {
-    self->hasErrors = true;
-
-    printError(
-      node->node.line,
-      "Reassigned immutable variable `%.*s` after definition.",
-      symbol->length,
-      symbol->text
-    );
-
-    printError(
-      node->node.line,
-      "Variable `%.*s` defined on line %zu.",
-      symbol->length,
-      symbol->text,
-      SymbolList_definedOnLine(&(self->symbolList), index)
-    );
-
-    return;
-  }
-
-  SymbolList_append(&(self->symbolList), symbol, node->node.line, false);
-}
-
 void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
   switch(node->type) {
     case NODE_INTEGER_LITERAL:
@@ -141,17 +109,92 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         return;
       }
 
-    case NODE_MUT_ASSIGN:
-      // TODO Implement
-      assert(false);
-
     case NODE_ASSIGN:
       {
         BinaryNode* assignNode = (BinaryNode*)node;
         Compiler_emitNode(self, out, assignNode->arg1);
 
         if(assignNode->arg0->type == NODE_SYMBOL) {
-          Compiler_emitSymbol(self, ((AtomNode*)(assignNode->arg0)));
+          AtomNode* symbolNode = ((AtomNode*)(assignNode->arg0));
+          Symbol* symbol = SymbolTable_getOrCreate(
+            &(self->symbolTable),
+            symbolNode->text,
+            symbolNode->length
+          );
+          int32_t index = SymbolList_find(&(self->symbolList), symbol);
+
+          if(index == -1) {
+            SymbolList_append(
+              &(self->symbolList),
+              symbol,
+              node->line,
+              false
+            );
+
+            // An assignment statement returns NIL
+            Compiler_emitOp(out, OP_NIL, node->line);
+          } else {
+            if(SymbolList_isMutable(&(self->symbolList), index)) {
+              Compiler_emitOp(out, OP_SET, node->line);
+              Compiler_emitUInt16(out, index, node->line);
+
+              // An assignment statement returns NIL
+              Compiler_emitOp(out, OP_NIL, node->line);
+            } else {
+              self->hasErrors = true;
+              printError(
+                node->line,
+                "Reassigning immutable variable `%.*s` after definition on line %zu.",
+                symbol->length,
+                symbol->text,
+                SymbolList_definedOnLine(&(self->symbolList), index)
+              );
+              return;
+            }
+          }
+        } else {
+          // TODO Handle assigning to other kinds of nodes
+          assert(false);
+        }
+
+      }
+      return;
+
+    case NODE_MUT_ASSIGN:
+      {
+        BinaryNode* assignNode = (BinaryNode*)node;
+        Compiler_emitNode(self, out, assignNode->arg1);
+
+        if(assignNode->arg0->type == NODE_SYMBOL) {
+          AtomNode* symbolNode = ((AtomNode*)(assignNode->arg0));
+          Symbol* symbol = SymbolTable_getOrCreate(
+            &(self->symbolTable),
+            symbolNode->text,
+            symbolNode->length
+          );
+          int32_t index = SymbolList_find(&(self->symbolList), symbol);
+
+          if(index == -1) {
+            SymbolList_append(
+              &(self->symbolList),
+              symbol,
+              node->line,
+              true
+            );
+
+            // An assignment statement returns NIL
+            Compiler_emitOp(out, OP_NIL, node->line);
+          } else {
+            self->hasErrors = true;
+            printError(
+              node->line,
+              "Re-declaring symbol `%.*s` already declared on line %zu.",
+              symbol->length,
+              symbol->text,
+              SymbolList_definedOnLine(&(self->symbolList), index)
+            );
+            return;
+          }
         } else {
           // TODO Handle assigning to other kinds of nodes
           assert(false);

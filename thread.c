@@ -67,6 +67,9 @@ static const char* Instruction_toOperatorCString(uint8_t* pc) {
 
     case OP_NOT_EQUAL:
       return "!=";
+
+    case OP_SET:
+      return "=";
   }
 }
 
@@ -159,6 +162,14 @@ Value Thread_run(Thread* self) {
           uint16_t index = *((uint16_t*)pc);
           pc += sizeof(uint16_t);
           Stack_pushIndex(stack, index);
+          break;
+        }
+
+      case OP_SET:
+        {
+          uint16_t index = *((uint16_t*)pc);
+          pc += sizeof(uint16_t);
+          Stack_popToIndex(stack, index);
           break;
         }
 

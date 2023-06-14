@@ -44,6 +44,12 @@ inline static void Stack_pushIndex(Stack* self, size_t index) {
   Stack_push(self, Value_copy(self->items + index));
 }
 
+inline static void Stack_popToIndex(Stack* self, size_t index) {
+  assert(self->items + index <= self->top);
+  Value_unreference(self->items + index);
+  self->items[index] = Stack_pop(self);
+}
+
 #ifdef TEST
 
 void test_Stack_init_empty();

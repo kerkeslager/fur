@@ -10,6 +10,7 @@ typedef enum {
   OP_FALSE,
   OP_INTEGER,
   OP_GET,
+  OP_SET,
   OP_NEGATE,
   OP_NOT,
   OP_ADD,

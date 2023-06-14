@@ -86,6 +86,19 @@ inline static Value Value_copy(Value* self) {
   }
 }
 
+inline static void Value_unreference(Value* self) {
+  /*
+   * None of these types require updating reference counts, but future types
+   * will.
+   */
+  switch(self->type) {
+    case VALUE_BOOLEAN:
+    case VALUE_NIL:
+    case VALUE_INTEGER:
+      break;
+  }
+}
+
 #ifdef TEST
 
 #endif
