@@ -3,6 +3,11 @@
 
 #include "symbol_list.h"
 
+void SymbolMetadata_init(SymbolMetadata* self, Symbol* symbol, bool isMutable) {
+  self->symbol = symbol;
+  self->isMutable = isMutable;
+}
+
 int32_t SymbolList_find(SymbolList* self, Symbol* symbol) {
   for(size_t i = 0; i < self->count; i++) {
     if(self->items[i].symbol == symbol) {
@@ -35,9 +40,11 @@ void SymbolList_append(SymbolList* self, Symbol* symbol, bool isMutable) {
     assert(self->items != NULL);
   }
 
-  self->items[self->count].symbol = symbol;
-  self->items[self->count].isMutable = isMutable;
-  self->count++;
+  SymbolMetadata_init(
+    &(self->items[self->count++]),
+    symbol,
+    isMutable
+  );
 }
 
 #ifdef TEST
