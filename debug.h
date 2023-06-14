@@ -112,6 +112,7 @@ inline static void NodeType_println(NodeType nodeType) {
     PRINT_CASE(NODE_SYMBOL);
 
     PRINT_CASE(NODE_ASSIGN);
+    PRINT_CASE(NODE_MUT_ASSIGN);
 
     PRINT_CASE(NODE_NEGATE);
     PRINT_CASE(NODE_LOGICAL_NOT);

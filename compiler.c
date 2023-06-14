@@ -141,6 +141,10 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         return;
       }
 
+    case NODE_MUT_ASSIGN:
+      // TODO Implement
+      assert(false);
+
     case NODE_ASSIGN:
       {
         BinaryNode* assignNode = (BinaryNode*)node;

@@ -18,6 +18,7 @@ typedef enum {
 
   // Binary Nodes
   NODE_ASSIGN,
+  NODE_MUT_ASSIGN,
   NODE_ADD,
   NODE_SUBTRACT,
   NODE_MULTIPLY,

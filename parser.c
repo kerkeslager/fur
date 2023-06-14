@@ -17,6 +17,7 @@ void Parser_free(Parser* self) {
 typedef enum {
   PREC_NONE,
   PREC_ANY,
+  PREC_MUTABILITY,
   PREC_ASSIGNMENT_LEFT,
   PREC_ASSIGNMENT_RIGHT,
   PREC_LOGICAL_NOT,
@@ -40,6 +41,7 @@ typedef struct {
 const PrecedenceRule PRECEDENCE[] = {
   [TOKEN_INTEGER_LITERAL] =     { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
+  [TOKEN_MUT] =                 { PREC_MUTABILITY,  PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
   [TOKEN_EQUALS] =              { PREC_NONE,        PREC_ASSIGNMENT_LEFT, PREC_ASSIGNMENT_RIGHT,  false,  NO_TOKEN },
   [TOKEN_SEMICOLON] =           { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
 
@@ -284,6 +286,16 @@ Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
     Node* inner = Parser_parseExpressionWithPrecedence(self, prefixPrecedence);
 
     if(inner->type == NODE_ERROR) {
+      return inner;
+    }
+
+    // This is a bit of a hack
+    if(token.type == TOKEN_MUT) {
+      // TODO Handle this better
+      assert(inner->type == NODE_ASSIGN);
+
+      inner->type = NODE_MUT_ASSIGN;
+
       return inner;
     }
 
@@ -1032,6 +1044,22 @@ void test_Parser_parseExpression_assignment() {
   Node* node = Parser_parseExpression(&parser);
 
   assert(node->type == NODE_ASSIGN);
+  assert(((BinaryNode*)node)->arg0->type == NODE_SYMBOL);
+  assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
+
+  Node_free(node);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseExpression_mutableAssignment() {
+  const char* source = "mut foo = 42";
+
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* node = Parser_parseExpression(&parser);
+
+  assert(node->type == NODE_MUT_ASSIGN);
   assert(((BinaryNode*)node)->arg0->type == NODE_SYMBOL);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
 

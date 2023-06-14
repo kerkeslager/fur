@@ -47,6 +47,7 @@ void test_Parser_parseExpression_infixLeftError();
 void test_Parser_parseExpression_infixRightError();
 
 void test_Parser_parseExpression_assignment();
+void test_Parser_parseExpression_mutableAssignment();
 
 void test_Parser_parseStatement_parsesJumpStatementsWithoutElse();
 void test_Parser_parseStatement_requiresSemicolonsForJumpStatementsOutsideREPL();

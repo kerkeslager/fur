@@ -157,6 +157,7 @@ void Node_free(Node* self) {
       return;
 
     case NODE_ASSIGN:
+    case NODE_MUT_ASSIGN:
     case NODE_ADD:
     case NODE_SUBTRACT:
     case NODE_MULTIPLY:
