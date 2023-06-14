@@ -13,7 +13,7 @@ int32_t SymbolList_find(SymbolList* self, Symbol* symbol) {
   return -1;
 }
 
-void SymbolList_append(SymbolList* self, Symbol* symbol) {
+void SymbolList_append(SymbolList* self, Symbol* symbol, bool isMutable) {
   // TODO Handle this better
   assert(SymbolList_find(self, symbol) == -1);
 
@@ -30,12 +30,15 @@ void SymbolList_append(SymbolList* self, Symbol* symbol) {
 
     self->capacity = capacity;
     self->items = realloc(self->items, self->capacity * sizeof(Symbol*));
+    self->isMutables = realloc(self->isMutables, self->capacity * sizeof(bool));
 
     // TODO Handle this better
     assert(self->items != NULL);
   }
 
-  self->items[self->count++] = symbol;
+  self->items[self->count] = symbol;
+  self->isMutables[self->count] = isMutable;
+  self->count++;
 }
 
 #ifdef TEST
@@ -167,7 +170,7 @@ void test_SymbolList_append_many() {
   }
 
   for(int i = 0; i < 100; i++) {
-    SymbolList_append(&symbolList, symbols[i]);
+    SymbolList_append(&symbolList, symbols[i], false);
   }
 
   for(int i = 0; i < 100; i++) {
@@ -198,7 +201,7 @@ void test_SymbolList_append_allowsUpToUINT16_MAXsymbols() {
 
   Symbol* symbol = Symbol_new("hello", strlen("hello"), 0 /* not real hash */);
 
-  SymbolList_append(&symbolList, symbol);
+  SymbolList_append(&symbolList, symbol, false);
 
   assert(symbolList.count = capacity + 1);
   assert(symbolList.capacity = UINT16_MAX);
@@ -206,6 +209,32 @@ void test_SymbolList_append_allowsUpToUINT16_MAXsymbols() {
   // Can't use SymbolList_free() due to previous hack
   free(symbolList.items);
   free(symbol);
+}
+
+void test_SymbolList_isMutable() {
+  SymbolList symbolList;
+  SymbolList_init(&symbolList);
+
+  Symbol* symbols[100];
+
+  for(int i = 0; i < 100; i++) {
+    symbols[i] = Symbol_new(SYMBOLS[i], strlen(SYMBOLS[i]), 0 /* not real hash */);
+  }
+
+  for(int i = 0; i < 100; i++) {
+    SymbolList_append(&symbolList, symbols[i], i % 3 == 0);
+  }
+
+  for(int i = 0; i < 100; i++) {
+    assert(
+      SymbolList_isMutable(
+        &symbolList,
+        SymbolList_find(&symbolList, symbols[i])
+      ) == (i % 3 == 0)
+    );
+  }
+
+  SymbolList_free(&symbolList);
 }
 
 #endif

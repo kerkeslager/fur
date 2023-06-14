@@ -94,7 +94,7 @@ inline static void Compiler_emitSymbol(Compiler* self, AtomNode* node) {
     return;
   }
 
-  SymbolList_append(&(self->symbolList), symbol);
+  SymbolList_append(&(self->symbolList), symbol, false);
 }
 
 void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
