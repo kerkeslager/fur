@@ -5,6 +5,7 @@
 
 typedef struct {
   Symbol* symbol;
+  size_t definedOnLine;
   bool isMutable;
 } SymbolMetadata;
 
@@ -32,11 +33,15 @@ inline static void SymbolList_rewind(SymbolList* self, size_t checkpoint) {
   self->count = checkpoint;
 }
 
-void SymbolList_append(SymbolList* self, Symbol* symbol, bool isMutable);
+void SymbolList_append(SymbolList* self, Symbol* symbol, size_t definedOnLine, bool isMutable);
 int32_t SymbolList_find(SymbolList* self, Symbol* symbol);
 
 inline static bool SymbolList_isMutable(SymbolList* self, int32_t index) {
   return self->items[index].isMutable;
+}
+
+inline static size_t SymbolList_definedOnLine(SymbolList* self, int32_t index) {
+  return self->items[index].definedOnLine;
 }
 
 #ifdef TEST
@@ -44,6 +49,7 @@ inline static bool SymbolList_isMutable(SymbolList* self, int32_t index) {
 void test_SymbolList_init();
 void test_SymbolList_append_many();
 void test_SymbolList_append_allowsUpToUINT16_MAXsymbols();
+void test_SymbolList_definedOnLine();
 void test_SymbolList_isMutable();
 
 #endif

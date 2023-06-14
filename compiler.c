@@ -76,7 +76,7 @@ inline static void Compiler_emitBinaryNode(Compiler* self, ByteCode* out, Instru
 inline static void Compiler_emitSymbol(Compiler* self, AtomNode* node) {
   Symbol* symbol = SymbolTable_getOrCreate(&(self->symbolTable), node->text, node->length);
 
-  int32_t index = SymbolList_find(&self->symbolList, symbol);
+  int32_t index = SymbolList_find(&(self->symbolList), symbol);
 
   /*
    * If it's found in the list, the symbol already exists in this scope.
@@ -91,10 +91,18 @@ inline static void Compiler_emitSymbol(Compiler* self, AtomNode* node) {
       symbol->text
     );
 
+    printError(
+      node->node.line,
+      "Variable `%.*s` defined on line %zu.",
+      symbol->length,
+      symbol->text,
+      SymbolList_definedOnLine(&(self->symbolList), index)
+    );
+
     return;
   }
 
-  SymbolList_append(&(self->symbolList), symbol, false);
+  SymbolList_append(&(self->symbolList), symbol, node->node.line, false);
 }
 
 void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {

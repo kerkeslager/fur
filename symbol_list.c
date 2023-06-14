@@ -3,8 +3,9 @@
 
 #include "symbol_list.h"
 
-void SymbolMetadata_init(SymbolMetadata* self, Symbol* symbol, bool isMutable) {
+inline static void SymbolMetadata_init(SymbolMetadata* self, Symbol* symbol, size_t definedOnLine, bool isMutable) {
   self->symbol = symbol;
+  self->definedOnLine = definedOnLine;
   self->isMutable = isMutable;
 }
 
@@ -18,7 +19,7 @@ int32_t SymbolList_find(SymbolList* self, Symbol* symbol) {
   return -1;
 }
 
-void SymbolList_append(SymbolList* self, Symbol* symbol, bool isMutable) {
+void SymbolList_append(SymbolList* self, Symbol* symbol, size_t definedOnLine, bool isMutable) {
   // TODO Handle this better
   assert(SymbolList_find(self, symbol) == -1);
 
@@ -43,6 +44,7 @@ void SymbolList_append(SymbolList* self, Symbol* symbol, bool isMutable) {
   SymbolMetadata_init(
     &(self->items[self->count++]),
     symbol,
+    definedOnLine,
     isMutable
   );
 }
@@ -176,7 +178,7 @@ void test_SymbolList_append_many() {
   }
 
   for(int i = 0; i < 100; i++) {
-    SymbolList_append(&symbolList, symbols[i], false);
+    SymbolList_append(&symbolList, symbols[i], 1, false);
   }
 
   for(int i = 0; i < 100; i++) {
@@ -207,7 +209,7 @@ void test_SymbolList_append_allowsUpToUINT16_MAXsymbols() {
 
   Symbol* symbol = Symbol_new("hello", strlen("hello"), 0 /* not real hash */);
 
-  SymbolList_append(&symbolList, symbol, false);
+  SymbolList_append(&symbolList, symbol, 1, false);
 
   assert(symbolList.count = capacity + 1);
   assert(symbolList.capacity = UINT16_MAX);
@@ -215,6 +217,32 @@ void test_SymbolList_append_allowsUpToUINT16_MAXsymbols() {
   // Can't use SymbolList_free() due to previous hack
   free(symbolList.items);
   free(symbol);
+}
+
+void test_SymbolList_definedOnLine() {
+  SymbolList symbolList;
+  SymbolList_init(&symbolList);
+
+  Symbol* symbols[100];
+
+  for(int i = 0; i < 100; i++) {
+    symbols[i] = Symbol_new(SYMBOLS[i], strlen(SYMBOLS[i]), 0 /* not real hash */);
+  }
+
+  for(int i = 0; i < 100; i++) {
+    SymbolList_append(&symbolList, symbols[i], (size_t)(2*i + 1), false);
+  }
+
+  for(int i = 0; i < 100; i++) {
+    assert(
+      SymbolList_definedOnLine(
+        &symbolList,
+        SymbolList_find(&symbolList, symbols[i])
+      ) == (size_t)(2*i + 1)
+    );
+  }
+
+  SymbolList_free(&symbolList);
 }
 
 void test_SymbolList_isMutable() {
@@ -228,7 +256,7 @@ void test_SymbolList_isMutable() {
   }
 
   for(int i = 0; i < 100; i++) {
-    SymbolList_append(&symbolList, symbols[i], i % 3 == 0);
+    SymbolList_append(&symbolList, symbols[i], 1, i % 3 == 0);
   }
 
   for(int i = 0; i < 100; i++) {
