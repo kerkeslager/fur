@@ -5,7 +5,7 @@
 
 int32_t SymbolList_find(SymbolList* self, Symbol* symbol) {
   for(size_t i = 0; i < self->count; i++) {
-    if(self->items[i] == symbol) {
+    if(self->items[i].symbol == symbol) {
       return i;
     }
   }
@@ -29,15 +29,14 @@ void SymbolList_append(SymbolList* self, Symbol* symbol, bool isMutable) {
     if(capacity > UINT16_MAX) capacity = UINT16_MAX;
 
     self->capacity = capacity;
-    self->items = realloc(self->items, self->capacity * sizeof(Symbol*));
-    self->isMutables = realloc(self->isMutables, self->capacity * sizeof(bool));
+    self->items = realloc(self->items, self->capacity * sizeof(SymbolMetadata));
 
     // TODO Handle this better
     assert(self->items != NULL);
   }
 
-  self->items[self->count] = symbol;
-  self->isMutables[self->count] = isMutable;
+  self->items[self->count].symbol = symbol;
+  self->items[self->count].isMutable = isMutable;
   self->count++;
 }
 
@@ -197,7 +196,7 @@ void test_SymbolList_append_allowsUpToUINT16_MAXsymbols() {
    * possibility that an assertion that the item doesn't already exits
    * will find the item by random chance.
    */
-  symbolList.items = calloc(capacity, sizeof(Symbol*));
+  symbolList.items = calloc(capacity, sizeof(SymbolMetadata));
 
   Symbol* symbol = Symbol_new("hello", strlen("hello"), 0 /* not real hash */);
 

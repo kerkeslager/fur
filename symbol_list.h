@@ -4,22 +4,24 @@
 #include "symbol.h"
 
 typedef struct {
-  Symbol** items;
-  bool* isMutables;
+  Symbol* symbol;
+  bool isMutable;
+} SymbolMetadata;
+
+typedef struct {
+  SymbolMetadata* items;
   uint16_t count;
   uint16_t capacity;
 } SymbolList;
 
 inline static void SymbolList_init(SymbolList* self) {
   self->items = NULL;
-  self->isMutables = NULL;
   self->count = 0;
   self->capacity = 0;
 }
 
 inline static void SymbolList_free(SymbolList* self) {
   free(self->items);
-  free(self->isMutables);
 }
 
 inline static size_t SymbolList_count(SymbolList* self) {
@@ -34,7 +36,7 @@ void SymbolList_append(SymbolList* self, Symbol* symbol, bool isMutable);
 int32_t SymbolList_find(SymbolList* self, Symbol* symbol);
 
 inline static bool SymbolList_isMutable(SymbolList* self, int32_t index) {
-  return self->isMutables[index];
+  return self->items[index].isMutable;
 }
 
 #ifdef TEST
