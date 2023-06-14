@@ -3,10 +3,10 @@
 
 #include "tokenizer.h"
 
-void Tokenizer_init(Tokenizer* self, const char* source) {
+void Tokenizer_init(Tokenizer* self, const char* source, size_t startLine) {
   self->source = source;
   self->current = source;
-  self->line = 1;
+  self->line = startLine;
   self->lookaheadCount = 0;
 }
 
@@ -319,6 +319,16 @@ Token Tokenizer_lookahead(Tokenizer* self, uint8_t lookahead) {
 
 Token Tokenizer_peek(Tokenizer* self) {
   return Tokenizer_lookahead(self, 1);
+}
+
+void Tokenizer_appendLine(Tokenizer* self, const char* line) {
+  // Make sure that the existing source is consumed before overwriting it
+  assert(Tokenizer_peek(self).type == TOKEN_EOF);
+
+  self->source = line;
+  self->current = line;
+  self->line++;
+  self->lookaheadCount = 0;
 }
 
 #ifdef TEST

@@ -48,18 +48,18 @@ int main() {
   BufferList bufferList;
   BufferList_init(&bufferList);
 
+  Parser parser;
+  Parser_init(&parser, "", true /* REPL mode */);
+
   for(;;) {
     const char* buffer = readline("> ");
 
     if (buffer && *buffer) {
       add_history(buffer);
 
-      Parser parser;
-      Parser_init(&parser, buffer, true /* REPL mode */);
+      Parser_appendLine(&parser, buffer);
 
       bool success = Compiler_compile(&compiler, &byteCode, &parser);
-
-      Parser_free(&parser);
 
       if(success) {
         Value result = Thread_run(&thread);
@@ -78,6 +78,8 @@ int main() {
      */
     if(buffer != NULL) BufferList_append(&bufferList, buffer);
   }
+
+  Parser_free(&parser);
 
   BufferList_free(&bufferList);
   Thread_free(&thread);

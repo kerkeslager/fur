@@ -6,12 +6,18 @@
 #include "parser.h"
 
 void Parser_init(Parser* self, const char* source, bool repl) {
-  Tokenizer_init(&(self->tokenizer), source);
+  Tokenizer_init(&(self->tokenizer), source, repl ? 0 : 1);
   self->repl = repl;
 }
 
 void Parser_free(Parser* self) {
   assert(self != NULL);
+}
+
+void Parser_appendLine(Parser* self, const char* line) {
+  // Make sure that all the existing source is consumed before overwriting it
+  assert(Tokenizer_peek(&(self->tokenizer)).type == TOKEN_EOF);
+  Tokenizer_appendLine(&(self->tokenizer), line);
 }
 
 typedef enum {

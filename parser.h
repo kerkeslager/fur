@@ -12,6 +12,8 @@ typedef struct {
 void Parser_init(Parser*, const char* source, bool repl);
 void Parser_free(Parser*);
 
+void Parser_appendLine(Parser*, const char*);
+
 Node* Parser_parseExpression(Parser*);
 Node* Parser_parseStatement(Parser*);
 
