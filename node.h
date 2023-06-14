@@ -83,6 +83,7 @@ typedef enum {
   ERROR_MISSING_SEMICOLON,
   ERROR_PAREN_OPENED_BUT_NOT_CLOSED,
   ERROR_UNEXPECTED_TOKEN,
+  ERROR_MUTABLE_NOT_ASSIGNMENT,
 } ParseErrorType;
 
 typedef struct {
@@ -94,6 +95,7 @@ typedef struct {
 } ErrorNode;
 
 Node* ErrorNode_new(ParseErrorType type, Token token);
+Node* ErrorNode_newWithPrevious(ParseErrorType, Token token, Node* previous);
 Node* ErrorNode_newWithAuxAndPrevious(ParseErrorType, Token token, Token auxToken, Node* previous);
 void ErrorNode_print(Node*);
 

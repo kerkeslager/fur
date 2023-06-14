@@ -125,6 +125,12 @@ Node* ErrorNode_newWithAuxAndPrevious(ParseErrorType type, Token token, Token au
   return (Node*)node;
 }
 
+Node* ErrorNode_newWithPrevious(ParseErrorType type, Token token, Node* previous) {
+  Token auxToken;
+  auxToken.type = NO_TOKEN;
+  return ErrorNode_newWithAuxAndPrevious(type, token, auxToken, previous);
+}
+
 Node* ErrorNode_new(ParseErrorType type, Token token) {
   Token auxToken;
   auxToken.type = NO_TOKEN;
@@ -228,6 +234,11 @@ void ErrorNode_print(Node* node) {
         );
       }
       break;
+
+    case ERROR_MUTABLE_NOT_ASSIGNMENT:
+      printError(self->token.line, "'mut' keyword applied to statement that is not assignment.");
+      break;
+
   }
 }
 

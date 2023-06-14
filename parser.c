@@ -292,6 +292,10 @@ Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
     // This is a bit of a hack
     if(token.type == TOKEN_MUT) {
       // TODO Handle this better
+      if(inner->type != NODE_ASSIGN) {
+        return ErrorNode_newWithPrevious(ERROR_MUTABLE_NOT_ASSIGNMENT, token, inner);
+      }
+
       assert(inner->type == NODE_ASSIGN);
 
       inner->type = NODE_MUT_ASSIGN;
