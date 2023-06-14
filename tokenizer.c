@@ -338,7 +338,7 @@ void Tokenizer_appendLine(Tokenizer* self, const char* line) {
 void test_Tokenizer_scan_eof() {
   const char* source = "";
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token = Tokenizer_scan(&tokenizer);
 
@@ -352,7 +352,7 @@ void test_Tokenizer_scan_unexpected_character() {
   // There is currently no plan to use the backtick character for anything
   const char* source = "`";
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token = Tokenizer_scan(&tokenizer);
 
@@ -366,7 +366,7 @@ void test_Tokenizer_scan_integer() {
   const char* source = "42";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token = Tokenizer_scan(&tokenizer);
 
@@ -380,7 +380,7 @@ void test_Tokenizer_scan_ignore_whitespace() {
   const char* source = " \t\r42";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token = Tokenizer_scan(&tokenizer);
 
@@ -394,7 +394,7 @@ void test_Tokenizer_scan_linebreaks_increment_line() {
   const char* source = "\n42";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token = Tokenizer_scan(&tokenizer);
 
@@ -408,7 +408,7 @@ void test_Tokenizer_scan_integerMathOperators() {
   const char* source = "+ - * //";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token;
 
@@ -441,7 +441,7 @@ void test_Tokenizer_scan_semicolon() {
   const char* source = ";";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token = Tokenizer_scan(&tokenizer);
   assert(token.type == TOKEN_SEMICOLON);
@@ -454,7 +454,7 @@ void test_Tokenizer_scan_equals() {
   const char* source = "=";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token = Tokenizer_scan(&tokenizer);
   assert(token.type == TOKEN_EQUALS);
@@ -467,7 +467,7 @@ void test_Tokenizer_scan_after_Tokenizer_peek() {
   const char* source = "+ - * //";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token;
 
@@ -500,7 +500,7 @@ void test_Tokenizer_scan_parentheses() {
   const char* source = "()";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token;
 
@@ -521,7 +521,7 @@ void test_Tokenizer_scan_braces() {
   const char* source = "{}";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token;
 
@@ -542,7 +542,7 @@ void test_Tokenizer_scan_symbol() {
   const char* source = "foo";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token = Tokenizer_scan(&tokenizer);
   assert(token.type == TOKEN_SYMBOL);
@@ -555,7 +555,7 @@ void test_Tokenizer_scan_booleans() {
   const char* source = "true false";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token;
 
@@ -576,7 +576,7 @@ void test_Tokenizer_scan_differentiateKeywords() {
   const char* source = "tru fals truey falsey";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token;
 
@@ -609,7 +609,7 @@ void test_Tokenizer_scan_not() {
   const char* source = "not";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token = Tokenizer_scan(&tokenizer);
   assert(token.type == TOKEN_NOT);
@@ -622,7 +622,7 @@ void test_Tokenizer_scan_comparisonOperators() {
   const char* source = "< > == <= >= !=";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token;
 
@@ -667,7 +667,7 @@ void test_Tokenizer_scan_jumpKeywords() {
   const char* source = "loop if else while until";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token;
 
@@ -706,7 +706,7 @@ void test_Tokenizer_scan_mut() {
   const char* source = "mut";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token = Tokenizer_scan(&tokenizer);
   assert(token.type == TOKEN_MUT);
@@ -719,7 +719,7 @@ void test_Tokenizer_peek_returnsScan() {
   const char* source = "+ - * //";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token = Tokenizer_peek(&tokenizer);
   assert(token.type == TOKEN_PLUS);
@@ -732,7 +732,7 @@ void test_Tokenizer_peek_doesNotProgress() {
   const char* source = "+ - * //";
 
   Tokenizer tokenizer;
-  Tokenizer_init(&tokenizer, source);
+  Tokenizer_init(&tokenizer, source, 1);
 
   Token token;
 
