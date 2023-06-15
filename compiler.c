@@ -93,14 +93,25 @@ inline static void Compiler_emitComparison(Compiler* self, ByteCode* out, Instru
     return Compiler_emitBinaryNode(self, out, op, (Node*)node);
   }
 
-  // TODO Prevent overflow
-
-  BinaryNode* stack[255];
-  uint8_t stackDepth = 0;
+  BinaryNode* stack[256];
+  int stackDepth = 0;
 
   BinaryNode* b = node;
 
   while(isComparison(b->arg0)) {
+    if(stackDepth > 256) {
+      self->hasErrors = true;
+
+      printError(
+        node->node.line,
+        "Cannot chain more than 256 comparison operators.",
+        symbol->length,
+        symbol->text
+      );
+
+      return;
+    }
+
     stack[stackDepth++] = b;
     b = (BinaryNode*)(b->arg0);
   }
