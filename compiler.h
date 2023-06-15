@@ -31,6 +31,8 @@ void test_Compiler_emitNode_emitsIntegerDivide();
 
 void test_Compiler_emitNode_emitsComparisons();
 
+void test_Compiler_emitNode_emitsAndOr();
+
 void test_Compiler_emitNode_loop();
 void test_Compiler_emitNode_if();
 void test_Compiler_emitNode_ifElse();

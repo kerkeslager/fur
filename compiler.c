@@ -219,12 +219,34 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
 
     case NODE_AND:
       {
-        assert(false);
+        BinaryNode* bNode = (BinaryNode*)node;
+        Compiler_emitNode(self, out, bNode->arg0);
+        Compiler_emitOp(out, OP_JUMP_TRUE, node->line);
+        Compiler_emitInt16(out, 6, node->line);
+        Compiler_emitOp(out, OP_FALSE, node->line);
+        Compiler_emitOp(out, OP_JUMP, node->line);
+        size_t shortCircuitStart = ByteCode_count(out);
+        int16_t* shortCircuitBackpatch = (int16_t*)ByteCode_pc(out, shortCircuitStart);
+        Compiler_emitInt16(out, 0, node->line);
+        Compiler_emitNode(self, out, bNode->arg1);
+        *shortCircuitBackpatch = ByteCode_count(out) - shortCircuitStart;
+        return;
       }
 
     case NODE_OR:
       {
-        assert(false);
+        BinaryNode* bNode = (BinaryNode*)node;
+        Compiler_emitNode(self, out, bNode->arg0);
+        Compiler_emitOp(out, OP_JUMP_FALSE, node->line);
+        Compiler_emitInt16(out, 6, node->line);
+        Compiler_emitOp(out, OP_TRUE, node->line);
+        Compiler_emitOp(out, OP_JUMP, node->line);
+        size_t shortCircuitStart = ByteCode_count(out);
+        int16_t* shortCircuitBackpatch = (int16_t*)ByteCode_pc(out, shortCircuitStart);
+        Compiler_emitInt16(out, 0, node->line);
+        Compiler_emitNode(self, out, bNode->arg1);
+        *shortCircuitBackpatch = ByteCode_count(out) - shortCircuitStart;
+        return;
       }
 
     case NODE_LOOP:
@@ -597,6 +619,53 @@ void test_Compiler_emitNode_emitsComparisons() {
     assert(out.items[0] == OP_INTEGER);
     assert(out.items[5] == OP_INTEGER);
     assert(out.items[10] == COMPARISON_INSTRUCTIONS[i]);
+
+    Node_free(node);
+    ByteCode_free(&out);
+  }
+
+  Compiler_free(&compiler);
+}
+
+void test_Compiler_emitNode_emitsAndOr() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  NodeType LOGICAL_NODE_TYPES[] = {
+    NODE_AND,
+    NODE_OR,
+  };
+
+  Instruction JUMP_INSTRUCTIONS[] = {
+    OP_JUMP_TRUE,
+    OP_JUMP_FALSE,
+  };
+
+  Instruction SHORT_CIRCUIT_INSTRUCTIONS[] = {
+    OP_FALSE,
+    OP_TRUE,
+  };
+
+  for(int i = 0; i < 2; i++) {
+    Node* node = BinaryNode_new(
+        LOGICAL_NODE_TYPES[i],
+        1,
+        AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+        AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "false", 5)
+    );
+    ByteCode out;
+    ByteCode_init(&out);
+
+    Compiler_emitNode(&compiler, &out, node);
+
+    assert(out.count == 9);
+    assert(out.items[0] == OP_TRUE);
+    assert(out.items[1] == JUMP_INSTRUCTIONS[i]);
+    assert(*((int16_t*)(out.items + 2)) == 6);
+    assert(out.items[4] == SHORT_CIRCUIT_INSTRUCTIONS[i]);
+    assert(out.items[5] == OP_JUMP);
+    assert(*((int16_t*)(out.items + 6)) == 3);
+    assert(out.items[8] == OP_FALSE);
 
     Node_free(node);
     ByteCode_free(&out);
