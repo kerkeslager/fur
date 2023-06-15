@@ -26,6 +26,10 @@ typedef enum {
   PREC_MUTABILITY,
   PREC_ASSIGNMENT_LEFT,
   PREC_ASSIGNMENT_RIGHT,
+  PREC_LOGICAL_OR_RIGHT,
+  PREC_LOGICAL_OR_LEFT,
+  PREC_LOGICAL_AND_RIGHT,
+  PREC_LOGICAL_AND_LEFT,
   PREC_LOGICAL_NOT,
   PREC_COMPARISON_RIGHT,
   PREC_COMPARISON_LEFT,
@@ -45,43 +49,46 @@ typedef struct {
 } PrecedenceRule;
 
 const PrecedenceRule PRECEDENCE[] = {
-  [TOKEN_INTEGER_LITERAL] =     { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_INTEGER_LITERAL] =     { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
 
-  [TOKEN_MUT] =                 { PREC_MUTABILITY,  PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
-  [TOKEN_EQUALS] =              { PREC_NONE,        PREC_ASSIGNMENT_LEFT, PREC_ASSIGNMENT_RIGHT,  false,  NO_TOKEN },
-  [TOKEN_SEMICOLON] =           { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_MUT] =                 { PREC_MUTABILITY,  PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_EQUALS] =              { PREC_NONE,        PREC_ASSIGNMENT_LEFT,   PREC_ASSIGNMENT_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_SEMICOLON] =           { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
 
-  [TOKEN_PLUS] =                { PREC_NONE,        PREC_TERM_LEFT,       PREC_TERM_RIGHT,        false,  NO_TOKEN },
-  [TOKEN_MINUS] =               { PREC_NEGATE,      PREC_TERM_LEFT,       PREC_TERM_RIGHT,        false,  NO_TOKEN },
-  [TOKEN_ASTERISK] =            { PREC_NONE,        PREC_FACTOR_LEFT,     PREC_FACTOR_RIGHT,      false,  NO_TOKEN },
-  [TOKEN_SLASH_SLASH] =         { PREC_NONE,        PREC_FACTOR_LEFT,     PREC_FACTOR_RIGHT,      false,  NO_TOKEN },
+  [TOKEN_PLUS] =                { PREC_NONE,        PREC_TERM_LEFT,         PREC_TERM_RIGHT,        false,  NO_TOKEN },
+  [TOKEN_MINUS] =               { PREC_NEGATE,      PREC_TERM_LEFT,         PREC_TERM_RIGHT,        false,  NO_TOKEN },
+  [TOKEN_ASTERISK] =            { PREC_NONE,        PREC_FACTOR_LEFT,       PREC_FACTOR_RIGHT,      false,  NO_TOKEN },
+  [TOKEN_SLASH_SLASH] =         { PREC_NONE,        PREC_FACTOR_LEFT,       PREC_FACTOR_RIGHT,      false,  NO_TOKEN },
 
-  [TOKEN_LESS_THAN] =           { PREC_NONE,        PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
-  [TOKEN_LESS_THAN_EQUALS] =    { PREC_NONE,        PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
-  [TOKEN_GREATER_THAN] =        { PREC_NONE,        PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
-  [TOKEN_GREATER_THAN_EQUALS] = { PREC_NONE,        PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
-  [TOKEN_EQUALS_EQUALS] =       { PREC_NONE,        PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
-  [TOKEN_BANG_EQUALS] =         { PREC_NONE,        PREC_COMPARISON_LEFT, PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_LESS_THAN] =           { PREC_NONE,        PREC_COMPARISON_LEFT,   PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_LESS_THAN_EQUALS] =    { PREC_NONE,        PREC_COMPARISON_LEFT,   PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_GREATER_THAN] =        { PREC_NONE,        PREC_COMPARISON_LEFT,   PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_GREATER_THAN_EQUALS] = { PREC_NONE,        PREC_COMPARISON_LEFT,   PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_EQUALS_EQUALS] =       { PREC_NONE,        PREC_COMPARISON_LEFT,   PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
+  [TOKEN_BANG_EQUALS] =         { PREC_NONE,        PREC_COMPARISON_LEFT,   PREC_COMPARISON_RIGHT,  false,  NO_TOKEN },
 
-  [TOKEN_OPEN_PAREN] =          { PREC_NONE,        PREC_NONE,            PREC_NONE,              true,   NO_TOKEN },
-  [TOKEN_CLOSE_PAREN] =         { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  TOKEN_OPEN_PAREN },
+  [TOKEN_AND] =                 { PREC_NONE,        PREC_LOGICAL_AND_LEFT,  PREC_LOGICAL_AND_RIGHT, false,  NO_TOKEN },
+  [TOKEN_OR] =                  { PREC_NONE,        PREC_LOGICAL_OR_LEFT,   PREC_LOGICAL_OR_RIGHT,  false,  NO_TOKEN },
 
-  [TOKEN_TRUE] =                { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
-  [TOKEN_FALSE] =               { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
-  [TOKEN_NOT] =                 { PREC_LOGICAL_NOT, PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_OPEN_PAREN] =          { PREC_NONE,        PREC_NONE,              PREC_NONE,              true,   NO_TOKEN },
+  [TOKEN_CLOSE_PAREN] =         { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  TOKEN_OPEN_PAREN },
 
-  [TOKEN_SYMBOL] =              { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_TRUE] =                { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_FALSE] =               { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_NOT] =                 { PREC_LOGICAL_NOT, PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
 
-  [TOKEN_LOOP] =                { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
-  [TOKEN_IF] =                  { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
-  [TOKEN_ELSE] =                { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
-  [TOKEN_WHILE] =               { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
-  [TOKEN_UNTIL] =               { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_SYMBOL] =              { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
 
-  [TOKEN_EOF] =                 { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
-  [TOKEN_ERROR] =               { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_LOOP] =                { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_IF] =                  { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_ELSE] =                { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_WHILE] =               { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_UNTIL] =               { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
 
-  [NO_TOKEN] =                  { PREC_NONE,        PREC_NONE,            PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_EOF] =                 { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
+  [TOKEN_ERROR] =               { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
+
+  [NO_TOKEN] =                  { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
 };
 
 inline static Precedence Token_prefixPrecedence(Token self) {
