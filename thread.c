@@ -25,7 +25,9 @@ static const char* Instruction_toOperatorCString(uint8_t* pc) {
     case OP_FALSE:
     case OP_INTEGER:
     case OP_GET:
+    case OP_DUP:
     case OP_DROP:
+    case OP_ROT3:
     case OP_JUMP:
     case OP_JUMP_TRUE:
     case OP_JUMP_FALSE:
@@ -368,8 +370,33 @@ Value Thread_run(Thread* self) {
         }
         break;
 
+      case OP_DUP:
+        {
+          // TODO There's probably a way to optimize this
+          Value value = Stack_pop(stack);
+          Value copy = Value_copy(&value);
+          Stack_push(stack, value);
+          Stack_push(stack, copy);
+        }
+        break;
+
       case OP_DROP:
         Stack_pop(stack);
+        break;
+
+      case OP_ROT3:
+        {
+          // TODO There's probably a way to optimize this
+          Value values[3] = {
+            Stack_pop(stack),
+            Stack_pop(stack),
+            Stack_pop(stack),
+          };
+
+          Stack_push(stack, values[0]);
+          Stack_push(stack, values[2]);
+          Stack_push(stack, values[1]);
+        }
         break;
 
       case OP_JUMP:

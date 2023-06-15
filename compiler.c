@@ -73,6 +73,118 @@ inline static void Compiler_emitBinaryNode(Compiler* self, ByteCode* out, Instru
   ByteCode_append(out, op, node->line);
 }
 
+inline static bool isComparison(Node* node) {
+  switch(node->type) {
+    case NODE_LESS_THAN:
+    case NODE_LESS_THAN_EQUAL:
+    case NODE_GREATER_THAN:
+    case NODE_GREATER_THAN_EQUAL:
+    case NODE_EQUAL:
+    case NODE_NOT_EQUAL:
+      return true;
+
+    default:
+      return false;
+  }
+}
+
+inline static void Compiler_emitComparison(Compiler* self, ByteCode* out, Instruction op, BinaryNode* node) {
+  if(!isComparison(node->arg0)) {
+    return Compiler_emitBinaryNode(self, out, op, (Node*)node);
+  }
+
+  // TODO Prevent overflow
+
+  BinaryNode* stack[255];
+  uint8_t stackDepth = 0;
+
+  BinaryNode* b = node;
+
+  while(isComparison(b->arg0)) {
+    stack[stackDepth++] = b;
+    b = (BinaryNode*)(b->arg0);
+  }
+
+  Compiler_emitNode(self, out, b->arg0);
+  Compiler_emitNode(self, out, b->arg1);
+
+  size_t shortCircuitStarts[255];
+  uint8_t shortCircuitStartCount = 0;
+
+  while(stackDepth > 0) {
+    // TODO We can probably optimize this by making it one instruction
+    Compiler_emitOp(out, OP_DUP, b->node.line);
+    Compiler_emitOp(out, OP_ROT3, b->node.line);
+
+    switch(b->node.type) {
+      case NODE_LESS_THAN:
+        Compiler_emitOp(out, OP_LESS_THAN, b->node.line);
+        break;
+      case NODE_LESS_THAN_EQUAL:
+        Compiler_emitOp(out, OP_LESS_THAN_EQUAL, b->node.line);
+        break;
+      case NODE_GREATER_THAN:
+        Compiler_emitOp(out, OP_GREATER_THAN, b->node.line);
+        break;
+      case NODE_GREATER_THAN_EQUAL:
+        Compiler_emitOp(out, OP_GREATER_THAN_EQUAL, b->node.line);
+        break;
+      case NODE_EQUAL:
+        Compiler_emitOp(out, OP_EQUAL, b->node.line);
+        break;
+      case NODE_NOT_EQUAL:
+        Compiler_emitOp(out, OP_NOT_EQUAL, b->node.line);
+        break;
+      default:
+        assert(false);
+    }
+
+    Compiler_emitOp(out, OP_JUMP_FALSE, b->node.line);
+    shortCircuitStarts[shortCircuitStartCount++] = ByteCode_count(out);
+    Compiler_emitInt16(out, 0, b->node.line);
+
+    stackDepth--;
+    b = stack[stackDepth];
+
+    Compiler_emitNode(self, out, b->arg1);
+  }
+
+  switch(b->node.type) {
+    case NODE_LESS_THAN:
+      Compiler_emitOp(out, OP_LESS_THAN, b->node.line);
+      break;
+    case NODE_LESS_THAN_EQUAL:
+      Compiler_emitOp(out, OP_LESS_THAN_EQUAL, b->node.line);
+      break;
+    case NODE_GREATER_THAN:
+      Compiler_emitOp(out, OP_GREATER_THAN, b->node.line);
+      break;
+    case NODE_GREATER_THAN_EQUAL:
+      Compiler_emitOp(out, OP_GREATER_THAN_EQUAL, b->node.line);
+      break;
+    case NODE_EQUAL:
+      Compiler_emitOp(out, OP_EQUAL, b->node.line);
+      break;
+    case NODE_NOT_EQUAL:
+      Compiler_emitOp(out, OP_NOT_EQUAL, b->node.line);
+      break;
+    default:
+      assert(false);
+  }
+
+  Compiler_emitOp(out, OP_JUMP, b->node.line);
+  Compiler_emitInt16(out, 4, b->node.line);
+
+  size_t shortCircuitEnd = ByteCode_count(out);
+  Compiler_emitOp(out, OP_DROP, b->node.line);
+  Compiler_emitOp(out, OP_FALSE, b->node.line);
+
+  for(uint8_t i = 0; i < shortCircuitStartCount; i++) {
+    *(ByteCode_pc(out, shortCircuitStarts[i]))
+      = shortCircuitEnd - shortCircuitStarts[i];
+  }
+}
+
 void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
   switch(node->type) {
     case NODE_INTEGER_LITERAL:
@@ -205,17 +317,27 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
       Compiler_emitNode(self, out, ((UnaryNode*)node)->arg0);
       return Compiler_emitOp(out, OP_NOT, node->line);
 
-    case NODE_ADD:            Compiler_emitBinaryNode(self, out, OP_ADD, node);       return;
-    case NODE_SUBTRACT:       Compiler_emitBinaryNode(self, out, OP_SUBTRACT, node);  return;
-    case NODE_MULTIPLY:       Compiler_emitBinaryNode(self, out, OP_MULTIPLY, node);  return;
-    case NODE_INTEGER_DIVIDE: Compiler_emitBinaryNode(self, out, OP_IDIVIDE, node);   return;
+    case NODE_ADD:
+      return Compiler_emitBinaryNode(self, out, OP_ADD, node);
+    case NODE_SUBTRACT:
+      return Compiler_emitBinaryNode(self, out, OP_SUBTRACT, node);
+    case NODE_MULTIPLY:
+      return Compiler_emitBinaryNode(self, out, OP_MULTIPLY, node);
+    case NODE_INTEGER_DIVIDE:
+      return Compiler_emitBinaryNode(self, out, OP_IDIVIDE, node);
 
-    case NODE_LESS_THAN:          Compiler_emitBinaryNode(self, out, OP_LESS_THAN, node);   return;
-    case NODE_LESS_THAN_EQUAL:    Compiler_emitBinaryNode(self, out, OP_LESS_THAN_EQUAL, node);   return;
-    case NODE_GREATER_THAN:       Compiler_emitBinaryNode(self, out, OP_GREATER_THAN, node);   return;
-    case NODE_GREATER_THAN_EQUAL: Compiler_emitBinaryNode(self, out, OP_GREATER_THAN_EQUAL, node);   return;
-    case NODE_EQUAL:              Compiler_emitBinaryNode(self, out, OP_EQUAL, node);   return;
-    case NODE_NOT_EQUAL:          Compiler_emitBinaryNode(self, out, OP_NOT_EQUAL, node);   return;
+    case NODE_LESS_THAN:
+      return Compiler_emitComparison(self, out, OP_LESS_THAN, (BinaryNode*)node);
+    case NODE_LESS_THAN_EQUAL:
+      return Compiler_emitComparison(self, out, OP_LESS_THAN_EQUAL, (BinaryNode*)node);
+    case NODE_GREATER_THAN:
+      return Compiler_emitComparison(self, out, OP_GREATER_THAN, (BinaryNode*)node);
+    case NODE_GREATER_THAN_EQUAL:
+      return Compiler_emitComparison(self, out, OP_GREATER_THAN_EQUAL, (BinaryNode*)node);
+    case NODE_EQUAL:
+      return Compiler_emitComparison(self, out, OP_EQUAL, (BinaryNode*)node);
+    case NODE_NOT_EQUAL:
+      return Compiler_emitComparison(self, out, OP_NOT_EQUAL, (BinaryNode*)node);
 
     case NODE_AND:
       {
