@@ -29,6 +29,8 @@ typedef enum {
   NODE_GREATER_THAN_EQUAL,
   NODE_EQUAL,
   NODE_NOT_EQUAL,
+  NODE_AND,
+  NODE_OR,
 
   // Ternary Nodes
   NODE_IF,

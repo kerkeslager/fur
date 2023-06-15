@@ -70,7 +70,9 @@ inline static void BinaryNode_init(BinaryNode* self, NodeType type, size_t line,
       || type == NODE_GREATER_THAN
       || type == NODE_GREATER_THAN_EQUAL
       || type == NODE_EQUAL
-      || type == NODE_NOT_EQUAL);
+      || type == NODE_NOT_EQUAL
+      || type == NODE_AND
+      || type == NODE_OR);
   Node_init(&(self->node), type, line);
   self->arg0 = arg0;
   self->arg1 = arg1;
@@ -174,6 +176,8 @@ void Node_free(Node* self) {
     case NODE_GREATER_THAN_EQUAL:
     case NODE_EQUAL:
     case NODE_NOT_EQUAL:
+    case NODE_AND:
+    case NODE_OR:
       BinaryNode_free((BinaryNode*)self);
       return;
 

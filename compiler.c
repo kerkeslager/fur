@@ -217,6 +217,16 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
     case NODE_EQUAL:              Compiler_emitBinaryNode(self, out, OP_EQUAL, node);   return;
     case NODE_NOT_EQUAL:          Compiler_emitBinaryNode(self, out, OP_NOT_EQUAL, node);   return;
 
+    case NODE_AND:
+      {
+        assert(false);
+      }
+
+    case NODE_OR:
+      {
+        assert(false);
+      }
+
     case NODE_LOOP:
       {
         size_t start = ByteCode_count(out);

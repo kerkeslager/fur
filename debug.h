@@ -135,6 +135,9 @@ inline static void NodeType_println(NodeType nodeType) {
     PRINT_CASE(NODE_EQUAL);
     PRINT_CASE(NODE_NOT_EQUAL);
 
+    PRINT_CASE(NODE_AND);
+    PRINT_CASE(NODE_OR);
+
     PRINT_CASE(NODE_LOOP);
     PRINT_CASE(NODE_IF);
     PRINT_CASE(NODE_WHILE);

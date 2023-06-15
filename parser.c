@@ -129,6 +129,9 @@ inline static NodeType mapInfix(Token token) {
     case TOKEN_GREATER_THAN_EQUALS: return NODE_GREATER_THAN_EQUAL;
     case TOKEN_EQUALS_EQUALS: return NODE_EQUAL;
     case TOKEN_BANG_EQUALS: return NODE_NOT_EQUAL;
+    case TOKEN_AND: return NODE_AND;
+    case TOKEN_OR: return NODE_OR;
+
     default: assert(false);
   }
 
@@ -651,7 +654,7 @@ void test_Parser_parseExpression_infixOperatorsBasic() {
     NodeType nodeType;
   } Test;
 
-  const int TEST_COUNT = 10;
+  const int TEST_COUNT = 12;
 
   /*
    * Don't infer the array length--we want an error if we add tests and don't
@@ -668,6 +671,8 @@ void test_Parser_parseExpression_infixOperatorsBasic() {
     { "6 >= 2", NODE_GREATER_THAN_EQUAL },
     { "6 == 2", NODE_EQUAL },
     { "6 != 2", NODE_NOT_EQUAL },
+    { "6 and 2", NODE_AND },
+    { "6 or 2", NODE_OR },
   };
 
   for(int i = 0; i < TEST_COUNT; i++) {
@@ -706,7 +711,7 @@ void test_Parser_parseExpression_infixOperatorsLeftAssociative() {
     NodeType nodeType1;
   } Test;
 
-  const int TEST_COUNT = 44;
+  const int TEST_COUNT = 46;
 
   /*
    * Don't infer the array length--we want an error if we add tests and don't
@@ -757,6 +762,8 @@ void test_Parser_parseExpression_infixOperatorsLeftAssociative() {
     { "6 != 2 >= 3", NODE_NOT_EQUAL, NODE_GREATER_THAN_EQUAL },
     { "6 != 2 == 3", NODE_NOT_EQUAL, NODE_EQUAL },
     { "6 != 2 != 3", NODE_NOT_EQUAL, NODE_NOT_EQUAL },
+    { "6 and 2 and 3", NODE_AND, NODE_AND },
+    { "6 or 2 or 3", NODE_OR, NODE_OR },
   };
 
   for(int i = 0; i < TEST_COUNT; i++) {
@@ -787,7 +794,7 @@ void test_Parser_parseExpression_infixOrderOfOperations() {
     NodeType nodeType1;
   } Test;
 
-  const int TEST_COUNT = 28;
+  const int TEST_COUNT = 49;
 
   /*
    * Don't infer the array length--we want an error if we add tests and don't
@@ -796,32 +803,62 @@ void test_Parser_parseExpression_infixOrderOfOperations() {
   Test tests[TEST_COUNT] = {
     { "6 + 2 * 3", NODE_ADD, NODE_MULTIPLY },
     { "6 + 2 // 3", NODE_ADD, NODE_INTEGER_DIVIDE },
+
     { "6 - 2 * 3", NODE_SUBTRACT, NODE_MULTIPLY },
     { "6 - 2 // 3", NODE_SUBTRACT, NODE_INTEGER_DIVIDE },
+
     { "6 < 2 + 3", NODE_LESS_THAN, NODE_ADD },
     { "6 < 2 - 3", NODE_LESS_THAN, NODE_SUBTRACT },
     { "6 < 2 * 3", NODE_LESS_THAN, NODE_MULTIPLY },
     { "6 < 2 // 3", NODE_LESS_THAN, NODE_INTEGER_DIVIDE },
+
     { "6 <= 2 + 3", NODE_LESS_THAN_EQUAL, NODE_ADD },
     { "6 <=  2 - 3", NODE_LESS_THAN_EQUAL, NODE_SUBTRACT },
     { "6 <=  2 * 3", NODE_LESS_THAN_EQUAL, NODE_MULTIPLY },
     { "6 <=  2 // 3", NODE_LESS_THAN_EQUAL, NODE_INTEGER_DIVIDE },
+
     { "6 > 2 + 3", NODE_GREATER_THAN, NODE_ADD },
     { "6 > 2 - 3", NODE_GREATER_THAN, NODE_SUBTRACT },
     { "6 > 2 * 3", NODE_GREATER_THAN, NODE_MULTIPLY },
     { "6 > 2 // 3", NODE_GREATER_THAN, NODE_INTEGER_DIVIDE },
+
     { "6 >= 2 + 3", NODE_GREATER_THAN_EQUAL, NODE_ADD },
     { "6 >= 2 - 3", NODE_GREATER_THAN_EQUAL, NODE_SUBTRACT },
     { "6 >= 2 * 3", NODE_GREATER_THAN_EQUAL, NODE_MULTIPLY },
     { "6 >= 2 // 3", NODE_GREATER_THAN_EQUAL, NODE_INTEGER_DIVIDE },
+
     { "6 == 2 + 3", NODE_EQUAL, NODE_ADD },
     { "6 == 2 - 3", NODE_EQUAL, NODE_SUBTRACT },
     { "6 == 2 * 3", NODE_EQUAL, NODE_MULTIPLY },
     { "6 == 2 // 3", NODE_EQUAL, NODE_INTEGER_DIVIDE },
+
     { "6 != 2 + 3", NODE_NOT_EQUAL, NODE_ADD },
     { "6 != 2 - 3", NODE_NOT_EQUAL, NODE_SUBTRACT },
     { "6 != 2 * 3", NODE_NOT_EQUAL, NODE_MULTIPLY },
     { "6 != 2 // 3", NODE_NOT_EQUAL, NODE_INTEGER_DIVIDE },
+
+    { "6 and 2 + 3", NODE_AND, NODE_ADD },
+    { "6 and 2 - 3", NODE_AND, NODE_SUBTRACT },
+    { "6 and 2 * 3", NODE_AND, NODE_MULTIPLY },
+    { "6 and 2 // 3", NODE_AND, NODE_INTEGER_DIVIDE },
+    { "6 and 2 < 3", NODE_AND, NODE_LESS_THAN },
+    { "6 and 2 <= 3", NODE_AND, NODE_LESS_THAN_EQUAL },
+    { "6 and 2 > 3", NODE_AND, NODE_GREATER_THAN },
+    { "6 and 2 >= 3", NODE_AND, NODE_GREATER_THAN_EQUAL },
+    { "6 and 2 == 3", NODE_AND, NODE_EQUAL },
+    { "6 and 2 != 3", NODE_AND, NODE_NOT_EQUAL },
+
+    { "6 or 2 + 3", NODE_OR, NODE_ADD },
+    { "6 or 2 - 3", NODE_OR, NODE_SUBTRACT },
+    { "6 or 2 * 3", NODE_OR, NODE_MULTIPLY },
+    { "6 or 2 // 3", NODE_OR, NODE_INTEGER_DIVIDE },
+    { "6 or 2 < 3", NODE_OR, NODE_LESS_THAN },
+    { "6 or 2 <= 3", NODE_OR, NODE_LESS_THAN_EQUAL },
+    { "6 or 2 > 3", NODE_OR, NODE_GREATER_THAN },
+    { "6 or 2 >= 3", NODE_OR, NODE_GREATER_THAN_EQUAL },
+    { "6 or 2 == 3", NODE_OR, NODE_EQUAL },
+    { "6 or 2 != 3", NODE_OR, NODE_NOT_EQUAL },
+    { "6 or 2 and 3", NODE_OR, NODE_AND },
   };
 
   for(int i = 0; i < TEST_COUNT; i++) {
