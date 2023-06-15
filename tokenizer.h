@@ -21,6 +21,9 @@ typedef enum {
   TOKEN_EQUALS_EQUALS,
   TOKEN_BANG_EQUALS,
 
+  TOKEN_AND,
+  TOKEN_OR,
+
   TOKEN_OPEN_PAREN,
   TOKEN_CLOSE_PAREN,
 
@@ -90,6 +93,7 @@ void test_Tokenizer_scan_booleans();
 void test_Tokenizer_scan_differentiateKeywords();
 void test_Tokenizer_scan_not();
 void test_Tokenizer_scan_comparisonOperators();
+void test_Tokenizer_scan_booleanOperators();
 void test_Tokenizer_scan_jumpKeywords();
 void test_Tokenizer_scan_mut();
 

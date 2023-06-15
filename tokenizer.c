@@ -173,7 +173,6 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
         }
       }
 
-    case 'a':
     case 'b':
     case 'c':
     case 'd':
@@ -181,7 +180,6 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
     case 'h':
     case 'j':
     case 'k':
-    case 'o':
     case 'p':
     case 'q':
     case 'r':
@@ -220,6 +218,13 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
         const char* lexeme = self->current;
         self->current++;
         return Tokenizer_completeSymbol(self, lexeme);
+      }
+
+    case 'a':
+      {
+        const char* lexeme = self->current;
+        self->current++;
+        return Tokenizer_keywordOrSymbol(self, lexeme, "nd", TOKEN_AND);
       }
 
     case 'e':
@@ -262,6 +267,13 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
         const char* lexeme = self->current;
         self->current++;
         return Tokenizer_keywordOrSymbol(self, lexeme, "ot", TOKEN_NOT);
+      }
+
+    case 'o':
+      {
+        const char* lexeme = self->current;
+        self->current++;
+        return Tokenizer_keywordOrSymbol(self, lexeme, "r", TOKEN_OR);
       }
 
     case 't':
@@ -659,6 +671,27 @@ void test_Tokenizer_scan_comparisonOperators() {
   token = Tokenizer_scan(&tokenizer);
   assert(token.type == TOKEN_BANG_EQUALS);
   assert(token.lexeme == source + 13);
+  assert(token.length == 2);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_booleanOperators() {
+  const char* source = "and or";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source, 1);
+
+  Token token;
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_AND);
+  assert(token.lexeme == source);
+  assert(token.length == 3);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_OR);
+  assert(token.lexeme == source + 4);
   assert(token.length == 2);
   assert(token.line == 1);
 }
