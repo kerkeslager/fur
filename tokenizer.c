@@ -173,7 +173,6 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
         }
       }
 
-    case 'b':
     case 'c':
     case 'd':
     case 'g':
@@ -225,6 +224,13 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
         const char* lexeme = self->current;
         self->current++;
         return Tokenizer_keywordOrSymbol(self, lexeme, "nd", TOKEN_AND);
+      }
+
+    case 'b':
+      {
+        const char* lexeme = self->current;
+        self->current++;
+        return Tokenizer_keywordOrSymbol(self, lexeme, "reak", TOKEN_BREAK);
       }
 
     case 'e':
@@ -294,7 +300,27 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
       {
         const char* lexeme = self->current;
         self->current++;
-        return Tokenizer_keywordOrSymbol(self, lexeme, "hile", TOKEN_WHILE);
+
+        switch(*(self->current)) {
+          case 'h':
+            self->current++;
+            return Tokenizer_keywordOrSymbol(self,
+              lexeme,
+              "ile",
+              TOKEN_WHILE
+            );
+
+          case 'i':
+            self->current++;
+            return Tokenizer_keywordOrSymbol(self,
+              lexeme,
+              "th",
+              TOKEN_WITH
+            );
+
+          default:
+            return Tokenizer_completeSymbol(self, lexeme);
+        }
       }
 
     default:
@@ -745,6 +771,27 @@ void test_Tokenizer_scan_mut() {
   assert(token.type == TOKEN_MUT);
   assert(token.lexeme == source);
   assert(token.length == 3);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_breakWith() {
+  const char* source = "break with";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source, 1);
+
+  Token token;
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_BREAK);
+  assert(token.lexeme == source);
+  assert(token.length == 5);
+  assert(token.line == 1);
+
+  token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_WITH);
+  assert(token.lexeme == source + 6);
+  assert(token.length == 4);
   assert(token.line == 1);
 }
 

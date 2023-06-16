@@ -42,6 +42,9 @@ typedef enum {
   TOKEN_WHILE,
   TOKEN_UNTIL,
 
+  TOKEN_BREAK,
+  TOKEN_WITH,
+
   TOKEN_MUT,
 
   TOKEN_ERROR,
@@ -96,6 +99,7 @@ void test_Tokenizer_scan_comparisonOperators();
 void test_Tokenizer_scan_booleanOperators();
 void test_Tokenizer_scan_jumpKeywords();
 void test_Tokenizer_scan_mut();
+void test_Tokenizer_scan_breakWith();
 
 void test_Tokenizer_peek_returnsScan();
 void test_Tokenizer_peek_doesNotProgress();

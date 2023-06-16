@@ -49,6 +49,9 @@ inline static void Token_println(Token token) {
     PRINT_CASE(TOKEN_WHILE);
     PRINT_CASE(TOKEN_UNTIL);
 
+    PRINT_CASE(TOKEN_BREAK);
+    PRINT_CASE(TOKEN_WITH);
+
     PRINT_CASE(TOKEN_MUT);
 
     PRINT_CASE(TOKEN_ERROR);
@@ -99,6 +102,9 @@ inline static void TokenType_println(TokenType tokenType) {
     PRINT_CASE(TOKEN_ELSE);
     PRINT_CASE(TOKEN_WHILE);
     PRINT_CASE(TOKEN_UNTIL);
+
+    PRINT_CASE(TOKEN_BREAK);
+    PRINT_CASE(TOKEN_WITH);
 
     PRINT_CASE(TOKEN_MUT);
 
