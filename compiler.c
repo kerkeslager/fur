@@ -10,15 +10,64 @@
 void Compiler_init(Compiler* self) {
   SymbolTable_init(&(self->symbolTable));
   SymbolList_init(&(self->symbolList));
+  self->breaks = NULL;
+  self->breakCount = 0;
+  self->breakCapacity = 0;
   /*
-   * We don't need to initialize hasErrors, because it's initialialized
-   * in the only place that it should be used, in Compiler_compile().
+   * hasErrors and loopDepth are initialized in Compiler_compile because
+   * we want them to be reset each time that is called. We also reset
+   * breakCount but we don't reset breaks because we don't want to reallocate
+   * if it's already allocated.
    */
 }
 
 void Compiler_free(Compiler* self) {
   SymbolTable_free(&(self->symbolTable));
   SymbolList_free(&(self->symbolList));
+
+  if(self->breaks != NULL) free(self->breaks);
+}
+
+void Compiler_patchBreaks(Compiler* self, ByteCode* out) {
+  size_t currentIndex = ByteCode_count(out);
+  size_t patchedCount = 0;
+
+  for(size_t i = 0; i < self->breakCount; i++) {
+    self->breaks[i].depth--;
+
+    if(self->breaks[i].depth == 0) {
+      size_t breakIndex = self->breaks[i].index;
+
+      // TODO Prevent overflowing int16_t
+      *((int16_t*)ByteCode_pc(out, breakIndex)) = currentIndex - breakIndex;
+
+      patchedCount++;
+    } else if(patchedCount) {
+      // Clean up breaks which have already been patched
+      self->breaks[i - patchedCount] = self->breaks[i];
+    }
+  }
+
+  self->breakCount -= patchedCount;
+}
+
+void Compiler_emitBreak(Compiler* self, ByteCode* out, size_t depth) {
+  Break b;
+  b.depth = depth;
+  b.index = ByteCode_count(out);
+
+  if(self->breakCount == self->breakCapacity) {
+    if(self->breakCapacity == 0) {
+      self->breakCapacity = 4;
+    } else {
+      self->breakCapacity *= 2;
+    }
+
+    self->breaks = realloc(self->breaks, self->breakCapacity * sizeof(Break));
+    assert(self->breaks != NULL); // TODO Handle this better
+  }
+
+  self->breaks[self->breakCount++] = b;
 }
 
 inline static void Compiler_emitOp(ByteCode* out, Instruction op, size_t line) {
@@ -104,9 +153,7 @@ inline static void Compiler_emitComparison(Compiler* self, ByteCode* out, Instru
 
       printError(
         node->node.line,
-        "Cannot chain more than 256 comparison operators.",
-        symbol->length,
-        symbol->text
+        "Cannot chain more than 256 comparison operators."
       );
 
       return;
@@ -445,7 +492,9 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         int16_t* loopJumpBackpatch = (int16_t*)ByteCode_pc(out, loopJumpStart);
         Compiler_emitInt16(out, 0, node->line);
 
+        self->loopDepth++;
         Compiler_emitNode(self, out, tNode->arg1);
+        self->loopDepth--;
         Compiler_emitOp(out, OP_DROP, node->line);
 
         // TODO Bounds-check fits in an int16_t
@@ -461,6 +510,52 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
           Compiler_emitNode(self, out, tNode->arg2);
         }
 
+        Compiler_patchBreaks(self, out);
+
+        return;
+      }
+
+    case NODE_BREAK:
+      {
+        // break; break 1 loop, with return nil
+        // break 2; break 2 loops, with return nil
+        // break with "Hello"; break 1 loop, with return "Hello"
+        // break 2 with "Hello"; break 2 loops, with return "hello"
+        BinaryNode* bNode = (BinaryNode*)node;
+
+        if(bNode->arg1 == NULL) {
+          Compiler_emitOp(out, OP_NIL, node->line);
+        } else {
+          Compiler_emitNode(self, out, bNode->arg1);
+        }
+
+        size_t depth = 1; // break out of one loop by default
+        if(bNode->arg0 != NULL) {
+          // TODO Handle this better
+          assert(bNode->arg0->type == NODE_INTEGER_LITERAL);
+
+          depth = 0;
+
+          for(size_t i = 0; i < ((AtomNode*)(bNode->arg0))->length; i++) {
+            depth *= 10;
+            depth += ((AtomNode*)(bNode->arg0))->text[i] - '0';
+
+            // TODO Handle this better
+            // This is to prevent overflows
+            assert(depth < 256);
+          }
+
+          // TODO Handle this better
+          assert(depth > 0);
+
+          // TODO Handle this better
+          assert(depth <= self->loopDepth);
+        }
+
+        Compiler_emitOp(out, OP_JUMP, node->line);
+        Compiler_emitBreak(self, out, depth);
+        Compiler_emitInt16(out, 0, node->line);
+
         return;
       }
 
@@ -473,10 +568,12 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
 bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
   Node* statement = Parser_parseStatement(parser);
   self->hasErrors = false;
+  self->loopDepth = 0;
+  self->breakCount = 0;
 
   /*
-   * Take some checkpoints so we can back out what we've emitted if there are
-   * errors point if there are errors.
+   * Take some checkpoints so we can back out what we've emitted if there
+   * are errors.
    */
   size_t byteCodeCheckpoint = ByteCode_count(out);
   size_t symbolListCheckpoint = SymbolList_count(&(self->symbolList));

@@ -178,6 +178,7 @@ void Node_free(Node* self) {
     case NODE_NOT_EQUAL:
     case NODE_AND:
     case NODE_OR:
+    case NODE_BREAK:
       BinaryNode_free((BinaryNode*)self);
       return;
 

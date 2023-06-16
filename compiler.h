@@ -9,9 +9,18 @@
 #include "symbol_table.h"
 
 typedef struct {
+  size_t index;
+  size_t depth;
+} Break;
+
+typedef struct {
   SymbolTable symbolTable;
   SymbolList symbolList;
   bool hasErrors;
+  size_t loopDepth;
+  Break* breaks;
+  size_t breakCount;
+  size_t breakCapacity;
 } Compiler;
 
 void Compiler_init(Compiler*);
