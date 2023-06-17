@@ -31,6 +31,8 @@ static const char* Instruction_toOperatorCString(uint8_t* pc) {
     case OP_JUMP:
     case OP_JUMP_TRUE:
     case OP_JUMP_FALSE:
+    case OP_SCOPE_OPEN:
+    case OP_SCOPE_CLOSE:
     case OP_RETURN:
       assert(false);
 
@@ -439,6 +441,14 @@ Value Thread_run(Thread* self) {
             pc += *((int16_t*)pc);
           }
         }
+        break;
+
+      case OP_SCOPE_OPEN:
+        Stack_openScope(&(self->stack));
+        break;
+
+      case OP_SCOPE_CLOSE:
+        Stack_closeScope(&(self->stack));
         break;
 
       case OP_RETURN:

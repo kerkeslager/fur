@@ -496,8 +496,10 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         Compiler_emitInt16(out, 0, node->line);
 
         self->loopDepth++;
+        Compiler_emitOp(out, OP_SCOPE_OPEN, node->line);
         Compiler_emitNode(self, out, tNode->arg1);
         self->loopDepth--;
+        Compiler_emitOp(out, OP_SCOPE_CLOSE, node->line);
         Compiler_emitOp(out, OP_DROP, node->line);
 
         // TODO Bounds-check fits in an int16_t
