@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Wextra -ggdb3
+CFLAGS = -Wall -Wextra -Wimplicit-fallthrough=5 -ggdb3
 SRCS := $(shell find . -name '*.c')
 HEADERS := $(shell find . -name '*.h')
 OBJS := $(SRCS:.c=.o)
