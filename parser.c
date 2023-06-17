@@ -168,7 +168,10 @@ inline static NodeType mapKeywordExpression(TokenType tokenType) {
   }
 }
 
-
+/*
+ * TODO
+ * This is clearly not parsing atoms any more. Come up with a better name.
+ */
 Node* Parser_parseAtom(Parser* self) {
   Tokenizer* tokenizer = &(self->tokenizer);
   Token token = Tokenizer_peek(tokenizer);
@@ -277,6 +280,38 @@ Node* Parser_parseAtom(Parser* self) {
         );
       }
 
+    case TOKEN_BREAK:
+      {
+        Tokenizer_scan(tokenizer);
+        Node* breakTo = NULL;
+        Node* breakWith = NULL;
+
+        token = Tokenizer_peek(tokenizer);
+
+        switch(token.type) {
+          case TOKEN_INTEGER_LITERAL:
+            Tokenizer_scan(tokenizer);
+            breakTo = AtomNode_new(NODE_INTEGER_LITERAL, token.line, token.lexeme, token.length);
+
+            token = Tokenizer_peek(tokenizer);
+            if(token.type == TOKEN_WITH) {
+              Tokenizer_scan(tokenizer);
+              breakWith = Parser_parseExpression(self);
+            }
+            break;
+
+          case TOKEN_WITH:
+            Tokenizer_scan(tokenizer);
+            breakWith = Parser_parseExpression(self);
+            break;
+
+          default:
+            break;
+        }
+
+        return BinaryNode_new(NODE_BREAK, token.line, breakTo, breakWith);
+      }
+
     default:
       // TODO More specific error
       Tokenizer_scan(tokenizer);
@@ -291,6 +326,11 @@ Node* Parser_parseExpressionWithPrecedence(Parser*, Precedence minPrecedence);
 /*
  * TODO
  * The commented parameter will be needed if we add any postfix operators.
+ */
+/*
+ * TODO
+ * This is clearly not parsing unary expressions any more. Come up with a
+ * better name.
  */
 Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
   Tokenizer* tokenizer = &(self->tokenizer);
@@ -307,12 +347,9 @@ Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
 
     // This is a bit of a hack
     if(token.type == TOKEN_MUT) {
-      // TODO Handle this better
       if(inner->type != NODE_ASSIGN) {
         return ErrorNode_newWithPrevious(ERROR_MUTABLE_NOT_ASSIGNMENT, token, inner);
       }
-
-      assert(inner->type == NODE_ASSIGN);
 
       inner->type = NODE_MUT_ASSIGN;
 
@@ -1377,6 +1414,74 @@ void test_Parser_parseStatement_parsesJumpElseInParens() {
     Node_free(node);
     Parser_free(&parser);
   }
+}
+
+void test_Parser_parseStatement_break() {
+  const char* source = "break;";
+
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* node = Parser_parseStatement(&parser);
+
+  assert(node->type == NODE_BREAK);
+  assert(((BinaryNode*)node)->arg0 == NULL);
+  assert(((BinaryNode*)node)->arg1 == NULL);
+
+  Node_free(node);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseStatement_breakTo() {
+  const char* source = "break 3;";
+
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* node = Parser_parseStatement(&parser);
+
+  assert(node->type == NODE_BREAK);
+  assert(((BinaryNode*)node)->arg0 != NULL);
+  assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
+  assert(((BinaryNode*)node)->arg1 == NULL);
+
+  Node_free(node);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseStatement_breakWith() {
+  const char* source = "break with true;";
+
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* node = Parser_parseStatement(&parser);
+
+  assert(node->type == NODE_BREAK);
+  assert(((BinaryNode*)node)->arg0 == NULL);
+  assert(((BinaryNode*)node)->arg1 != NULL);
+  assert(((BinaryNode*)node)->arg1->type == NODE_BOOLEAN_LITERAL);
+
+  Node_free(node);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseStatement_breakToWith() {
+  const char* source = "break 3 with true;";
+
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* node = Parser_parseStatement(&parser);
+
+  assert(node->type == NODE_BREAK);
+  assert(((BinaryNode*)node)->arg0 != NULL);
+  assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
+  assert(((BinaryNode*)node)->arg1 != NULL);
+  assert(((BinaryNode*)node)->arg1->type == NODE_BOOLEAN_LITERAL);
+
+  Node_free(node);
+  Parser_free(&parser);
 }
 
 void test_Parser_parseStatement_terminatesAtSemicolon() {

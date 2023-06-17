@@ -60,6 +60,11 @@ void test_Parser_parseStatement_parsesJumpElseInAssignment();
 void test_Parser_parseStatement_parsesJumpInParens();
 void test_Parser_parseStatement_parsesJumpElseInParens();
 
+void test_Parser_parseStatement_break();
+void test_Parser_parseStatement_breakTo();
+void test_Parser_parseStatement_breakWith();
+void test_Parser_parseStatement_breakToWith();
+
 void test_Parser_parseStatement_terminatesAtSemicolon();
 void test_Parser_parseStatement_elideSemicolonAtEndInReplMode();
 void test_Parser_parseStatement_noElideSemicolonAtEndInModuleMode();
