@@ -36,7 +36,7 @@ inline static void Tokenizer_handleWhitespace(Tokenizer* self) {
     switch(*(self->current)) {
       case '\n':
         self->line++;
-        // Fall through
+        [[fallthrough]];
 
       case ' ':
       case '\t':

@@ -73,6 +73,10 @@ static const char* Instruction_toOperatorCString(uint8_t* pc) {
     case OP_SET:
       return "=";
   }
+
+  // Should never get here
+  assert(false);
+  return ""; // Silence warnings
 }
 
 const char* ValueType_toCString(ValueType type) {
@@ -86,6 +90,10 @@ const char* ValueType_toCString(ValueType type) {
     case VALUE_INTEGER:
       return "Integer";
   }
+
+  // Should never get here
+  assert(false);
+  return ""; // silence warnings
 }
 
 Value Thread_run(Thread* self) {

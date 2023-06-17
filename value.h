@@ -20,9 +20,9 @@ typedef struct {
   } as;
 } Value;
 
-const static Value NIL = { VALUE_NIL, { 0 } };
-const static Value TRUE = { VALUE_BOOLEAN, { true } };
-const static Value FALSE = { VALUE_BOOLEAN, { false } };
+static const Value NIL = { VALUE_NIL, { 0 } };
+static const Value TRUE = { VALUE_BOOLEAN, { true } };
+static const Value FALSE = { VALUE_BOOLEAN, { false } };
 
 inline static Value Value_fromBoolean(bool b) {
   return b ? TRUE : FALSE;
@@ -84,6 +84,10 @@ inline static Value Value_copy(Value* self) {
     case VALUE_INTEGER:
       return *self;
   }
+
+  // Should never get here
+  assert(false);
+  return NIL; // Silence warnings
 }
 
 inline static void Value_unreference(Value* self) {
