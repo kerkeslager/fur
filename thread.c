@@ -453,6 +453,10 @@ Value Thread_run(Thread* self) {
   #undef THREAD_ERROR
 }
 
+void Thread_printStack(Thread* self) {
+  Stack_println(&(self->stack));
+}
+
 #ifdef TEST
 
 void test_Thread_run_executesIntegerMathOps() {

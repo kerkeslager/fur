@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <readline/readline.h>
 
 #include "compiler.h"
@@ -56,6 +57,14 @@ int main() {
 
     if (buffer && *buffer) {
       add_history(buffer);
+
+      if(*buffer == '\\') {
+        if(strcmp("\\stack", buffer) == 0) {
+          Thread_printStack(&thread);
+        }
+
+        continue;
+      }
 
       Parser_appendLine(&parser, buffer);
 

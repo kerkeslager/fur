@@ -15,6 +15,7 @@ typedef struct {
 
 void Thread_init(Thread*, ByteCode*);
 void Thread_free(Thread*);
+void Thread_printStack(Thread*);
 
 Value Thread_run(Thread*);
 

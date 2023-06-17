@@ -50,11 +50,28 @@ inline static void Stack_popToIndex(Stack* self, size_t index) {
   self->items[index] = Stack_pop(self);
 }
 
+inline static void Stack_println(Stack* self) {
+  printf("[");
+  bool first = true;
+  for(Value* v = self->items; v <= self->top; v++) {
+    if(first) {
+      first = false;
+    } else {
+      printf(", ");
+    }
+
+    Value_print(*v);
+  }
+
+  printf("] top\n");
+}
+
 #ifdef TEST
 
 void test_Stack_init_empty();
 void test_Stack_lifo();
 void test_Stack_pushIndex();
+void test_Stack_scopes();
 
 #endif
 
