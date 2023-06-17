@@ -272,7 +272,19 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
       {
         const char* lexeme = self->current;
         self->current++;
-        return Tokenizer_keywordOrSymbol(self, lexeme, "ot", TOKEN_NOT);
+
+        switch(*(self->current)) {
+          case 'i':
+            self->current++;
+            return Tokenizer_keywordOrSymbol(self, lexeme, "l", TOKEN_NIL);
+
+          case 'o':
+            self->current++;
+            return Tokenizer_keywordOrSymbol(self, lexeme, "t", TOKEN_NOT);
+
+          default:
+            return Tokenizer_completeSymbol(self, lexeme);
+        }
       }
 
     case 'o':
@@ -584,6 +596,19 @@ void test_Tokenizer_scan_symbol() {
 
   Token token = Tokenizer_scan(&tokenizer);
   assert(token.type == TOKEN_SYMBOL);
+  assert(token.lexeme == source);
+  assert(token.length == 3);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_nil() {
+  const char* source = "nil";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source, 1);
+
+  Token token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_NIL);
   assert(token.lexeme == source);
   assert(token.length == 3);
   assert(token.line == 1);

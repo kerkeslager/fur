@@ -37,6 +37,7 @@ inline static void Token_println(Token token) {
     PRINT_CASE(TOKEN_OPEN_BRACE);
     PRINT_CASE(TOKEN_CLOSE_BRACE);
 
+    PRINT_CASE(TOKEN_NIL);
     PRINT_CASE(TOKEN_TRUE);
     PRINT_CASE(TOKEN_FALSE);
     PRINT_CASE(TOKEN_NOT);
@@ -91,6 +92,7 @@ inline static void TokenType_println(TokenType tokenType) {
     PRINT_CASE(TOKEN_OPEN_BRACE);
     PRINT_CASE(TOKEN_CLOSE_BRACE);
 
+    PRINT_CASE(TOKEN_NIL);
     PRINT_CASE(TOKEN_TRUE);
     PRINT_CASE(TOKEN_FALSE);
     PRINT_CASE(TOKEN_NOT);
@@ -120,6 +122,7 @@ inline static void TokenType_println(TokenType tokenType) {
 inline static void NodeType_println(NodeType nodeType) {
   switch(nodeType) {
     PRINT_CASE(NODE_INTEGER_LITERAL);
+    PRINT_CASE(NODE_NIL_LITERAL);
     PRINT_CASE(NODE_BOOLEAN_LITERAL);
     PRINT_CASE(NODE_SYMBOL);
 

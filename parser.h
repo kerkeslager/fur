@@ -23,6 +23,7 @@ void test_Parser_parseAtom_parseIntegerLiteral();
 void test_Parser_parseAtom_errorOnUnexpectedToken();
 void test_Parser_parseAtom_errorOnUnexpectedEof();
 void test_Parser_parseAtom_errorOnUnexpectedTokenDoesNotConsume();
+void test_Parser_parseAtom_parsesNil();
 void test_Parser_parseAtom_parsesTrue();
 void test_Parser_parseAtom_parsesFalse();
 

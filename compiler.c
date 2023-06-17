@@ -248,6 +248,9 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
     case NODE_INTEGER_LITERAL:
       return Compiler_emitInteger(out, (AtomNode*)node);
 
+    case NODE_NIL_LITERAL:
+      return Compiler_emitOp(out, OP_NIL, node->line);
+
     case NODE_BOOLEAN_LITERAL:
       return Compiler_emitBoolean(out, (AtomNode*)node);
 

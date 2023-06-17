@@ -73,6 +73,7 @@ const PrecedenceRule PRECEDENCE[] = {
   [TOKEN_OPEN_PAREN] =          { PREC_NONE,        PREC_NONE,              PREC_NONE,              true,   NO_TOKEN },
   [TOKEN_CLOSE_PAREN] =         { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  TOKEN_OPEN_PAREN },
 
+  [TOKEN_NIL] =                 { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
   [TOKEN_TRUE] =                { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
   [TOKEN_FALSE] =               { PREC_NONE,        PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
   [TOKEN_NOT] =                 { PREC_LOGICAL_NOT, PREC_NONE,              PREC_NONE,              false,  NO_TOKEN },
@@ -180,6 +181,10 @@ Node* Parser_parseAtom(Parser* self) {
     case TOKEN_INTEGER_LITERAL:
       Tokenizer_scan(tokenizer);
       return AtomNode_new(NODE_INTEGER_LITERAL, token.line, token.lexeme, token.length);
+
+    case TOKEN_NIL:
+      Tokenizer_scan(tokenizer);
+      return AtomNode_new(NODE_NIL_LITERAL, token.line, token.lexeme, token.length);
 
     case TOKEN_TRUE:
     case TOKEN_FALSE:
@@ -547,6 +552,24 @@ void test_Parser_parseAtom_errorOnUnexpectedTokenDoesNotConsume() {
   assert(token.type == TOKEN_CLOSE_PAREN);
   assert(token.line == 1);
   assert(token.lexeme == source);
+
+  Parser_free(&parser);
+  Node_free(expression);
+}
+
+void test_Parser_parseAtom_parsesNil() {
+  const char* source = "nil";
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* expression = Parser_parseAtom(&parser);
+
+  assert(expression->type == NODE_NIL_LITERAL);
+  assert(expression->line == 1);
+
+  AtomNode* ilExpression = (AtomNode*)expression;
+  assert(ilExpression->text == source);
+  assert(ilExpression->length == 3);
 
   Parser_free(&parser);
   Node_free(expression);

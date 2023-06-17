@@ -30,6 +30,7 @@ typedef enum {
   TOKEN_OPEN_BRACE,
   TOKEN_CLOSE_BRACE,
 
+  TOKEN_NIL,
   TOKEN_TRUE,
   TOKEN_FALSE,
   TOKEN_NOT,
@@ -92,6 +93,7 @@ void test_Tokenizer_scan_after_Tokenizer_peek();
 void test_Tokenizer_scan_parentheses();
 void test_Tokenizer_scan_braces();
 void test_Tokenizer_scan_symbol();
+void test_Tokenizer_scan_nil();
 void test_Tokenizer_scan_booleans();
 void test_Tokenizer_scan_differentiateKeywords();
 void test_Tokenizer_scan_not();
