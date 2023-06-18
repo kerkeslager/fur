@@ -18,11 +18,6 @@ typedef struct {
   SymbolList symbolList;
   bool hasErrors;
 
-  /*
-   * TODO
-   * We can get rid of scope depth because it is duplicated in SymbolList.
-   */
-  size_t scopeDepth;
   Break* breaks;
   size_t breakCount;
   size_t breakCapacity;

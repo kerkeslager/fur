@@ -13,11 +13,12 @@ void Compiler_init(Compiler* self) {
   self->breaks = NULL;
   self->breakCount = 0;
   self->breakCapacity = 0;
+
   /*
-   * hasErrors and scopeDepth are initialized in Compiler_compile because
-   * we want them to be reset each time that is called. We also reset
-   * breakCount but we don't reset breaks because we don't want to reallocate
-   * if it's already allocated.
+   * hasErrors is initialized in Compiler_compile because we want it to be
+   * reset each time Compiler_compile is called. We also reset breakCount but
+   * we don't reset breaks because we don't want to reallocate if it's
+   * already allocated.
    */
 }
 
@@ -118,13 +119,11 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node);
 
 static inline void Compiler_openScope(Compiler* self, ByteCode* out, Node* node, ScopeType type) {
   Compiler_emitOp(out, OP_SCOPE_OPEN, node->line);
-  self->scopeDepth++;
   SymbolList_openScope(&(self->symbolList), type);
 }
 
 static inline void Compiler_closeScope(Compiler* self, ByteCode* out, Node* node) {
   Compiler_emitOp(out, OP_SCOPE_CLOSE, node->line);
-  self->scopeDepth--;
   SymbolList_closeScope(&(self->symbolList));
 }
 
@@ -597,10 +596,13 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
 
           // TODO Handle this better
           assert(breakDepth > 0);
-
-          // TODO Handle this better
-          assert(breakDepth <= self->scopeDepth);
         }
+
+        /*
+         * TODO
+         * Wrap scopeDepth so we aren't directly accessing symbolList's
+         * fields.
+         */
 
         size_t brokenCount = 0;
         for(int i = (int)(self->symbolList.scopeDepth) - 1; i >= 0; i--) {
@@ -641,7 +643,6 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
 bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
   Node* statement = Parser_parseStatement(parser);
   self->hasErrors = false;
-  self->scopeDepth = 0;
   self->breakCount = 0;
 
   /*
@@ -992,12 +993,14 @@ void test_Compiler_emitNode_loop() {
 
   Compiler_emitNode(&compiler, &out, node);
 
-  assert(out.count == 9);
-  assert(out.items[0] == OP_INTEGER);
-  assert(*((int32_t*)(out.items + 1)) == 42);
-  assert(out.items[5] == OP_DROP);
-  assert(out.items[6] == OP_JUMP);
-  assert(*((int16_t*)(out.items + 7)) == -7);
+  assert(out.count == 11);
+  assert(out.items[0] == OP_SCOPE_OPEN);
+  assert(out.items[1] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 2)) == 42);
+  assert(out.items[6] == OP_SCOPE_CLOSE);
+  assert(out.items[7] == OP_DROP);
+  assert(out.items[8] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 9)) == -9);
 
   Node_free(node);
   ByteCode_free(&out);
