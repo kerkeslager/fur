@@ -255,6 +255,22 @@ inline static void Compiler_emitComparison(Compiler* self, ByteCode* out, Instru
   }
 }
 
+void Compiler_emitBlock(Compiler* self, ByteCode* out, Node* node, bool isScoped) {
+  ListNode* block = (ListNode*)node;
+
+  if(isScoped) Compiler_openScope(self, out, node, SCOPE_GENERIC);
+
+  for(size_t i = 0; i < block->count; i++) {
+    Compiler_emitNode(self, out, block->items[i]);
+
+    if(i < block->count - 1) {
+      Compiler_emitOp(out, OP_DROP, node->line);
+    }
+  }
+
+  if(isScoped) Compiler_closeScope(self, out, node);
+}
+
 void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
   switch(node->type) {
     case NODE_INTEGER_LITERAL:
@@ -445,29 +461,22 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
       }
 
     case NODE_BLOCK:
-      {
-        ListNode* block = (ListNode*)node;
-
-        Compiler_openScope(self, out, node, SCOPE_GENERIC);
-
-        for(size_t i = 0; i < block->count; i++) {
-          Compiler_emitNode(self, out, block->items[i]);
-
-          if(i < block->count - 1) {
-            Compiler_emitOp(out, OP_DROP, node->line);
-          }
-        }
-
-        Compiler_closeScope(self, out, node);
-        return;
-      }
+      Compiler_emitBlock(self, out, node, true);
+      return;
 
     case NODE_LOOP:
       {
         size_t start = ByteCode_count(out);
+
+        Compiler_openScope(self, out, node, SCOPE_BREAKABLE);
         Compiler_emitNode(self, out, ((UnaryNode*)node)->arg0);
+        Compiler_closeScope(self, out, node);
+
         Compiler_emitOp(out, OP_DROP, node->line);
         Compiler_emitOp(out, OP_JUMP, node->line);
+
+        Compiler_patchBreaks(self, out);
+
         // TODO Bounds-check that this fits in an int16_t
         return Compiler_emitInt16(out, start - ByteCode_count(out), node->line);
       }
