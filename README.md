@@ -36,6 +36,8 @@ performance costs.
 
 ### n-ary Comparison operators
 
+*TODO This has been implemented, so let's document it.*
+
 ```
 > 1 < 2 < 3
   true
@@ -412,3 +414,15 @@ There are a few other options we could explore:
 Another related note is that we probably want users to be able to paste
 multiline input into the REPL. We might be able to handle this by detecting
 keypresses more rapid than are humanly possible.
+
+### Shift operators
+Two ideas:
+
+1. Some platforms have different behavior for shifts based on the endianness
+   of the platform. Fur should guarantee that `<<` is equivalent to
+   multiplication by a power of two, and `>>` is equivalent to division by
+   a power of two, i.e. big-endian semantics. This is how things work on most
+   platforms I've seen anyway.
+2. C leaves behavior for negative shifts undefined, but there's a pretty
+   intuitive way to handle this: `x << -42` should be equivalent to `x >> 42`,
+   and `x >> -42` should be equivalent to `x << 42`.
