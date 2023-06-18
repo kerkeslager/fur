@@ -15,6 +15,7 @@ typedef enum {
 } ScopeType;
 
 typedef struct {
+  size_t start;
   uint16_t checkpoint;
   ScopeType type;
 } CompilationScope;
@@ -54,11 +55,12 @@ inline static void SymbolList_rewind(SymbolList* self, size_t checkpoint) {
   self->scopeDepth = 0;
 }
 
-inline static void SymbolList_openScope(SymbolList* self, ScopeType type) {
+inline static void SymbolList_openScope(SymbolList* self, ScopeType type, size_t start) {
   // TODO Handle this
   assert(self->scopeDepth < UINT8_MAX);
 
   CompilationScope scope;
+  scope.start = start;
   scope.checkpoint = self->count;
   scope.type = type;
 

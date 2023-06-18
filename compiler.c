@@ -136,8 +136,8 @@ inline static void Compiler_emitBoolean(ByteCode* out, AtomNode* node) {
 void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node);
 
 static inline void Compiler_openScope(Compiler* self, ByteCode* out, Node* node, ScopeType type) {
+  SymbolList_openScope(&(self->symbolList), type, ByteCode_count(out));
   Compiler_emitOp(out, OP_SCOPE_OPEN, node->line);
-  SymbolList_openScope(&(self->symbolList), type);
 }
 
 static inline void Compiler_closeScope(Compiler* self, ByteCode* out, Node* node) {
@@ -583,7 +583,75 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
       }
 
     case NODE_CONTINUE:
-      assert(false);
+      {
+        UnaryNode* uNode = (UnaryNode*)node;
+
+        /*
+         * TODO
+         * This is a hack to deal with the fact that everything assumes the
+         * loop body will return a value. Notably, we emit an OP_DROP
+         * after exiting the scope to clear any lingering variable that was
+         * retained by OP_SCOPE_CLOSE. But if no variables were defined
+         * within the scope, that OP_DROP would drop a value too far.
+         *
+         * Ideally we wouldn't push a nil onto the stack just to drop it.
+         */
+        Compiler_emitOp(out, OP_NIL, node->line);
+
+        size_t continueDepth = 1; // continue the current loop by default
+
+        if(uNode->arg0 != NULL) {
+          assert(uNode->arg0->type == NODE_INTEGER_LITERAL);
+
+          continueDepth = Compiler_atomNodeToInteger(uNode->arg0);
+
+          // TODO Handle this better
+          assert(continueDepth < 256);
+
+          // TODO Handle this better
+          assert(continueDepth > 0);
+        }
+
+        size_t brokenCount = 0;
+        int i = (int)(self->symbolList.scopeDepth) - 1;
+
+        for(; i >= 0; i--) {
+          /*
+           * We don't call Compiler_closeScope() because we are still
+           * syntactically inside the loop. We're emitting an OP_SCOPE_CLOSE
+           * because the program counter is leaving the scope.
+           *
+           * We have to close all scopes, not just the breakable (loop) scopes,
+           * because we may be inside another scope such as an if scope.
+           */
+          /*
+           * TODO
+           * Rather than emit multiple OP_SCOPE_CLOSEs, can we emit 1 that
+           * takes an argument?
+           */
+          Compiler_emitOp(out, OP_SCOPE_CLOSE, node->line);
+
+          if(self->symbolList.scopes[i].type == SCOPE_BREAKABLE) {
+            brokenCount++;
+            if(brokenCount == continueDepth) break;
+          }
+        }
+
+        assert(i >= 0);
+
+        /*
+         * TODO
+         * See earlier comment about emitting OP_NIL just so we can
+         * drop it here.
+         */
+        Compiler_emitOp(out, OP_DROP, node->line);
+        Compiler_emitOp(out, OP_JUMP, node->line);
+        Compiler_emitInt16(
+          out,
+          self->symbolList.scopes[i].start - ByteCode_count(out),
+          node->line
+        );
+      }
       return;
 
     case NODE_BREAK:
@@ -1247,6 +1315,650 @@ void test_Compiler_emitNode_untilElse() {
   Node_free(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
+}
+
+void test_Compiler_emitNode_loopContinue() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = UnaryNode_new(
+    NODE_LOOP,
+    1,
+    UnaryNode_new(
+      NODE_CONTINUE,
+      1,
+      NULL
+    )
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  assert(ByteCode_count(&out) == 12);
+  assert(out.items[0] == OP_SCOPE_OPEN);
+  assert(out.items[1] == OP_NIL);
+  assert(out.items[2] == OP_SCOPE_CLOSE);
+  assert(out.items[3] == OP_DROP);
+  assert(out.items[4] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 5)) == -5);
+  assert(out.items[7] == OP_SCOPE_CLOSE);
+  assert(out.items[8] == OP_DROP);
+  assert(out.items[9] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 10)) == -10);
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+}
+
+void test_Compiler_emitNode_loopContinueTo() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = UnaryNode_new(
+    NODE_LOOP,
+    1,
+    UnaryNode_new(
+      NODE_LOOP,
+      1,
+      UnaryNode_new(
+        NODE_LOOP,
+        1,
+        UnaryNode_new(
+          NODE_CONTINUE,
+          1,
+          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1)
+        )
+      )
+    )
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_whileContinue() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = TernaryNode_new(
+    NODE_WHILE,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+    UnaryNode_new(
+      NODE_CONTINUE,
+      1,
+      NULL
+    ),
+    NULL
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_whileContinueTo() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = TernaryNode_new(
+    NODE_WHILE,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+    TernaryNode_new(
+      NODE_WHILE,
+      1,
+      AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+      TernaryNode_new(
+        NODE_WHILE,
+        1,
+        AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+        UnaryNode_new(
+          NODE_CONTINUE,
+          1,
+          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1)
+        ),
+        NULL
+      ),
+      NULL
+    ),
+    NULL
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_whileElseContinue() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = TernaryNode_new(
+    NODE_WHILE,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+    UnaryNode_new(
+      NODE_CONTINUE,
+      1,
+      NULL
+    ),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_whileElseContinueTo() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = TernaryNode_new(
+    NODE_WHILE,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+    TernaryNode_new(
+      NODE_WHILE,
+      1,
+      AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+      TernaryNode_new(
+        NODE_WHILE,
+        1,
+        AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+        UnaryNode_new(
+          NODE_CONTINUE,
+          1,
+          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1)
+        ),
+        AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+      ),
+      AtomNode_new(NODE_INTEGER_LITERAL, 1, "43", 2)
+    ),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, "44", 2)
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_loopBreak() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = UnaryNode_new(
+    NODE_LOOP,
+    1,
+    BinaryNode_new(
+      NODE_BREAK,
+      1,
+      NULL,
+      NULL
+    )
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_loopBreakTo() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = UnaryNode_new(
+    NODE_LOOP,
+    1,
+    UnaryNode_new(
+      NODE_LOOP,
+      1,
+      UnaryNode_new(
+        NODE_LOOP,
+        1,
+        BinaryNode_new(
+          NODE_BREAK,
+          1,
+          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1),
+          NULL
+        )
+      )
+    )
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_loopBreakWith() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = UnaryNode_new(
+    NODE_LOOP,
+    1,
+    BinaryNode_new(
+      NODE_BREAK,
+      1,
+      NULL,
+      AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+    )
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_loopBreakToWith() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = UnaryNode_new(
+    NODE_LOOP,
+    1,
+    UnaryNode_new(
+      NODE_LOOP,
+      1,
+      UnaryNode_new(
+        NODE_LOOP,
+        1,
+        BinaryNode_new(
+          NODE_BREAK,
+          1,
+          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1),
+          AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+        )
+      )
+    )
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_whileBreak() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = TernaryNode_new(
+    NODE_WHILE,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+    BinaryNode_new(
+      NODE_BREAK,
+      1,
+      NULL,
+      NULL
+    ),
+    NULL
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_whileBreakTo() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = TernaryNode_new(
+    NODE_WHILE,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+    TernaryNode_new(
+      NODE_WHILE,
+      1,
+      AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+      TernaryNode_new(
+        NODE_WHILE,
+        1,
+        AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+        BinaryNode_new(
+          NODE_BREAK,
+          1,
+          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1),
+          NULL
+        ),
+        NULL
+      ),
+      NULL
+    ),
+    NULL
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_whileBreakWith() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = TernaryNode_new(
+    NODE_WHILE,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+    BinaryNode_new(
+      NODE_BREAK,
+      1,
+      NULL,
+      AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+    ),
+    NULL
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_whileBreakToWith() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = TernaryNode_new(
+    NODE_WHILE,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+    TernaryNode_new(
+      NODE_WHILE,
+      1,
+      AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+      TernaryNode_new(
+        NODE_WHILE,
+        1,
+        AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+        BinaryNode_new(
+          NODE_BREAK,
+          1,
+          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1),
+          AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+        ),
+        NULL
+      ),
+      NULL
+    ),
+    NULL
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_whileElseBreak() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = TernaryNode_new(
+    NODE_WHILE,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+    BinaryNode_new(
+      NODE_BREAK,
+      1,
+      NULL,
+      NULL
+    ),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_whileElseBreakTo() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = TernaryNode_new(
+    NODE_WHILE,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+    TernaryNode_new(
+      NODE_WHILE,
+      1,
+      AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+      TernaryNode_new(
+        NODE_WHILE,
+        1,
+        AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+        BinaryNode_new(
+          NODE_BREAK,
+          1,
+          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1),
+          NULL
+        ),
+        AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+      ),
+      AtomNode_new(NODE_INTEGER_LITERAL, 1, "43", 2)
+    ),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, "44", 2)
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_whileElseBreakWith() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = TernaryNode_new(
+    NODE_WHILE,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+    BinaryNode_new(
+      NODE_BREAK,
+      1,
+      NULL,
+      AtomNode_new(NODE_INTEGER_LITERAL, 1, "37", 2)
+    ),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
+}
+
+void test_Compiler_emitNode_whileElseBreakToWith() {
+  Compiler compiler;
+  Compiler_init(&compiler);
+
+  Node* node = TernaryNode_new(
+    NODE_WHILE,
+    1,
+    AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+    TernaryNode_new(
+      NODE_WHILE,
+      1,
+      AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+      TernaryNode_new(
+        NODE_WHILE,
+        1,
+        AtomNode_new(NODE_BOOLEAN_LITERAL, 1, "true", 4),
+        BinaryNode_new(
+          NODE_BREAK,
+          1,
+          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1),
+          AtomNode_new(NODE_INTEGER_LITERAL, 1, "37", 2)
+        ),
+        AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+      ),
+      AtomNode_new(NODE_INTEGER_LITERAL, 1, "43", 2)
+    ),
+    AtomNode_new(NODE_INTEGER_LITERAL, 1, "44", 2)
+  );
+
+  ByteCode out;
+  ByteCode_init(&out);
+
+  Compiler_emitNode(&compiler, &out, node);
+
+  // TODO Assertions here
+
+  Node_free(node);
+  ByteCode_free(&out);
+  Compiler_free(&compiler);
+
+  assert(false);
 }
 
 void test_Compiler_compile_emitsVariableInstructions() {

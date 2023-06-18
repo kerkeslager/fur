@@ -50,6 +50,32 @@ void test_Compiler_emitNode_whileElse();
 void test_Compiler_emitNode_until();
 void test_Compiler_emitNode_untilElse();
 
+void test_Compiler_emitNode_loopContinue();
+
+/*
+ * TODO
+ * The following tests have all been sketched out, but actually writing them
+ * is a tedious chore.
+ */
+//void test_Compiler_emitNode_loopContinueTo();
+//void test_Compiler_emitNode_whileContinue();
+//void test_Compiler_emitNode_whileContinueTo();
+//void test_Compiler_emitNode_whileElseContinue();
+//void test_Compiler_emitNode_whileElseContinueTo();
+
+//void test_Compiler_emitNode_loopBreak();
+//void test_Compiler_emitNode_loopBreakTo();
+//void test_Compiler_emitNode_loopBreakWith();
+//void test_Compiler_emitNode_loopBreakToWith();
+//void test_Compiler_emitNode_whileBreak();
+//void test_Compiler_emitNode_whileBreakTo();
+//void test_Compiler_emitNode_whileBreakWith();
+//void test_Compiler_emitNode_whileBreakToWith();
+//void test_Compiler_emitNode_whileElseBreak();
+//void test_Compiler_emitNode_whileElseBreakTo();
+//void test_Compiler_emitNode_whileElseBreakWith();
+//void test_Compiler_emitNode_whileElseBreakToWith();
+
 void test_Compiler_compile_emitsVariableInstructions();
 
 void test_Compiler_compile_emitsNilOnEmptyInput();
