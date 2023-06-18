@@ -86,18 +86,36 @@ inline static void Compiler_emitInt32(ByteCode* out, int32_t i, size_t line) {
   ByteCode_appendInt32(out, i, line);
 }
 
-inline static void Compiler_emitInteger(ByteCode* out, AtomNode* node) {
-  // TODO Handle overflows
+inline static uint64_t Compiler_atomNodeToInteger(Node* node) {
+  assert(node->type == NODE_INTEGER_LITERAL);
 
-  int32_t result = 0;
+  uint64_t result = 0;
 
-  for(size_t i = 0; i < node->length; i++) {
+  for(size_t i = 0; i < ((AtomNode*)node)->length; i++) {
+    // TODO Handle this better
+    assert(result <= UINT64_MAX / 10);
+
     result *= 10;
-    result += node->text[i] - '0';
+
+    uint8_t digit = ((AtomNode*)node)->text[i] - '0';
+
+    // TODO Handle this better
+    assert(result <= UINT64_MAX - digit);
+
+    result += digit;
   }
 
-  Compiler_emitOp(out, OP_INTEGER, node->node.line);
-  Compiler_emitInt32(out, result, node->node.line);
+  return result;
+}
+
+inline static void Compiler_emitInteger(ByteCode* out, Node* node) {
+  int64_t result = Compiler_atomNodeToInteger(node);
+
+  // TODO Handle this better
+  assert(result <= INT32_MAX);
+
+  Compiler_emitOp(out, OP_INTEGER, node->line);
+  Compiler_emitInt32(out, result, node->line);
 }
 
 inline static void Compiler_emitBoolean(ByteCode* out, AtomNode* node) {
@@ -273,7 +291,7 @@ void Compiler_emitBlock(Compiler* self, ByteCode* out, Node* node, bool isScoped
 void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
   switch(node->type) {
     case NODE_INTEGER_LITERAL:
-      return Compiler_emitInteger(out, (AtomNode*)node);
+      return Compiler_emitInteger(out, node);
 
     case NODE_NIL_LITERAL:
       return Compiler_emitOp(out, OP_NIL, node->line);
@@ -587,16 +605,10 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
           // TODO Handle this better
           assert(bNode->arg0->type == NODE_INTEGER_LITERAL);
 
-          breakDepth = 0;
+          breakDepth = Compiler_atomNodeToInteger(bNode->arg0);
 
-          for(size_t i = 0; i < ((AtomNode*)(bNode->arg0))->length; i++) {
-            breakDepth *= 10;
-            breakDepth += ((AtomNode*)(bNode->arg0))->text[i] - '0';
-
-            // TODO Handle this better
-            // This is to prevent overflows
-            assert(breakDepth < 256);
-          }
+          // TODO Handle this better
+          assert(breakDepth < 256);
 
           // TODO Handle this better
           assert(breakDepth > 0);
