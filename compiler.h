@@ -17,7 +17,7 @@ typedef struct {
   SymbolTable symbolTable;
   SymbolList symbolList;
   bool hasErrors;
-  size_t loopDepth;
+  size_t scopeDepth;
   Break* breaks;
   size_t breakCount;
   size_t breakCapacity;
