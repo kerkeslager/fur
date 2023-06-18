@@ -564,6 +564,10 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         return;
       }
 
+    case NODE_CONTINUE:
+      assert(false);
+      return;
+
     case NODE_BREAK:
       {
         // break; break 1 loop, with return nil

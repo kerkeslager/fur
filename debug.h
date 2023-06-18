@@ -154,6 +154,7 @@ inline static void NodeType_println(NodeType nodeType) {
     PRINT_CASE(NODE_WHILE);
     PRINT_CASE(NODE_UNTIL);
 
+    PRINT_CASE(NODE_CONTINUE);
     PRINT_CASE(NODE_BREAK);
 
     PRINT_CASE(NODE_BLOCK);

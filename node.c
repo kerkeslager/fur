@@ -45,7 +45,8 @@ inline static void AtomNode_free(AtomNode* self) {
 inline static void UnaryNode_init(UnaryNode* self, NodeType type, size_t line, Node* arg0) {
   assert(type == NODE_NEGATE
       || type == NODE_LOGICAL_NOT
-      || type == NODE_LOOP);
+      || type == NODE_LOOP
+      || type == NODE_CONTINUE);
   Node_init(&(self->node), type, line);
   self->arg0 = arg0;
 }
@@ -208,6 +209,7 @@ void Node_free(Node* self) {
       AtomNode_free((AtomNode*)self);
       return;
 
+    case NODE_CONTINUE:
     case NODE_NEGATE:
     case NODE_LOGICAL_NOT:
     case NODE_LOOP:

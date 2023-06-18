@@ -295,6 +295,26 @@ Node* Parser_parseAtom(Parser* self) {
         );
       }
 
+    case TOKEN_CONTINUE:
+      {
+        Tokenizer_scan(tokenizer);
+        Node* continueTo = NULL;
+
+        token = Tokenizer_peek(tokenizer);
+
+        switch(token.type) {
+          case TOKEN_INTEGER_LITERAL:
+            Tokenizer_scan(tokenizer);
+            continueTo = AtomNode_new(NODE_INTEGER_LITERAL, token.line, token.lexeme, token.length);
+            break;
+
+          default:
+            break;
+        }
+
+        return UnaryNode_new(NODE_CONTINUE, token.line, continueTo);
+      }
+
     case TOKEN_BREAK:
       {
         Tokenizer_scan(tokenizer);
@@ -1478,6 +1498,37 @@ void test_Parser_parseStatement_parsesJumpElseInParens() {
     Node_free(node);
     Parser_free(&parser);
   }
+}
+
+void test_Parser_parseStatement_continue() {
+  const char* source = "continue;";
+
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* node = Parser_parseStatement(&parser);
+
+  assert(node->type == NODE_CONTINUE);
+  assert(((UnaryNode*)node)->arg0 == NULL);
+
+  Node_free(node);
+  Parser_free(&parser);
+}
+
+void test_Parser_parseStatement_continueTo() {
+  const char* source = "continue 3;";
+
+  Parser parser;
+  Parser_init(&parser, source, false);
+
+  Node* node = Parser_parseStatement(&parser);
+
+  assert(node->type == NODE_CONTINUE);
+  assert(((UnaryNode*)node)->arg0 != NULL);
+  assert(((UnaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
+
+  Node_free(node);
+  Parser_free(&parser);
 }
 
 void test_Parser_parseStatement_break() {

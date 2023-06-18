@@ -16,6 +16,7 @@ typedef enum {
   NODE_NEGATE,
   NODE_LOGICAL_NOT,
   NODE_LOOP,
+  NODE_CONTINUE,
 
   // Binary Nodes
   NODE_ASSIGN,

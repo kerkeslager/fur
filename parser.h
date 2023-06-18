@@ -61,6 +61,9 @@ void test_Parser_parseStatement_parsesJumpElseInAssignment();
 void test_Parser_parseStatement_parsesJumpInParens();
 void test_Parser_parseStatement_parsesJumpElseInParens();
 
+void test_Parser_parseStatement_continue();
+void test_Parser_parseStatement_continueTo();
+
 void test_Parser_parseStatement_break();
 void test_Parser_parseStatement_breakTo();
 void test_Parser_parseStatement_breakWith();
