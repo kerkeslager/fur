@@ -652,12 +652,13 @@ void test_Parser_parseUnary_passesOnErrors() {
 }
 
 void test_Parser_parseUnary_notAfterComparison() {
+  #define TEST_COUNT 6
+
   typedef struct {
     const char* source;
     NodeType nestedNodeType;
   } TestCase;
 
-  const int TEST_COUNT = 6;
   /*
    * Don't infer the array length, because if we add cases, we want an error
    * if we don't update the test count, so that all test cases are executed
@@ -685,6 +686,7 @@ void test_Parser_parseUnary_notAfterComparison() {
     Parser_free(&parser);
     Node_free(expression);
   }
+  #undef TEST_COUNT
 }
 
 void test_Parser_parseExpression_parseIntegerLiteral() {
@@ -706,6 +708,7 @@ void test_Parser_parseExpression_parseIntegerLiteral() {
 }
 
 void test_Parser_parseExpression_infixOperatorsBasic() {
+  #define TEST_COUNT 12
   Parser parser;
   Node* expression;
 
@@ -713,8 +716,6 @@ void test_Parser_parseExpression_infixOperatorsBasic() {
     const char* source;
     NodeType nodeType;
   } Test;
-
-  const int TEST_COUNT = 12;
 
   /*
    * Don't infer the array length--we want an error if we add tests and don't
@@ -759,9 +760,13 @@ void test_Parser_parseExpression_infixOperatorsBasic() {
     Node_free(expression);
     Parser_free(&parser);
   }
+
+  #undef TEST_COUNT
 }
 
 void test_Parser_parseExpression_infixOperatorsLeftAssociative() {
+  #define TEST_COUNT 46
+
   Parser parser;
   Node* expression;
 
@@ -770,8 +775,6 @@ void test_Parser_parseExpression_infixOperatorsLeftAssociative() {
     NodeType nodeType0;
     NodeType nodeType1;
   } Test;
-
-  const int TEST_COUNT = 46;
 
   /*
    * Don't infer the array length--we want an error if we add tests and don't
@@ -842,9 +845,12 @@ void test_Parser_parseExpression_infixOperatorsLeftAssociative() {
     Node_free(expression);
     Parser_free(&parser);
   }
+
+  #undef TEST_COUNT
 }
 
 void test_Parser_parseExpression_infixOrderOfOperations() {
+  #define TEST_COUNT 49
   Parser parser;
   Node* expression;
 
@@ -853,8 +859,6 @@ void test_Parser_parseExpression_infixOrderOfOperations() {
     NodeType nodeType0;
     NodeType nodeType1;
   } Test;
-
-  const int TEST_COUNT = 49;
 
   /*
    * Don't infer the array length--we want an error if we add tests and don't

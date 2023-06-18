@@ -470,14 +470,14 @@ void Thread_printStack(Thread* self) {
 #ifdef TEST
 
 void test_Thread_run_executesIntegerMathOps() {
+  #define TEST_COUNT 4
+
   typedef struct {
     Instruction instruction;
     int32_t operand0;
     int32_t operand1;
     int32_t result;
   } TestCase;
-
-  const int TEST_COUNT = 4;
 
   /*
    * Don't infer the array length--we want an error if we add tests and don't
@@ -510,17 +510,18 @@ void test_Thread_run_executesIntegerMathOps() {
     ByteCode_free(&byteCode);
     Thread_free(&thread);
   }
+  #undef TEST_COUNT
 }
 
 void test_Thread_run_integerComparison() {
+  #define TEST_COUNT 18
+
   typedef struct {
     Instruction instruction;
     int32_t operand0;
     int32_t operand1;
     bool result;
   } TestCase;
-
-  const int TEST_COUNT = 18;
 
   /*
    * Don't infer the array length--we want an error if we add tests and don't
@@ -567,6 +568,8 @@ void test_Thread_run_integerComparison() {
     ByteCode_free(&byteCode);
     Thread_free(&thread);
   }
+
+  #undef TEST_COUNT
 }
 
 void test_Thread_clearPanic_setsPanicFalse() {
