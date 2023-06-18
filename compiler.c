@@ -444,6 +444,24 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         return;
       }
 
+    case NODE_BLOCK:
+      {
+        ListNode* block = (ListNode*)node;
+
+        Compiler_openScope(self, out, node, SCOPE_GENERIC);
+
+        for(size_t i = 0; i < block->count; i++) {
+          Compiler_emitNode(self, out, block->items[i]);
+
+          if(i < block->count - 1) {
+            Compiler_emitOp(out, OP_DROP, node->line);
+          }
+        }
+
+        Compiler_closeScope(self, out, node);
+        return;
+      }
+
     case NODE_LOOP:
       {
         size_t start = ByteCode_count(out);

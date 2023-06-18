@@ -116,6 +116,52 @@ inline static void TernaryNode_free(TernaryNode* self) {
   free(self);
 }
 
+ListNode* ListNode_new(NodeType type, size_t line) {
+  ListNode* self = malloc(sizeof(ListNode));
+  // TODO Handle this
+  assert(self != NULL);
+
+  Node_init(&(self->node), type, line);
+
+  self->count = 0;
+  self->capacity = 0;
+  self->items = NULL;
+
+  return self;
+}
+
+inline static void ListNode_free(ListNode* self) {
+  for(size_t i = 0; i < self->count; i++) {
+    Node_free(self->items[i]);
+  }
+
+  if(self->capacity > 0) free(self->items);
+  free(self);
+}
+
+void ListNode_append(ListNode* self, Node* item) {
+  if(self->count == self->capacity) {
+    if(self->capacity == 0) {
+      self->capacity = 8;
+    } else {
+      self->capacity *= 2;
+    }
+
+    self->items = realloc(self->items, sizeof(Node*) * self->capacity);
+
+    // TODO Handle this
+    assert(self->items != NULL);
+  }
+
+  self->items[self->count++] = item;
+}
+
+Node* ListNode_finish(ListNode* self) {
+  self->capacity = self->count;
+  self->items = realloc(self->items, sizeof(Node*) * self->capacity);
+  return (Node*)self;
+}
+
 inline static void ErrorNode_init(ErrorNode* self, ParseErrorType type, Token token, Token auxToken, Node* previous) {
   Node_init(&(self->node), NODE_ERROR, token.line);
   self->type = type;
@@ -192,8 +238,13 @@ void Node_free(Node* self) {
       TernaryNode_free((TernaryNode*)self);
       return;
 
+    case NODE_BLOCK:
+      ListNode_free((ListNode*) self);
+      return;
+
     case NODE_ERROR:
       ErrorNode_free((ErrorNode*)self);
+      return;
   }
 }
 

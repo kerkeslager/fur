@@ -39,6 +39,9 @@ typedef enum {
   NODE_WHILE,
   NODE_UNTIL,
 
+  // List Nodes
+  NODE_BLOCK,
+
   // Auxiliary nodes
   NODE_ERROR,
   NODE_EOF,
@@ -82,6 +85,17 @@ typedef struct {
 } TernaryNode;
 
 Node* TernaryNode_new(NodeType type, size_t line, Node* arg0, Node* arg1, Node* arg2);
+
+typedef struct {
+  Node node;
+  Node** items;
+  size_t count;
+  size_t capacity;
+} ListNode;
+
+ListNode* ListNode_new(NodeType type, size_t line);
+void ListNode_append(ListNode*, Node*);
+Node* ListNode_finish(ListNode*);
 
 typedef enum {
   ERROR_MISSING_SEMICOLON,

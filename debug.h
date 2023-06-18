@@ -154,6 +154,8 @@ inline static void NodeType_println(NodeType nodeType) {
 
     PRINT_CASE(NODE_BREAK);
 
+    PRINT_CASE(NODE_BLOCK);
+
     PRINT_CASE(NODE_ERROR);
     PRINT_CASE(NODE_EOF);
   }

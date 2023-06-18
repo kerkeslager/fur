@@ -198,6 +198,37 @@ Node* Parser_parseAtom(Parser* self) {
     case TOKEN_CLOSE_PAREN:
       return ErrorNode_new(ERROR_UNEXPECTED_TOKEN, token);
 
+    case TOKEN_OPEN_BRACE:
+      Tokenizer_scan(tokenizer);
+      {
+        ListNode* listNode = ListNode_new(NODE_BLOCK, token.line);
+
+        for(;;) {
+          token = Tokenizer_peek(tokenizer);
+
+          switch(token.type) {
+            case TOKEN_CLOSE_BRACE:
+              Tokenizer_scan(tokenizer);
+              return ListNode_finish(listNode);
+
+            case TOKEN_EOF:
+              // TODO Handle this
+              assert(false);
+              return NULL;
+
+            default:
+              {
+                Node* next = Parser_parseStatement(self);
+
+                // TODO Handle this
+                assert(next->type != NODE_ERROR);
+
+                ListNode_append(listNode, next);
+              }
+          }
+        }
+      }
+
     case TOKEN_LOOP:
       Tokenizer_scan(tokenizer);
       {
@@ -226,32 +257,11 @@ Node* Parser_parseAtom(Parser* self) {
           return condition;
         }
 
-        Node* ifBranch = Parser_parseExpression(self);
+        Node* ifBranch = Parser_parseStatement(self);
 
         if(ifBranch->type == NODE_ERROR) {
           free(condition);
           return ifBranch;
-        }
-
-        Token semicolonToken = Tokenizer_peek(tokenizer);
-
-        if(semicolonToken.type == TOKEN_SEMICOLON) {
-          Token lookahead = Tokenizer_lookahead(tokenizer, 2);
-
-          /*
-           * This detects if we are NOT at the end of a statement. If we
-           * ARE at the end of a statement, we don't want to consume the
-           * semicolon because Parser_parseStatement() will expect it to be
-           * there.
-           */
-          if(lookahead.type == TOKEN_ELSE
-              || Token_closesOutfix(lookahead) != NO_TOKEN) {
-            Tokenizer_scan(tokenizer);
-          }
-        } else if(semicolonToken.type == TOKEN_ELSE) {
-          Node_free(condition);
-          Node_free(ifBranch);
-          return ErrorNode_new(ERROR_MISSING_SEMICOLON, semicolonToken);
         }
 
         Token elseToken = Tokenizer_peek(tokenizer);
@@ -268,7 +278,7 @@ Node* Parser_parseAtom(Parser* self) {
 
         Tokenizer_scan(tokenizer);
 
-        Node* elseBranch = Parser_parseExpression(self);
+        Node* elseBranch = Parser_parseStatement(self);
 
         if(elseBranch->type == NODE_ERROR) {
           Node_free(condition);
@@ -444,6 +454,26 @@ Node* Parser_parseExpression(Parser* self) {
   return Parser_parseExpressionWithPrecedence(self, PREC_ANY);
 }
 
+static inline bool Node_requiresSemicolon(Node* self) {
+  switch(self->type) {
+    /*
+     * These don't require a semicolon because they either already consume
+     * their semicolons, or end in a block.
+     */
+    case NODE_BLOCK:
+    case NODE_IF:
+    case NODE_WHILE:
+    case NODE_UNTIL:
+      return false;
+
+    case NODE_ASSIGN:
+      return Node_requiresSemicolon(((BinaryNode*)self)->arg1);
+
+    default:
+      return true;
+  }
+}
+
 Node* Parser_parseStatement(Parser* self) {
   Tokenizer* tokenizer = &(self->tokenizer);
   Token token = Tokenizer_peek(tokenizer);
@@ -454,10 +484,17 @@ Node* Parser_parseStatement(Parser* self) {
 
   Node* expression = Parser_parseExpression(self);
 
+  if(!Node_requiresSemicolon(expression)) {
+    return expression;
+  }
+
   token = Tokenizer_peek(tokenizer);
   switch(token.type) {
     case TOKEN_SEMICOLON:
       Tokenizer_scan(tokenizer);
+      return expression;
+
+    case TOKEN_CLOSE_PAREN:
       return expression;
 
     case TOKEN_EOF:
