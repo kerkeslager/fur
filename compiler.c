@@ -542,6 +542,7 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         TernaryNode* tNode = (TernaryNode*)node;
         size_t beforeLoop = ByteCode_count(out);
 
+        Compiler_openScope(self, out, node, SCOPE_BREAKABLE);
         Compiler_emitNode(self, out, tNode->arg0);
 
         if(node->type == NODE_WHILE) {
@@ -556,7 +557,6 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         int16_t* loopJumpBackpatch = (int16_t*)ByteCode_pc(out, loopJumpStart);
         Compiler_emitInt16(out, 0, node->line);
 
-        Compiler_openScope(self, out, node, SCOPE_BREAKABLE);
         Compiler_emitNode(self, out, tNode->arg1);
         Compiler_closeScope(self, out, node);
 
@@ -1116,10 +1116,10 @@ void test_Compiler_emitNode_while() {
   Compiler_emitNode(&compiler, &out, node);
 
   assert(out.count == 16);
-  assert(out.items[0] == OP_TRUE);
-  assert(out.items[1] == OP_JUMP_FALSE);
-  assert(*((int16_t*)(out.items + 2)) == 13);
-  assert(out.items[4] == OP_SCOPE_OPEN);
+  assert(out.items[0] == OP_SCOPE_OPEN);
+  assert(out.items[1] == OP_TRUE);
+  assert(out.items[2] == OP_JUMP_FALSE);
+  assert(*((int16_t*)(out.items + 3)) == 12);
   assert(out.items[5] == OP_INTEGER);
   assert(*((int32_t*)(out.items + 6)) == 42);
   assert(out.items[10] == OP_SCOPE_CLOSE);
@@ -1153,10 +1153,10 @@ void test_Compiler_emitNode_whileElse() {
   Compiler_emitNode(&compiler, &out, node);
 
   assert(out.count == 22);
-  assert(out.items[0] == OP_TRUE);
-  assert(out.items[1] == OP_JUMP_FALSE);
-  assert(*((int16_t*)(out.items + 2)) == 13);
-  assert(out.items[4] == OP_SCOPE_OPEN);
+  assert(out.items[0] == OP_SCOPE_OPEN);
+  assert(out.items[1] == OP_TRUE);
+  assert(out.items[2] == OP_JUMP_FALSE);
+  assert(*((int16_t*)(out.items + 3)) == 12);
   assert(out.items[5] == OP_INTEGER);
   assert(*((int32_t*)(out.items + 6)) == 42);
   assert(out.items[10] == OP_SCOPE_CLOSE);
@@ -1192,10 +1192,10 @@ void test_Compiler_emitNode_until() {
   Compiler_emitNode(&compiler, &out, node);
 
   assert(out.count == 16);
-  assert(out.items[0] == OP_TRUE);
-  assert(out.items[1] == OP_JUMP_TRUE);
-  assert(*((int16_t*)(out.items + 2)) == 13);
-  assert(out.items[4] == OP_SCOPE_OPEN);
+  assert(out.items[0] == OP_SCOPE_OPEN);
+  assert(out.items[1] == OP_TRUE);
+  assert(out.items[2] == OP_JUMP_TRUE);
+  assert(*((int16_t*)(out.items + 3)) == 12);
   assert(out.items[5] == OP_INTEGER);
   assert(*((int32_t*)(out.items + 6)) == 42);
   assert(out.items[10] == OP_SCOPE_CLOSE);
@@ -1229,10 +1229,10 @@ void test_Compiler_emitNode_untilElse() {
   Compiler_emitNode(&compiler, &out, node);
 
   assert(out.count == 22);
-  assert(out.items[0] == OP_TRUE);
-  assert(out.items[1] == OP_JUMP_TRUE);
-  assert(*((int16_t*)(out.items + 2)) == 13);
-  assert(out.items[4] == OP_SCOPE_OPEN);
+  assert(out.items[0] == OP_SCOPE_OPEN);
+  assert(out.items[1] == OP_TRUE);
+  assert(out.items[2] == OP_JUMP_TRUE);
+  assert(*((int16_t*)(out.items + 3)) == 12);
   assert(out.items[5] == OP_INTEGER);
   assert(*((int32_t*)(out.items + 6)) == 42);
   assert(out.items[10] == OP_SCOPE_CLOSE);
