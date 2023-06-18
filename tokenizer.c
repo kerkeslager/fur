@@ -173,7 +173,6 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
         }
       }
 
-    case 'c':
     case 'd':
     case 'g':
     case 'h':
@@ -231,6 +230,13 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
         const char* lexeme = self->current;
         self->current++;
         return Tokenizer_keywordOrSymbol(self, lexeme, "reak", TOKEN_BREAK);
+      }
+
+    case 'c':
+      {
+        const char* lexeme = self->current;
+        self->current++;
+        return Tokenizer_keywordOrSymbol(self, lexeme, "ontinue", TOKEN_CONTINUE);
       }
 
     case 'e':
@@ -796,6 +802,19 @@ void test_Tokenizer_scan_mut() {
   assert(token.type == TOKEN_MUT);
   assert(token.lexeme == source);
   assert(token.length == 3);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_continue() {
+  const char* source = "continue";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source, 1);
+
+  Token token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_CONTINUE);
+  assert(token.lexeme == source);
+  assert(token.length == 8);
   assert(token.line == 1);
 }
 
