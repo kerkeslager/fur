@@ -9,16 +9,31 @@ typedef struct {
   bool isMutable;
 } SymbolMetadata;
 
+typedef enum {
+  SCOPE_GENERIC,
+  SCOPE_BREAKABLE
+} ScopeType;
+
+typedef struct {
+  uint16_t checkpoint;
+  ScopeType type;
+} CompilationScope;
+
 typedef struct {
   SymbolMetadata* items;
   uint16_t count;
   uint16_t capacity;
+
+  CompilationScope scopes[256];
+  uint8_t scopeDepth;
 } SymbolList;
 
 inline static void SymbolList_init(SymbolList* self) {
   self->items = NULL;
   self->count = 0;
   self->capacity = 0;
+
+  self->scopeDepth = 0;
 }
 
 inline static void SymbolList_free(SymbolList* self) {
@@ -31,6 +46,33 @@ inline static size_t SymbolList_count(SymbolList* self) {
 
 inline static void SymbolList_rewind(SymbolList* self, size_t checkpoint) {
   self->count = checkpoint;
+
+  /*
+   * Rewind is only called from "in the global scope", i.e. Compiler_compile
+   * assumes we're parsing an outermost statement. Therefore, we can do this:
+   */
+  self->scopeDepth = 0;
+}
+
+inline static void SymbolList_openScope(SymbolList* self, ScopeType type) {
+  // TODO Handle this
+  assert(self->scopeDepth < UINT8_MAX);
+
+  CompilationScope scope;
+  scope.checkpoint = self->count;
+  scope.type = type;
+
+  self->scopes[self->scopeDepth] = scope;
+  self->scopeDepth++;
+}
+
+inline static void SymbolList_closeScope(SymbolList* self) {
+  // This would mean we're closing a scope we never opened
+  assert(self->scopeDepth > 0);
+
+  self->scopeDepth--;
+  CompilationScope scope = self->scopes[self->scopeDepth];
+  self->count = scope.checkpoint;
 }
 
 void SymbolList_append(SymbolList* self, Symbol* symbol, size_t definedOnLine, bool isMutable);

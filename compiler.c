@@ -116,14 +116,16 @@ inline static void Compiler_emitBoolean(ByteCode* out, AtomNode* node) {
 
 void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node);
 
-static inline void Compiler_openScope(Compiler* self, ByteCode* out, Node* node) {
+static inline void Compiler_openScope(Compiler* self, ByteCode* out, Node* node, ScopeType type) {
   Compiler_emitOp(out, OP_SCOPE_OPEN, node->line);
   self->scopeDepth++;
+  SymbolList_openScope(&(self->symbolList), type);
 }
 
 static inline void Compiler_closeScope(Compiler* self, ByteCode* out, Node* node) {
   Compiler_emitOp(out, OP_SCOPE_CLOSE, node->line);
   self->scopeDepth--;
+  SymbolList_closeScope(&(self->symbolList));
 }
 
 inline static void Compiler_emitBinaryNode(Compiler* self, ByteCode* out, Instruction op, Node* node) {
@@ -456,13 +458,16 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
       {
         TernaryNode* tNode = (TernaryNode*)node;
         Compiler_emitNode(self, out, tNode->arg0);
+
         Compiler_emitOp(out, OP_JUMP_FALSE, node->line);
 
         size_t ifJumpStart = ByteCode_count(out);
         int16_t* ifJumpBackpatch = (int16_t*)ByteCode_pc(out, ifJumpStart);
         Compiler_emitInt16(out, 0, node->line);
 
+        Compiler_openScope(self, out, node, SCOPE_GENERIC);
         Compiler_emitNode(self, out, tNode->arg1);
+        Compiler_closeScope(self, out, node);
 
         Compiler_emitOp(out, OP_JUMP, node->line);
 
@@ -476,7 +481,9 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         if(tNode->arg2 == NULL) {
           Compiler_emitOp(out, OP_NIL, node->line);
         } else {
+          Compiler_openScope(self, out, node, SCOPE_GENERIC);
           Compiler_emitNode(self, out, tNode->arg2);
+          Compiler_closeScope(self, out, node);
         }
 
         // TODO Bounds-check fits in an int16_t
@@ -505,10 +512,8 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         int16_t* loopJumpBackpatch = (int16_t*)ByteCode_pc(out, loopJumpStart);
         Compiler_emitInt16(out, 0, node->line);
 
-        Compiler_openScope(self, out, node);
-
+        Compiler_openScope(self, out, node, SCOPE_BREAKABLE);
         Compiler_emitNode(self, out, tNode->arg1);
-
         Compiler_closeScope(self, out, node);
 
         Compiler_emitOp(out, OP_DROP, node->line);
@@ -523,7 +528,9 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         if(tNode->arg2 == NULL) {
           Compiler_emitOp(out, OP_NIL, node->line);
         } else {
+          Compiler_openScope(self, out, node, SCOPE_GENERIC);
           Compiler_emitNode(self, out, tNode->arg2);
+          Compiler_closeScope(self, out, node);
         }
 
         Compiler_patchBreaks(self, out);
@@ -568,13 +575,27 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
           assert(breakDepth <= self->scopeDepth);
         }
 
-        for(size_t i = 0; i < breakDepth; i++) {
+        size_t brokenCount = 0;
+        for(int i = (int)(self->symbolList.scopeDepth) - 1; i >= 0; i--) {
           /*
            * We don't call Compiler_closeScope() because we are still
            * syntactically inside the loop. We're emitting an OP_SCOPE_CLOSE
-           * because the program counter is about to leave the loop.
+           * because the program counter is leaving the scope.
+           *
+           * We have to close all scopes, not just the breakable (loop) scopes,
+           * because we may be inside another scope such as an if scope.
+           */
+          /*
+           * TODO
+           * Rather than emit multiple OP_SCOPE_CLOSEs, can we emit 1 that
+           * takes an argument?
            */
           Compiler_emitOp(out, OP_SCOPE_CLOSE, node->line);
+
+          if(self->symbolList.scopes[i].type == SCOPE_BREAKABLE) {
+            brokenCount++;
+            if(brokenCount == breakDepth) break;
+          }
         }
 
         Compiler_emitOp(out, OP_JUMP, node->line);
@@ -974,15 +995,17 @@ void test_Compiler_emitNode_if() {
 
   Compiler_emitNode(&compiler, &out, node);
 
-  assert(out.count == 13);
+  assert(out.count == 15);
   assert(out.items[0] == OP_TRUE);
   assert(out.items[1] == OP_JUMP_FALSE);
-  assert(*((int16_t*)(out.items + 2)) == 10);
-  assert(out.items[4] == OP_INTEGER);
-  assert(*((int32_t*)(out.items + 5)) == 42);
-  assert(out.items[9] == OP_JUMP);
-  assert(*((int16_t*)(out.items + 10)) == 3);
-  assert(out.items[12] == OP_NIL);
+  assert(*((int16_t*)(out.items + 2)) == 12);
+  assert(out.items[4] == OP_SCOPE_OPEN);
+  assert(out.items[5] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 6)) == 42);
+  assert(out.items[10] == OP_SCOPE_CLOSE);
+  assert(out.items[11] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 12)) == 3);
+  assert(out.items[14] == OP_NIL);
 
   Node_free(node);
   ByteCode_free(&out);
@@ -1008,16 +1031,20 @@ void test_Compiler_emitNode_ifElse() {
 
   Compiler_emitNode(&compiler, &out, node);
 
-  assert(out.count == 17);
+  assert(out.count == 21);
   assert(out.items[0] == OP_TRUE);
   assert(out.items[1] == OP_JUMP_FALSE);
-  assert(*((int16_t*)(out.items + 2)) == 10);
-  assert(out.items[4] == OP_INTEGER);
-  assert(*((int32_t*)(out.items + 5)) == 42);
-  assert(out.items[9] == OP_JUMP);
-  assert(*((int16_t*)(out.items + 10)) == 7);
-  assert(out.items[12] == OP_INTEGER);
-  assert(*((int32_t*)(out.items + 13)) == 37);
+  assert(*((int16_t*)(out.items + 2)) == 12);
+  assert(out.items[4] == OP_SCOPE_OPEN);
+  assert(out.items[5] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 6)) == 42);
+  assert(out.items[10] == OP_SCOPE_CLOSE);
+  assert(out.items[11] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 12)) == 9);
+  assert(out.items[14] == OP_SCOPE_OPEN);
+  assert(out.items[15] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 16)) == 37);
+  assert(out.items[20] == OP_SCOPE_CLOSE);
 
   Node_free(node);
   ByteCode_free(&out);
@@ -1079,7 +1106,7 @@ void test_Compiler_emitNode_whileElse() {
 
   Compiler_emitNode(&compiler, &out, node);
 
-  assert(out.count == 20);
+  assert(out.count == 22);
   assert(out.items[0] == OP_TRUE);
   assert(out.items[1] == OP_JUMP_FALSE);
   assert(*((int16_t*)(out.items + 2)) == 13);
@@ -1090,8 +1117,10 @@ void test_Compiler_emitNode_whileElse() {
   assert(out.items[11] == OP_DROP);
   assert(out.items[12] == OP_JUMP);
   assert(*((int16_t*)(out.items + 13)) == -13);
-  assert(out.items[15] == OP_INTEGER);
-  assert(*((int32_t*)(out.items + 16)) == 37);
+  assert(out.items[15] == OP_SCOPE_OPEN);
+  assert(out.items[16] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 17)) == 37);
+  assert(out.items[21] == OP_SCOPE_CLOSE);
 
   Node_free(node);
   ByteCode_free(&out);
@@ -1153,7 +1182,7 @@ void test_Compiler_emitNode_untilElse() {
 
   Compiler_emitNode(&compiler, &out, node);
 
-  assert(out.count == 20);
+  assert(out.count == 22);
   assert(out.items[0] == OP_TRUE);
   assert(out.items[1] == OP_JUMP_TRUE);
   assert(*((int16_t*)(out.items + 2)) == 13);
@@ -1164,8 +1193,10 @@ void test_Compiler_emitNode_untilElse() {
   assert(out.items[11] == OP_DROP);
   assert(out.items[12] == OP_JUMP);
   assert(*((int16_t*)(out.items + 13)) == -13);
-  assert(out.items[15] == OP_INTEGER);
-  assert(*((int32_t*)(out.items + 16)) == 37);
+  assert(out.items[15] == OP_SCOPE_OPEN);
+  assert(out.items[16] == OP_INTEGER);
+  assert(*((int32_t*)(out.items + 17)) == 37);
+  assert(out.items[21] == OP_SCOPE_CLOSE);
 
   Node_free(node);
   ByteCode_free(&out);
