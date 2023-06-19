@@ -33,8 +33,12 @@ static Value Builtin_Bool(uint8_t argc, Value* argv) {
       return FALSE;
 
     case VALUE_INTEGER:
-      return Value_fromBoolean(Value_asInteger(argv) != 0);
+      return Value_fromBoolean(Value_asInteger(arg0) != 0);
   }
+
+  // Should never happen
+  assert(false);
+  return NIL;
 }
 
 static Value Builtin_Int(uint8_t argc, Value* argv) {
@@ -57,6 +61,10 @@ static Value Builtin_Int(uint8_t argc, Value* argv) {
     case VALUE_INTEGER:
       return arg0;
   }
+
+  // Should never happen
+  assert(false);
+  return NIL;
 }
 
 static Value Builtin_println(uint8_t argc, Value* argv) {
