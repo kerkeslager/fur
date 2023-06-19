@@ -15,12 +15,12 @@ typedef enum {
   // Unary Nodes
   NODE_NEGATE,
   NODE_LOGICAL_NOT,
+  NODE_MUT,
   NODE_LOOP,
   NODE_CONTINUE,
 
   // Binary Nodes
   NODE_ASSIGN,
-  NODE_MUT_ASSIGN,
   NODE_ADD,
   NODE_SUBTRACT,
   NODE_MULTIPLY,

@@ -145,6 +145,8 @@ inline static NodeType mapPrefix(Token token) {
       return NODE_NEGATE;
     case TOKEN_NOT:
       return NODE_LOGICAL_NOT;
+    case TOKEN_MUT:
+      return NODE_MUT;
 
     default: assert(false);
   }
@@ -377,17 +379,6 @@ Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
     Node* inner = Parser_parseExpressionWithPrecedence(self, prefixPrecedence);
 
     if(inner->type == NODE_ERROR) {
-      return inner;
-    }
-
-    // This is a bit of a hack
-    if(token.type == TOKEN_MUT) {
-      if(inner->type != NODE_ASSIGN) {
-        return ErrorNode_newWithPrevious(ERROR_MUTABLE_NOT_ASSIGNMENT, token, inner);
-      }
-
-      inner->type = NODE_MUT_ASSIGN;
-
       return inner;
     }
 
@@ -1234,9 +1225,12 @@ void test_Parser_parseExpression_mutableAssignment() {
 
   Node* node = Parser_parseExpression(&parser);
 
-  assert(node->type == NODE_MUT_ASSIGN);
-  assert(((BinaryNode*)node)->arg0->type == NODE_SYMBOL);
-  assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
+  assert(node->type == NODE_MUT);
+
+  Node* assignNode = ((UnaryNode*)node)->arg0;
+
+  assert(((BinaryNode*)assignNode)->arg0->type == NODE_SYMBOL);
+  assert(((BinaryNode*)assignNode)->arg1->type == NODE_INTEGER_LITERAL);
 
   Node_free(node);
   Parser_free(&parser);

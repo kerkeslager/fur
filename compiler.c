@@ -387,9 +387,11 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
       }
       return;
 
-    case NODE_MUT_ASSIGN:
+    case NODE_MUT:
       {
-        BinaryNode* assignNode = (BinaryNode*)node;
+        BinaryNode* assignNode = (BinaryNode*)(((UnaryNode*)node)->arg0);
+        assert(assignNode->node.type == NODE_ASSIGN);
+
         Compiler_emitNode(self, out, assignNode->arg1);
 
         if(assignNode->arg0->type == NODE_SYMBOL) {
