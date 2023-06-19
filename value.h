@@ -8,17 +8,24 @@
 
 typedef enum {
   VALUE_BOOLEAN,
+  VALUE_NATIVE_FN,
   VALUE_NIL,
   VALUE_INTEGER
 } ValueType;
 
-typedef struct {
+struct Value;
+typedef struct Value Value;
+
+typedef Value (*NativeFn)(uint8_t argc, Value* argv);
+
+struct Value {
   ValueType type;
   union {
     bool boolean;
+    NativeFn nativeFn;
     int32_t integer;
   } as;
-} Value;
+};
 
 static const Value NIL = { VALUE_NIL, { 0 } };
 static const Value TRUE = { VALUE_BOOLEAN, { true } };
@@ -31,6 +38,18 @@ inline static Value Value_fromBoolean(bool b) {
 inline static bool Value_asBoolean(Value v) {
   assert(v.type == VALUE_BOOLEAN);
   return v.as.boolean;
+}
+
+inline static Value Value_fromNativeFn(NativeFn nativeFn) {
+  Value result;
+  result.type = VALUE_NATIVE_FN;
+  result.as.nativeFn = nativeFn;
+  return result;
+}
+
+inline static NativeFn Value_asNativeFn(Value v) {
+  assert(v.type == VALUE_NATIVE_FN);
+  return v.as.nativeFn;
 }
 
 inline static Value Value_fromInteger(int32_t i) {
@@ -53,6 +72,10 @@ inline static void Value_print(Value v) {
       } else {
         printf("false");
       }
+      return;
+
+    case VALUE_NATIVE_FN:
+      printf("<NativeFn@%p>", Value_asNativeFn(v));
       return;
 
     case VALUE_NIL:
@@ -80,6 +103,7 @@ inline static Value Value_copy(Value* self) {
    */
   switch(self->type) {
     case VALUE_BOOLEAN:
+    case VALUE_NATIVE_FN:
     case VALUE_NIL:
     case VALUE_INTEGER:
       return *self;
@@ -97,6 +121,7 @@ inline static void Value_unreference(Value* self) {
    */
   switch(self->type) {
     case VALUE_BOOLEAN:
+    case VALUE_NATIVE_FN:
     case VALUE_NIL:
     case VALUE_INTEGER:
       break;

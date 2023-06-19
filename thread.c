@@ -83,11 +83,14 @@ static const char* Instruction_toOperatorCString(uint8_t* pc) {
 
 const char* ValueType_toCString(ValueType type) {
   switch(type) {
-    case VALUE_NIL:
-      return "Void";
-
     case VALUE_BOOLEAN:
       return "Boolean";
+
+    case VALUE_NATIVE_FN:
+      return "NativeFn";
+
+    case VALUE_NIL:
+      return "Void";
 
     case VALUE_INTEGER:
       return "Integer";
@@ -328,16 +331,27 @@ Value Thread_run(Thread* self) {
           CHECK_SAME_TYPE();
 
           switch(operand0.type) {
-            case VALUE_NIL:
-              // If both types are nil, that implies both values are nil
-              Stack_push(stack, Value_fromBoolean(true));
-              break;
-
             case VALUE_BOOLEAN:
               Stack_push(
                 stack,
-                Value_fromBoolean(Value_asBoolean(operand0) == Value_asBoolean(operand1))
+                Value_fromBoolean(
+                  Value_asBoolean(operand0) == Value_asBoolean(operand1)
+                )
               );
+              break;
+
+            case VALUE_NATIVE_FN:
+              Stack_push(
+                stack,
+                Value_fromBoolean(
+                  Value_asNativeFn(operand0) == Value_asNativeFn(operand1)
+                )
+              );
+              break;
+
+            case VALUE_NIL:
+              // If both types are nil, that implies both values are nil
+              Stack_push(stack, Value_fromBoolean(true));
               break;
 
             case VALUE_INTEGER:
