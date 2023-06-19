@@ -111,8 +111,8 @@ inline static bool Token_opensOutfix(Token self) {
   return PRECEDENCE[self.type].opensOutfix;
 }
 
-inline static TokenType Token_closesOutfix(Token self) {
-  return PRECEDENCE[self.type].closesOutfix;
+inline static TokenType Token_closesOutfix(Token self, Token openToken) {
+  return PRECEDENCE[self.type].closesOutfix == openToken.type;
 }
 
 inline static NodeType mapInfix(Token token) {
@@ -401,7 +401,7 @@ Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
 
     Token closeToken = Tokenizer_peek(tokenizer);
 
-    if(Token_closesOutfix(closeToken) == token.type) {
+    if(Token_closesOutfix(closeToken, token)) {
       Tokenizer_scan(tokenizer);
       return result;
     } else  {
