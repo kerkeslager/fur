@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "builtins.h"
 #include "thread.h"
 
 #include "error.h"
@@ -23,6 +24,7 @@ static const char* Instruction_toOperatorCString(uint8_t* pc) {
     case OP_NIL:
     case OP_TRUE:
     case OP_FALSE:
+    case OP_BUILTIN:
     case OP_INTEGER:
     case OP_GET:
     case OP_DUP:
@@ -165,6 +167,11 @@ Value Thread_run(Thread* self) {
 
       case OP_FALSE:
         Stack_push(stack, FALSE);
+        break;
+
+      case OP_BUILTIN:
+        Stack_push(stack, BUILTINS[*(pc)].value);
+        pc++;
         break;
 
       case OP_INTEGER:
@@ -372,16 +379,27 @@ Value Thread_run(Thread* self) {
           CHECK_SAME_TYPE();
 
           switch(operand0.type) {
-            case VALUE_NIL:
-              // If both types are nil, that implies both values are nil
-              Stack_push(stack, Value_fromBoolean(false));
-              break;
-
             case VALUE_BOOLEAN:
               Stack_push(
                 stack,
-                Value_fromBoolean(Value_asBoolean(operand0) != Value_asBoolean(operand1))
+                Value_fromBoolean(
+                  Value_asBoolean(operand0) != Value_asBoolean(operand1)
+                )
               );
+              break;
+
+            case VALUE_NATIVE_FN:
+              Stack_push(
+                stack,
+                Value_fromBoolean(
+                  Value_asNativeFn(operand0) != Value_asNativeFn(operand1)
+                )
+              );
+              break;
+
+            case VALUE_NIL:
+              // If both types are nil, that implies both values are nil
+              Stack_push(stack, Value_fromBoolean(false));
               break;
 
             case VALUE_INTEGER:

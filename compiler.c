@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "builtins.h"
 #include "compiler.h"
 #include "error.h"
 #include "node.h"
@@ -77,6 +78,10 @@ inline static void Compiler_emitOp(ByteCode* out, Instruction op, size_t line) {
 
 inline static void Compiler_emitInt16(ByteCode* out, int16_t i, size_t line) {
   ByteCode_appendInt16(out, i, line);
+}
+
+inline static void Compiler_emitUInt8(ByteCode* out, uint8_t i, size_t line) {
+  ByteCode_append(out, i, line);
 }
 
 inline static void Compiler_emitUInt16(ByteCode* out, uint16_t i, size_t line) {
@@ -309,6 +314,14 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
          * This means the symbol wasn't found.
          */
         if(index == -1) {
+          index = Builtin_index(aNode->text, aNode->length);
+
+          if(index != -1) {
+            Compiler_emitOp(out, OP_BUILTIN, node->line);
+            Compiler_emitUInt8(out, index, node->line);
+            return;
+          }
+
           self->hasErrors = true;
 
           printError(

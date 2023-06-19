@@ -9,6 +9,7 @@ typedef enum {
   OP_TRUE,
   OP_FALSE,
   OP_INTEGER,
+  OP_BUILTIN,
   OP_GET,
   OP_SET,
   OP_NEGATE,
