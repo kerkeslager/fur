@@ -51,13 +51,13 @@ void test_Compiler_emitNode_until();
 void test_Compiler_emitNode_untilElse();
 
 void test_Compiler_emitNode_loopContinue();
+void test_Compiler_emitNode_loopContinueTo();
 
 /*
  * TODO
  * The following tests have all been sketched out, but actually writing them
  * is a tedious chore.
  */
-//void test_Compiler_emitNode_loopContinueTo();
 //void test_Compiler_emitNode_whileContinue();
 //void test_Compiler_emitNode_whileContinueTo();
 //void test_Compiler_emitNode_whileElseContinue();

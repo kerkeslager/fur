@@ -1380,13 +1380,32 @@ void test_Compiler_emitNode_loopContinueTo() {
 
   Compiler_emitNode(&compiler, &out, node);
 
-  // TODO Assertions here
+  assert(ByteCode_count(&out) == 25);
+  assert(out.items[0] == OP_SCOPE_OPEN);
+  assert(out.items[1] == OP_SCOPE_OPEN);
+  assert(out.items[2] == OP_SCOPE_OPEN);
+  assert(out.items[3] == OP_NIL);
+  assert(out.items[4] == OP_SCOPE_CLOSE);
+  assert(out.items[5] == OP_SCOPE_CLOSE);
+  assert(out.items[6] == OP_DROP);
+  assert(out.items[7] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 8)) == -7);
+  assert(out.items[10] == OP_SCOPE_CLOSE);
+  assert(out.items[11] == OP_DROP);
+  assert(out.items[12] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 13)) == -11);
+  assert(out.items[15] == OP_SCOPE_CLOSE);
+  assert(out.items[16] == OP_DROP);
+  assert(out.items[17] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 18)) == -17);
+  assert(out.items[20] == OP_SCOPE_CLOSE);
+  assert(out.items[21] == OP_DROP);
+  assert(out.items[22] == OP_JUMP);
+  assert(*((int16_t*)(out.items + 23)) == -23);
 
   Node_free(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
-
-  assert(false);
 }
 
 void test_Compiler_emitNode_whileContinue() {
