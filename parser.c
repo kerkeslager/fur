@@ -306,7 +306,7 @@ Node* Parser_parseAtom(Parser* self) {
     case TOKEN_LOOP:
       Tokenizer_scan(tokenizer);
       {
-        Node* body = Parser_parseExpression(self);
+        Node* body = Parser_parseStatement(self);
 
         if(body->type == NODE_ERROR) {
           return body;
@@ -511,24 +511,65 @@ Node* Parser_parseExpression(Parser* self) {
   return Parser_parseExprWithPrec(self, PREC_ANY);
 }
 
+#include "debug.h"
+
 static inline bool Node_requiresSemicolon(Node* self) {
   switch(self->type) {
-    /*
-     * These don't require a semicolon because they either already consume
-     * their semicolons, or end in a block.
-     */
     case NODE_BLOCK:
-    case NODE_IF:
-    case NODE_WHILE:
-    case NODE_UNTIL:
       return false;
 
+    /*
+     * These don't require a semicolon because they already consume
+     * their semicolons by calling parseStatement.
+     */
+    case NODE_LOOP:
+    case NODE_IF:
+    case NODE_UNTIL:
+    case NODE_WHILE:
+      return false;
+
+    case NODE_INTEGER_LITERAL:
+    case NODE_NIL_LITERAL:
+    case NODE_BOOLEAN_LITERAL:
+    case NODE_SYMBOL:
+    case NODE_CALL:
+      return true;
+
+    case NODE_NEGATE:
+    case NODE_LOGICAL_NOT:
+    case NODE_MUT:
+      return Node_requiresSemicolon(((UnaryNode*)self)->arg0);
+
     case NODE_ASSIGN:
+    case NODE_ADD:
+    case NODE_SUBTRACT:
+    case NODE_MULTIPLY:
+    case NODE_INTEGER_DIVIDE:
+    case NODE_LESS_THAN:
+    case NODE_LESS_THAN_EQUAL:
+    case NODE_GREATER_THAN:
+    case NODE_GREATER_THAN_EQUAL:
+    case NODE_EQUAL:
+    case NODE_NOT_EQUAL:
+    case NODE_AND:
+    case NODE_OR:
       return Node_requiresSemicolon(((BinaryNode*)self)->arg1);
 
-    default:
-      return true;
+    /*
+     * Requires semicolon should never be called for these.
+     */
+    case NODE_EOF:
+    case NODE_ERROR:
+    case NODE_BREAK:
+    case NODE_CONTINUE:
+      NodeType_println(self->type);
+      assert(false);
+      break;
   }
+
+  // Should never happen
+  assert(false);
+  return false;
 }
 
 Node* Parser_parseContinueStmt(Parser* self) {
@@ -615,6 +656,10 @@ Node* Parser_parseStatement(Parser* self) {
   }
 
   Node* expression = Parser_parseExpression(self);
+
+  if(expression->type == NODE_ERROR) {
+    return expression;
+  }
 
   if(!Node_requiresSemicolon(expression)) {
     return expression;
