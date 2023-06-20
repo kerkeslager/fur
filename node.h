@@ -15,6 +15,7 @@ typedef enum {
   // Unary Nodes
   NODE_NEGATE,
   NODE_LOGICAL_NOT,
+  NODE_PARENS,
   NODE_MUT,
   NODE_LOOP,
   NODE_CONTINUE,

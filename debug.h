@@ -133,6 +133,7 @@ inline static void NodeType_println(NodeType nodeType) {
 
     PRINT_CASE(NODE_NEGATE);
     PRINT_CASE(NODE_LOGICAL_NOT);
+    PRINT_CASE(NODE_PARENS);
 
     PRINT_CASE(NODE_ADD);
     PRINT_CASE(NODE_SUBTRACT);

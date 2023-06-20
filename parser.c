@@ -154,9 +154,25 @@ inline static NodeType mapInfix(Token token) {
       return NODE_OR;
 
     default:
-      assert(false);
+      break;
   }
 
+  // Should never happen
+  assert(false);
+  return NODE_ERROR;
+}
+
+inline static NodeType mapOutfix(Token token) {
+  switch(token.type) {
+    case TOKEN_OPEN_PAREN:
+      return NODE_PARENS;
+
+    default:
+      break;
+  }
+
+  // Should never happen
+  assert(false);
   return NODE_ERROR;
 }
 
@@ -408,7 +424,12 @@ Node* Parser_parseOutfix(Parser* self) {
   }
 
   Tokenizer_scan(tokenizer);
-  return result;
+
+  return UnaryNode_new(
+    mapOutfix(openToken),
+    openToken.line,
+    result
+  );
 }
 
 Precedence Precedence_max(Precedence arg0, Precedence arg1) {
@@ -532,6 +553,7 @@ static inline bool Node_requiresSemicolon(Node* self) {
     case NODE_NIL_LITERAL:
     case NODE_BOOLEAN_LITERAL:
     case NODE_SYMBOL:
+    case NODE_PARENS:
     case NODE_CALL:
       return true;
 
@@ -1287,43 +1309,14 @@ void test_Parser_parseExpression_negationRight() {
   Parser_free(&parser);
 }
 
-void test_Parser_parseExpression_simpleParens() {
+void test_Parser_parseExpression_parens() {
   const char* source = "(42)";
   Parser parser;
   Parser_init(&parser, source, false);
   Node* node = Parser_parseExpression(&parser);
 
-  assert(node->type == NODE_INTEGER_LITERAL);
-
-  Node_free(node);
-  Parser_free(&parser);
-}
-
-void test_Parser_parseExpression_parensOverAssociation() {
-  const char* source = "1 + (42 + 1)";
-  Parser parser;
-  Parser_init(&parser, source, false);
-
-  Node* node = Parser_parseExpression(&parser);
-
-  assert(node->type == NODE_ADD);
-  assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
-  assert(((BinaryNode*)node)->arg1->type == NODE_ADD);
-
-  Node_free(node);
-  Parser_free(&parser);
-}
-
-void test_Parser_parseExpression_parensOverOrderOfOperations() {
-  const char* source = "(1 + 1) * 3";
-  Parser parser;
-  Parser_init(&parser, source, false);
-
-  Node* node = Parser_parseExpression(&parser);
-
-  assert(node->type == NODE_MULTIPLY);
-  assert(((BinaryNode*)node)->arg0->type == NODE_ADD);
-  assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
+  assert(node->type == NODE_PARENS);
+  assert(((UnaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
 
   Node_free(node);
   Parser_free(&parser);
@@ -1610,7 +1603,11 @@ void test_Parser_parseStatement_parsesJumpInParens() {
 
     assert(assignmentNode->type == NODE_ASSIGN);
 
-    Node* node = ((BinaryNode*)assignmentNode)->arg1;
+    Node* parenNode = ((BinaryNode*)assignmentNode)->arg1;
+
+    assert(parenNode->type == NODE_PARENS);
+
+    Node* node = ((UnaryNode*)parenNode)->arg0;
 
     assert(node->type == nodeTypes[i]);
     assert(((TernaryNode*)node)->arg0 != NULL);
@@ -1619,7 +1616,7 @@ void test_Parser_parseStatement_parsesJumpInParens() {
     assert(((TernaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
     assert(((TernaryNode*)node)->arg2 == NULL);
 
-    Node_free(node);
+    Node_free(assignmentNode);
     Parser_free(&parser);
   }
 }
@@ -1645,8 +1642,13 @@ void test_Parser_parseStatement_parsesJumpElseInParens() {
 
     assert(assignmentNode->type == NODE_ASSIGN);
 
-    Node* node = ((BinaryNode*)assignmentNode)->arg1;
+    Node* parenNode = ((BinaryNode*)assignmentNode)->arg1;
 
+    assert(parenNode->type == NODE_PARENS);
+
+    Node* node = ((UnaryNode*)parenNode)->arg0;
+
+    assert(node != NULL);
     assert(node->type == nodeTypes[i]);
     assert(((TernaryNode*)node)->arg0 != NULL);
     assert(((TernaryNode*)node)->arg0->type == NODE_BOOLEAN_LITERAL);
@@ -1655,7 +1657,7 @@ void test_Parser_parseStatement_parsesJumpElseInParens() {
     assert(((TernaryNode*)node)->arg2 != NULL);
     assert(((TernaryNode*)node)->arg2->type == NODE_INTEGER_LITERAL);
 
-    Node_free(node);
+    Node_free(assignmentNode);
     Parser_free(&parser);
   }
 }

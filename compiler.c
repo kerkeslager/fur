@@ -304,6 +304,9 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
     case NODE_BOOLEAN_LITERAL:
       return Compiler_emitBoolean(out, (AtomNode*)node);
 
+    case NODE_PARENS:
+      return Compiler_emitNode(self, out, ((UnaryNode*)node)->arg0);
+
     case NODE_SYMBOL:
       {
         AtomNode* aNode = (AtomNode*)node;

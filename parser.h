@@ -42,9 +42,7 @@ void test_Parser_parseExpression_nestedNegation();
 void test_Parser_parseExpression_negationLeft();
 void test_Parser_parseExpression_negationRight();
 
-void test_Parser_parseExpression_simpleParens();
-void test_Parser_parseExpression_parensOverAssociation();
-void test_Parser_parseExpression_parensOverOrderOfOperations();
+void test_Parser_parseExpression_parens();
 
 void test_Parser_parseExpression_infixLeftError();
 void test_Parser_parseExpression_infixRightError();
