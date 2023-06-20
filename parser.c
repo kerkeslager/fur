@@ -349,6 +349,32 @@ Node* Parser_parseStatement(Parser*);
 Node* Parser_parseExpression(Parser*);
 Node* Parser_parseExprWithPrec(Parser*, Precedence minPrecedence);
 
+Node* Parser_parseOutfix(Parser* self) {
+  Tokenizer* tokenizer = &(self->tokenizer);
+  Token openToken = Tokenizer_peek(tokenizer);
+
+  if(!Token_opensOutfix(openToken)) return Parser_parseAtom(self);
+
+  Tokenizer_scan(tokenizer);
+
+  // TODO Should we set a minPrecedence for opened "environments"?
+  Node* result = Parser_parseExpression(self);
+
+  Token closeToken = Tokenizer_peek(tokenizer);
+
+  if(!Token_closesOutfix(closeToken, openToken)) {
+    return ErrorNode_newWithAuxAndPrevious(
+      ERROR_PAREN_OPENED_BUT_NOT_CLOSED,
+      closeToken,
+      openToken,
+      result
+    );
+  }
+
+  Tokenizer_scan(tokenizer);
+  return result;
+}
+
 /*
  * TODO
  * The commented parameter will be needed if we add any postfix operators.
@@ -363,41 +389,17 @@ Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
   Token token = Tokenizer_peek(tokenizer);
   Precedence prefixPrecedence = Token_prefixPrecedence(token);
 
-  if(prefixPrecedence != PREC_NONE) {
-    Tokenizer_scan(tokenizer);
-    Node* inner = Parser_parseExprWithPrec(self, prefixPrecedence);
+  if(prefixPrecedence == PREC_NONE) return Parser_parseOutfix(self);
 
-    if(inner->type == NODE_ERROR) {
-      return inner;
-    }
+  Tokenizer_scan(tokenizer);
+  Node* inner = Parser_parseExprWithPrec(self, prefixPrecedence);
 
-    // TODO Handle postfix
-    return UnaryNode_new(mapPrefix(token), token.line, inner);
-  } else if(Token_opensOutfix(token)) {
-    Tokenizer_scan(tokenizer);
-
-    // TODO Should we set a minPrecedence for opened "environments"?
-    Node* result = Parser_parseExpression(self);
-
-    Token closeToken = Tokenizer_peek(tokenizer);
-
-    if(Token_closesOutfix(closeToken, token)) {
-      Tokenizer_scan(tokenizer);
-      return result;
-    } else  {
-      return ErrorNode_newWithAuxAndPrevious(
-          ERROR_PAREN_OPENED_BUT_NOT_CLOSED,
-          closeToken,
-          token,
-          result
-      );
-    }
-
-  } else {
-    // TODO Handle postfix
-    return Parser_parseAtom(self);
+  if(inner->type == NODE_ERROR) {
+    return inner;
   }
 
+  // TODO Handle postfix
+  return UnaryNode_new(mapPrefix(token), token.line, inner);
 }
 
 void Parser_panic(Parser* self) {
