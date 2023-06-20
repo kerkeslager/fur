@@ -153,22 +153,58 @@ inline static NodeType mapPrefix(Token token) {
   return NODE_ERROR;
 }
 
-inline static NodeType mapKeywordExpression(TokenType tokenType) {
-  switch(tokenType) {
-    case TOKEN_IF:
-      return NODE_IF;
+Node* Parser_parseCondJumpExpr(Parser* self, NodeType nodeType) {
+  Tokenizer* tokenizer = &(self->tokenizer);
+  Token token = Tokenizer_scan(tokenizer);
 
-    case TOKEN_WHILE:
-      return NODE_WHILE;
+  // TODO Handle this better
+  assert(Tokenizer_scan(tokenizer).type == TOKEN_OPEN_PAREN);
 
-    case TOKEN_UNTIL:
-      return NODE_UNTIL;
+  Node* condition = Parser_parseExpression(self);
 
-    default:
-      // This should never be called this way
-      assert(false);
-      return NODE_ERROR; // This is just here to silence warnings
+  // TODO Handle this better
+  assert(Tokenizer_scan(tokenizer).type == TOKEN_CLOSE_PAREN);
+
+  if(condition->type == NODE_ERROR) {
+    return condition;
   }
+
+  Node* ifBranch = Parser_parseStatement(self);
+
+  if(ifBranch->type == NODE_ERROR) {
+    free(condition);
+    return ifBranch;
+  }
+
+  Token elseToken = Tokenizer_peek(tokenizer);
+
+  if(elseToken.type != TOKEN_ELSE) {
+    return TernaryNode_new(
+      nodeType,
+      token.line,
+      condition,
+      ifBranch,
+      NULL
+    );
+  }
+
+  Tokenizer_scan(tokenizer);
+
+  Node* elseBranch = Parser_parseStatement(self);
+
+  if(elseBranch->type == NODE_ERROR) {
+    Node_free(condition);
+    Node_free(ifBranch);
+    return elseBranch;
+  }
+
+  return TernaryNode_new(
+    nodeType,
+    token.line,
+    condition,
+    ifBranch,
+    elseBranch
+  );
 }
 
 /*
@@ -244,63 +280,11 @@ Node* Parser_parseAtom(Parser* self) {
       }
 
     case TOKEN_IF:
+      return Parser_parseCondJumpExpr(self, NODE_IF);
     case TOKEN_WHILE:
+      return Parser_parseCondJumpExpr(self, NODE_WHILE);
     case TOKEN_UNTIL:
-      /*
-       * These three cases have the same form, so we push them through the
-       * same code and emit the structure at the end.
-       */
-      Tokenizer_scan(tokenizer);
-      {
-        // TODO Handle this better
-        assert(Tokenizer_scan(tokenizer).type == TOKEN_OPEN_PAREN);
-
-        Node* condition = Parser_parseExpression(self);
-
-        // TODO Handle this better
-        assert(Tokenizer_scan(tokenizer).type == TOKEN_CLOSE_PAREN);
-
-        if(condition->type == NODE_ERROR) {
-          return condition;
-        }
-
-        Node* ifBranch = Parser_parseStatement(self);
-
-        if(ifBranch->type == NODE_ERROR) {
-          free(condition);
-          return ifBranch;
-        }
-
-        Token elseToken = Tokenizer_peek(tokenizer);
-
-        if(elseToken.type != TOKEN_ELSE) {
-          return TernaryNode_new(
-            mapKeywordExpression(token.type),
-            token.line,
-            condition,
-            ifBranch,
-            NULL
-          );
-        }
-
-        Tokenizer_scan(tokenizer);
-
-        Node* elseBranch = Parser_parseStatement(self);
-
-        if(elseBranch->type == NODE_ERROR) {
-          Node_free(condition);
-          Node_free(ifBranch);
-          return elseBranch;
-        }
-
-        return TernaryNode_new(
-          mapKeywordExpression(token.type),
-          token.line,
-          condition,
-          ifBranch,
-          elseBranch
-        );
-      }
+      return Parser_parseCondJumpExpr(self, NODE_UNTIL);
 
     case TOKEN_CONTINUE:
       {
