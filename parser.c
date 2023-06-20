@@ -375,16 +375,11 @@ Node* Parser_parseOutfix(Parser* self) {
   return result;
 }
 
-/*
- * TODO
- * The commented parameter will be needed if we add any postfix operators.
- */
-/*
- * TODO
- * This is clearly not parsing unary expressions any more. Come up with a
- * better name.
- */
-Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
+Precedence Precedence_max(Precedence arg0, Precedence arg1) {
+  return arg0 > arg1 ? arg0 : arg1;
+}
+
+Node* Parser_parsePrefix(Parser* self, Precedence minPrecedence) {
   Tokenizer* tokenizer = &(self->tokenizer);
   Token token = Tokenizer_peek(tokenizer);
   Precedence prefixPrecedence = Token_prefixPrecedence(token);
@@ -392,13 +387,18 @@ Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
   if(prefixPrecedence == PREC_NONE) return Parser_parseOutfix(self);
 
   Tokenizer_scan(tokenizer);
-  Node* inner = Parser_parseExprWithPrec(self, prefixPrecedence);
+  Node* inner = Parser_parseExprWithPrec(
+    self,
+    Precedence_max(
+      prefixPrecedence,
+      minPrecedence
+    )
+  );
 
   if(inner->type == NODE_ERROR) {
     return inner;
   }
 
-  // TODO Handle postfix
   return UnaryNode_new(mapPrefix(token), token.line, inner);
 }
 
@@ -422,7 +422,7 @@ void Parser_panic(Parser* self) {
 
 Node* Parser_parseExprWithPrec(Parser* self, Precedence minPrecedence) {
   Tokenizer* tokenizer = &(self->tokenizer);
-  Node* left = Parser_parseUnary(self/*, minPrecedence*/);
+  Node* left = Parser_parsePrefix(self, minPrecedence);
 
   if(left->type == NODE_ERROR) {
     Parser_panic(self);
@@ -651,12 +651,12 @@ void test_Parser_parseAtom_parsesFalse() {
   Node_free(expression);
 }
 
-void test_Parser_parseUnary_parenOpenedButNotClosed() {
+void test_Parser_parsePrefix_parenOpenedButNotClosed() {
   const char* source = "(1 + 2";
   Parser parser;
   Parser_init(&parser, source, false);
 
-  Node* expression = Parser_parseUnary(&parser);
+  Node* expression = Parser_parsePrefix(&parser, PREC_ANY);
 
   assert(expression->type == NODE_ERROR);
   assert(expression->line == 1);
@@ -672,12 +672,12 @@ void test_Parser_parseUnary_parenOpenedButNotClosed() {
   Node_free(expression);
 }
 
-void test_Parser_parseUnary_passesOnErrors() {
+void test_Parser_parsePrefix_passesOnErrors() {
   const char* source = "- - ";
   Parser parser;
   Parser_init(&parser, source, false);
 
-  Node* expression = Parser_parseUnary(&parser);
+  Node* expression = Parser_parsePrefix(&parser, PREC_ANY);
 
   assert(expression->type == NODE_ERROR);
   assert(expression->line == 1);
@@ -691,7 +691,7 @@ void test_Parser_parseUnary_passesOnErrors() {
   Node_free(expression);
 }
 
-void test_Parser_parseUnary_notAfterComparison() {
+void test_Parser_parsePrefix_notAfterComparison() {
   #define TEST_COUNT 6
 
   typedef struct {
@@ -717,7 +717,7 @@ void test_Parser_parseUnary_notAfterComparison() {
     Parser parser;
     Parser_init(&parser, tests[i].source, false);
 
-    Node* expression = Parser_parseUnary(&parser);
+    Node* expression = Parser_parsePrefix(&parser, PREC_ANY);
 
     assert(expression->type == NODE_LOGICAL_NOT);
     assert(expression->line == 1);
