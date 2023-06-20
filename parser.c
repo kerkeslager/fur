@@ -252,8 +252,13 @@ Node* Parser_parseAtom(Parser* self) {
        */
       Tokenizer_scan(tokenizer);
       {
-        // TODO Should we force parens around this?
+        // TODO Handle this better
+        assert(Tokenizer_scan(tokenizer).type == TOKEN_OPEN_PAREN);
+
         Node* condition = Parser_parseExpression(self);
+
+        // TODO Handle this better
+        assert(Tokenizer_scan(tokenizer).type == TOKEN_CLOSE_PAREN);
 
         if(condition->type == NODE_ERROR) {
           return condition;
