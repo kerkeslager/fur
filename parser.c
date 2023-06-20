@@ -3,15 +3,40 @@
 
 #include <stdio.h>
 
+#include "error.h"
 #include "parser.h"
 
 void Parser_init(Parser* self, const char* source, bool repl) {
   Tokenizer_init(&(self->tokenizer), source, repl ? 0 : 1);
   self->repl = repl;
+  self->panic = false;
 }
 
 void Parser_free(Parser* self) {
   assert(self != NULL);
+}
+
+void Parser_clearPanic(Parser* self) {
+  Tokenizer* tokenizer = &(self->tokenizer);
+  self->panic = false;
+
+  for(;;) {
+    Token token = Tokenizer_peek(tokenizer);
+
+    switch(token.type) {
+      case TOKEN_SEMICOLON:
+        Tokenizer_scan(tokenizer);
+        return;
+
+      case TOKEN_CLOSE_BRACE:
+      case TOKEN_EOF:
+        return;
+
+      default:
+        Tokenizer_scan(tokenizer);
+        break;
+    }
+  }
 }
 
 void Parser_appendLine(Parser* self, const char* line) {
@@ -159,7 +184,7 @@ inline static NodeType mapInfix(Token token) {
 
   // Should never happen
   assert(false);
-  return NODE_ERROR;
+  return NODE_NIL_LITERAL; // silence warnings
 }
 
 inline static NodeType mapOutfix(Token token) {
@@ -173,7 +198,7 @@ inline static NodeType mapOutfix(Token token) {
 
   // Should never happen
   assert(false);
-  return NODE_ERROR;
+  return NODE_NIL_LITERAL; // silence warnings
 }
 
 inline static NodeType mapPrefix(Token token) {
@@ -186,9 +211,12 @@ inline static NodeType mapPrefix(Token token) {
       return NODE_MUT;
 
     default:
-      assert(false);
+      break;
   }
-  return NODE_ERROR;
+
+  // Should never happen
+  assert(false);
+  return NODE_NIL_LITERAL; // silence warnings
 }
 
 inline static NodeType mapPostfix(Token token) {
@@ -202,7 +230,7 @@ inline static NodeType mapPostfix(Token token) {
 
   // Should never happen
   assert(false);
-  return NODE_ERROR;
+  return NODE_NIL_LITERAL; // silence warnings
 }
 
 Node* Parser_parseCondJumpExpr(Parser* self, NodeType nodeType) {
@@ -214,18 +242,20 @@ Node* Parser_parseCondJumpExpr(Parser* self, NodeType nodeType) {
 
   Node* condition = Parser_parseExpression(self);
 
+  if(self->panic) {
+    assert(condition == NULL);
+    return NULL;
+  }
+
   // TODO Handle this better
   assert(Tokenizer_scan(tokenizer).type == TOKEN_CLOSE_PAREN);
 
-  if(condition->type == NODE_ERROR) {
-    return condition;
-  }
-
   Node* ifBranch = Parser_parseStatement(self);
 
-  if(ifBranch->type == NODE_ERROR) {
+  if(self->panic) {
+    assert(ifBranch == NULL);
     free(condition);
-    return ifBranch;
+    return NULL;
   }
 
   Token elseToken = Tokenizer_peek(tokenizer);
@@ -244,10 +274,11 @@ Node* Parser_parseCondJumpExpr(Parser* self, NodeType nodeType) {
 
   Node* elseBranch = Parser_parseStatement(self);
 
-  if(elseBranch->type == NODE_ERROR) {
+  if(self->panic) {
+    assert(elseBranch == NULL);
     Node_free(condition);
     Node_free(ifBranch);
-    return elseBranch;
+    return NULL;
   }
 
   return TernaryNode_new(
@@ -286,12 +317,21 @@ Node* Parser_parseAtom(Parser* self) {
       return AtomNode_new(NODE_SYMBOL, token.line, token.lexeme, token.length);
 
     case TOKEN_CLOSE_PAREN:
-      return ErrorNode_new(ERROR_UNEXPECTED_TOKEN, token);
+      self->panic = true;
+      printError(
+        token.line,
+        "Unexpected token \"%.*s\".",
+        token.length,
+        token.lexeme
+      );
+      return NULL;
 
     case TOKEN_OPEN_BRACE:
       Tokenizer_scan(tokenizer);
       {
         ListNode* listNode = ListNode_new(NODE_BLOCK, token.line);
+
+        bool panic = false;
 
         for(;;) {
           token = Tokenizer_peek(tokenizer);
@@ -299,21 +339,41 @@ Node* Parser_parseAtom(Parser* self) {
           switch(token.type) {
             case TOKEN_CLOSE_BRACE:
               Tokenizer_scan(tokenizer);
+
+              if(panic) {
+                Node_free((Node*)listNode);
+                return NULL;
+              }
+
               return ListNode_finish(listNode);
 
             case TOKEN_EOF:
-              // TODO Handle this
-              assert(false);
+              self->panic = true;
+              printError(token.line, "Unexpected end of file.");
+              Node_free((Node*)listNode);
               return NULL;
 
             default:
               {
                 Node* next = Parser_parseStatement(self);
 
-                // TODO Handle this
-                assert(next->type != NODE_ERROR);
+                /*
+                 * We don't want to immediately exit if parsing a statement
+                 * fails, because we want to report further errors to the
+                 * user so that they don't have to run compilation for each
+                 * error. However, we need to save that an error occurred so
+                 * that we can report it to the calling function when we're
+                 * finished parsing the block.
+                 */
+                if(self->panic) {
+                  assert(next == NULL);
+                  panic = true;
+                  Parser_clearPanic(self);
+                }
 
-                ListNode_append(listNode, next);
+                if(!panic) {
+                  ListNode_append(listNode, next);
+                }
               }
           }
         }
@@ -324,11 +384,12 @@ Node* Parser_parseAtom(Parser* self) {
       {
         Node* body = Parser_parseStatement(self);
 
-        if(body->type == NODE_ERROR) {
-          return body;
-        } else {
-          return UnaryNode_new(NODE_LOOP, token.line, body);
+        if(self->panic) {
+          Node_free(body);
+          return NULL;
         }
+
+        return UnaryNode_new(NODE_LOOP, token.line, body);
       }
 
     case TOKEN_IF:
@@ -393,7 +454,14 @@ Node* Parser_parseAtom(Parser* self) {
     default:
       // TODO More specific error
       Tokenizer_scan(tokenizer);
-      return ErrorNode_new(ERROR_UNEXPECTED_TOKEN, token);
+      self->panic = true;
+      printError(
+        token.line,
+        "Unexpected token \"%.*s\".",
+        token.length,
+        token.lexeme
+      );
+      return NULL;
   }
 }
 
@@ -415,12 +483,23 @@ Node* Parser_parseOutfix(Parser* self) {
   Token closeToken = Tokenizer_peek(tokenizer);
 
   if(!Token_closesOutfix(closeToken, openToken)) {
-    return ErrorNode_newWithAuxAndPrevious(
-      ERROR_PAREN_OPENED_BUT_NOT_CLOSED,
-      closeToken,
-      openToken,
-      result
+    self->panic = true;
+
+    /*
+     * TODO
+     * Currenly the only outfix operators are parentheses, but this will
+     * need to supply other expected close operators.
+     */
+    printError(
+      closeToken.line,
+      "Expected \")\" to close \"%.*s\" on line %zu.",
+      openToken.length,
+      openToken.lexeme,
+      openToken.line
     );
+
+    Node_free(result);
+    return NULL;
   }
 
   Tokenizer_scan(tokenizer);
@@ -452,39 +531,16 @@ Node* Parser_parsePrefix(Parser* self, Precedence minPrecedence) {
     )
   );
 
-  if(inner->type == NODE_ERROR) {
-    return inner;
-  }
+  if(self->panic) return NULL;
 
   return UnaryNode_new(mapPrefix(token), token.line, inner);
-}
-
-void Parser_panic(Parser* self) {
-  Tokenizer* tokenizer = &(self->tokenizer);
-
-  for(;;) {
-    switch(Tokenizer_peek(tokenizer).type) {
-      case TOKEN_SEMICOLON:
-      case TOKEN_CLOSE_PAREN:
-      case TOKEN_EOF:
-        return;
-
-      default:
-        break;
-    }
-
-    Tokenizer_scan(tokenizer);
-  }
 }
 
 Node* Parser_parseExprWithPrec(Parser* self, Precedence minPrecedence) {
   Tokenizer* tokenizer = &(self->tokenizer);
   Node* result = Parser_parsePrefix(self, minPrecedence);
 
-  if(result->type == NODE_ERROR) {
-    Parser_panic(self);
-    return result;
-  }
+  if(self->panic) return NULL;
 
   for(;;) {
     Token operator = Tokenizer_peek(tokenizer);
@@ -497,10 +553,9 @@ Node* Parser_parseExprWithPrec(Parser* self, Precedence minPrecedence) {
         Token_infixLeftPrecedence(operator)
       );
 
-      if(right->type == NODE_ERROR) {
-        Parser_panic(self);
+      if(self->panic) {
         Node_free(result);
-        return right;
+        return NULL;
       }
 
       result = BinaryNode_new(mapInfix(operator), result->line, result, right);
@@ -581,7 +636,6 @@ static inline bool Node_requiresSemicolon(Node* self) {
      * Requires semicolon should never be called for these.
      */
     case NODE_EOF:
-    case NODE_ERROR:
     case NODE_BREAK:
     case NODE_CONTINUE:
       NodeType_println(self->type);
@@ -613,7 +667,10 @@ Node* Parser_parseContinueStmt(Parser* self) {
   }
 
   if(token.type != TOKEN_SEMICOLON) {
-    return ErrorNode_new(ERROR_MISSING_SEMICOLON, token);
+    self->panic = true;
+    printError(token.line, "Missing \";\".");
+    Node_free(continueTo);
+    return NULL;
   }
 
   Tokenizer_scan(tokenizer);
@@ -652,7 +709,13 @@ Node* Parser_parseBreakStmt(Parser* self) {
   token = Tokenizer_peek(tokenizer);
 
   if(token.type != TOKEN_SEMICOLON) {
-    return ErrorNode_new(ERROR_MISSING_SEMICOLON, token);
+    self->panic = true;
+    printError(token.line, "Missing \";\".");
+
+    Node_free(breakTo);
+    Node_free(breakWith);
+
+    return NULL;
   }
 
   Tokenizer_scan(tokenizer);
@@ -679,15 +742,14 @@ Node* Parser_parseStatement(Parser* self) {
 
   Node* expression = Parser_parseExpression(self);
 
-  if(expression->type == NODE_ERROR) {
-    return expression;
-  }
+  if(self->panic) return NULL;
 
   if(!Node_requiresSemicolon(expression)) {
     return expression;
   }
 
   token = Tokenizer_peek(tokenizer);
+
   switch(token.type) {
     case TOKEN_SEMICOLON:
       Tokenizer_scan(tokenizer);
@@ -708,13 +770,16 @@ Node* Parser_parseStatement(Parser* self) {
         return expression;
       } else {
         Node_free(expression);
-        return ErrorNode_new(ERROR_MISSING_SEMICOLON, token);
+        self->panic = true;
+        printError(token.line, "Missing \";\".");
+        return NULL;
       }
 
     default:
-      // TODO Support eliding semicolons after blocks
       Node_free(expression);
-      return ErrorNode_new(ERROR_MISSING_SEMICOLON, token);
+      self->panic = true;
+      printError(token.line, "Missing \";\".");
+      return NULL;
   }
 }
 

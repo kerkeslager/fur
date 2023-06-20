@@ -739,14 +739,12 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
     case NODE_CALL:
       assert(false);
 
-    case NODE_ERROR:
     case NODE_EOF:
       assert(false);
   }
 }
 
 bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
-  Node* statement = Parser_parseStatement(parser);
   self->hasErrors = false;
   self->breakCount = 0;
 
@@ -757,57 +755,60 @@ bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
   size_t byteCodeCheckpoint = ByteCode_count(out);
   size_t symbolListCheckpoint = SymbolList_count(&(self->symbolList));
 
-  if(statement->type == NODE_EOF) {
-    /*
-     * This is so that empty files or repl lines emit a return value, since
-     * callers expect this.
-     */
-    Compiler_emitOp(out, OP_NIL, statement->line);
-    Compiler_emitOp(out, OP_RETURN, statement->line);
-    return true;
-  } else if(statement->type == NODE_ERROR) {
-    ErrorNode_print(statement);
-    self->hasErrors = true;
-  } else {
-    Compiler_emitNode(self, out, statement);
-  }
+  bool firstStatement = true;
+  Node* statement = NULL;
 
-  Node_free(statement);
+  for(;;) {
+    statement = Parser_parseStatement(parser);
 
-  while((statement = Parser_parseStatement(parser))->type != NODE_EOF) {
-    if(statement->type == NODE_ERROR) {
-      ErrorNode_print(statement);
+    if(parser->panic) {
       self->hasErrors = true;
-    } else {
-      // Drop the result of previous statement
-      /*
-       * TODO
-       * We can pass a flag into emitNode() to tell it if the result of the
-       * expression will be used, and not emit unused results that we'll
-       * just have to drop.
-       */
-      /*
-       * TODO
-       * The OP_DROP is really part of the previous statement, and should have
-       * the line number of the previous statement.
-       */
-      Compiler_emitOp(out, OP_DROP, statement->line);
-      Compiler_emitNode(self, out, statement);
+      Parser_clearPanic(parser);
+      continue;
     }
 
+    assert(statement != NULL);
+
+    if(statement->type == NODE_EOF) break;
+
+    // Drop the result of previous statement
+    /*
+     * TODO
+     * We can pass a flag into emitNode() to tell it if the result of the
+     * expression will be used, and not emit unused results that we'll
+     * just have to drop.
+     */
+    /*
+     * TODO
+     * The OP_DROP is really part of the previous statement, and should have
+     * the line number of the previous statement.
+     */
+    if(!firstStatement) {
+      Compiler_emitOp(out, OP_DROP, statement->line);
+    } else {
+      firstStatement = false;
+    }
+
+    Compiler_emitNode(self, out, statement);
     Node_free(statement);
   }
 
-  /*
-   * Rewind the emitted code if there were errors.
-   */
   if(self->hasErrors) {
     ByteCode_rewind(out, byteCodeCheckpoint);
     SymbolList_rewind(&(self->symbolList), symbolListCheckpoint);
   } else {
+    /*
+     * This is to allow the compilation of empty lines to have a return,
+     * because the calling function expects one.
+     */
+    if(firstStatement) {
+      Compiler_emitOp(out, OP_NIL, statement->line);
+    }
+
     Compiler_emitOp(out, OP_RETURN, statement->line);
   }
 
+  Node_free(statement);
   return !(self->hasErrors);
 }
 

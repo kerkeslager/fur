@@ -166,37 +166,6 @@ Node* ListNode_finish(ListNode* self) {
   return (Node*)self;
 }
 
-inline static void ErrorNode_init(ErrorNode* self, ParseErrorType type, Token token, Token auxToken, Node* previous) {
-  Node_init(&(self->node), NODE_ERROR, token.line);
-  self->type = type;
-  self->token = token;
-  self->auxToken = auxToken;
-  self->previous = previous;
-}
-
-Node* ErrorNode_newWithAuxAndPrevious(ParseErrorType type, Token token, Token auxToken, Node* previous) {
-  ErrorNode* node = malloc(sizeof(ErrorNode));
-  ErrorNode_init(node, type, token, auxToken, previous);
-  return (Node*)node;
-}
-
-Node* ErrorNode_newWithPrevious(ParseErrorType type, Token token, Node* previous) {
-  Token auxToken;
-  auxToken.type = NO_TOKEN;
-  return ErrorNode_newWithAuxAndPrevious(type, token, auxToken, previous);
-}
-
-Node* ErrorNode_new(ParseErrorType type, Token token) {
-  Token auxToken;
-  auxToken.type = NO_TOKEN;
-  return ErrorNode_newWithAuxAndPrevious(type, token, auxToken, NULL);
-}
-
-inline static void ErrorNode_free(ErrorNode* self) {
-  if(self->previous != NULL) Node_free(self->previous);
-  free(self);
-}
-
 void Node_free(Node* self) {
   if(self == NULL) return;
 
@@ -248,64 +217,6 @@ void Node_free(Node* self) {
     case NODE_BLOCK:
       ListNode_free((ListNode*) self);
       return;
-
-    case NODE_ERROR:
-      ErrorNode_free((ErrorNode*)self);
-      return;
-  }
-}
-
-void ErrorNode_print(Node* node) {
-  assert(node->type == NODE_ERROR);
-
-  ErrorNode* self = (ErrorNode*)node;
-
-  if(self->previous != NULL && self->previous->type == NODE_ERROR) {
-    ErrorNode_print(self->previous);
-  }
-
-  switch(self->type) {
-    case ERROR_MISSING_SEMICOLON:
-      printError(self->token.line, "Missing ';'.");
-      break;
-
-    case ERROR_PAREN_OPENED_BUT_NOT_CLOSED:
-      printError(
-        self->token.line,
-        "Parentheses opened but not closed.\n"
-        "\tParentheses opened on line %zu.",
-        self->auxToken.line
-      );
-      break;
-
-    case ERROR_UNEXPECTED_TOKEN:
-      if(self->token.type == TOKEN_EOF) {
-        printError(self->token.line, "Unexpected end of file.");
-      } else if(self->token.length > 64) {
-        /*
-         * This check also protects against overflowing the integer cast in
-         * the else block, so it's a security concern as well.
-         */
-        printError(
-          self->token.line,
-          "Unexpected token '%.*s...'.",
-          64,
-          self->token.lexeme
-        );
-      } else {
-        printError(
-          self->token.line,
-          "Unexpected token '%.*s'.",
-          (int)(self->token.length),
-          self->token.lexeme
-        );
-      }
-      break;
-
-    case ERROR_MUTABLE_NOT_ASSIGNMENT:
-      printError(self->token.line, "'mut' keyword applied to statement that is not assignment.");
-      break;
-
   }
 }
 

@@ -7,12 +7,15 @@
 typedef struct {
   Tokenizer tokenizer;
   bool repl;
+  bool panic;
 } Parser;
 
 void Parser_init(Parser*, const char* source, bool repl);
 void Parser_free(Parser*);
 
 void Parser_appendLine(Parser*, const char*);
+
+void Parser_clearPanic(Parser*);
 
 Node* Parser_parseExpression(Parser*);
 Node* Parser_parseStatement(Parser*);
