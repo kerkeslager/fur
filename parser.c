@@ -531,12 +531,87 @@ static inline bool Node_requiresSemicolon(Node* self) {
   }
 }
 
+Node* Parser_parseContinueStmt(Parser* self) {
+  Tokenizer* tokenizer = &(self->tokenizer);
+  Token token = Tokenizer_scan(tokenizer);
+  Node* continueTo = NULL;
+
+  token = Tokenizer_peek(tokenizer);
+
+  if(token.type == TOKEN_INTEGER_LITERAL) {
+    Tokenizer_scan(tokenizer);
+    continueTo = AtomNode_new(
+      NODE_INTEGER_LITERAL,
+      token.line,
+      token.lexeme,
+      token.length
+    );
+    token = Tokenizer_peek(tokenizer);
+  }
+
+  if(token.type != TOKEN_SEMICOLON) {
+    return ErrorNode_new(ERROR_MISSING_SEMICOLON, token);
+  }
+
+  Tokenizer_scan(tokenizer);
+  return UnaryNode_new(NODE_CONTINUE, token.line, continueTo);
+}
+
+Node* Parser_parseBreakStmt(Parser* self) {
+  Tokenizer* tokenizer = &(self->tokenizer);
+  Token token = Tokenizer_scan(tokenizer);
+  Node* breakTo = NULL;
+  Node* breakWith = NULL;
+
+  token = Tokenizer_peek(tokenizer);
+
+  switch(token.type) {
+    case TOKEN_INTEGER_LITERAL:
+      Tokenizer_scan(tokenizer);
+      breakTo = AtomNode_new(NODE_INTEGER_LITERAL, token.line, token.lexeme, token.length);
+
+      token = Tokenizer_peek(tokenizer);
+      if(token.type == TOKEN_WITH) {
+        Tokenizer_scan(tokenizer);
+        breakWith = Parser_parseExpression(self);
+      }
+      break;
+
+    case TOKEN_WITH:
+      Tokenizer_scan(tokenizer);
+      breakWith = Parser_parseExpression(self);
+      break;
+
+    default:
+      break;
+  }
+
+  token = Tokenizer_peek(tokenizer);
+
+  if(token.type != TOKEN_SEMICOLON) {
+    return ErrorNode_new(ERROR_MISSING_SEMICOLON, token);
+  }
+
+  Tokenizer_scan(tokenizer);
+  return BinaryNode_new(NODE_BREAK, token.line, breakTo, breakWith);
+}
+
 Node* Parser_parseStatement(Parser* self) {
   Tokenizer* tokenizer = &(self->tokenizer);
   Token token = Tokenizer_peek(tokenizer);
 
-  if(token.type == TOKEN_EOF) {
-    return Node_new(NODE_EOF, token.line);
+  switch(token.type) {
+    case TOKEN_EOF:
+      return Node_new(NODE_EOF, token.line);
+
+    case TOKEN_CONTINUE:
+      return Parser_parseContinueStmt(self);
+
+    case TOKEN_BREAK:
+      return Parser_parseBreakStmt(self);
+
+    default:
+      break;
   }
 
   Node* expression = Parser_parseExpression(self);
