@@ -347,7 +347,7 @@ Node* Parser_parseAtom(Parser* self) {
 
 Node* Parser_parseStatement(Parser*);
 Node* Parser_parseExpression(Parser*);
-Node* Parser_parseExpressionWithPrecedence(Parser*, Precedence minPrecedence);
+Node* Parser_parseExprWithPrec(Parser*, Precedence minPrecedence);
 
 /*
  * TODO
@@ -365,7 +365,7 @@ Node* Parser_parseUnary(Parser* self/*, Precedence minPrecedence*/) {
 
   if(prefixPrecedence != PREC_NONE) {
     Tokenizer_scan(tokenizer);
-    Node* inner = Parser_parseExpressionWithPrecedence(self, prefixPrecedence);
+    Node* inner = Parser_parseExprWithPrec(self, prefixPrecedence);
 
     if(inner->type == NODE_ERROR) {
       return inner;
@@ -418,7 +418,7 @@ void Parser_panic(Parser* self) {
   }
 }
 
-Node* Parser_parseExpressionWithPrecedence(Parser* self, Precedence minPrecedence) {
+Node* Parser_parseExprWithPrec(Parser* self, Precedence minPrecedence) {
   Tokenizer* tokenizer = &(self->tokenizer);
   Node* left = Parser_parseUnary(self/*, minPrecedence*/);
 
@@ -436,9 +436,10 @@ Node* Parser_parseExpressionWithPrecedence(Parser* self, Precedence minPrecedenc
 
     Tokenizer_scan(tokenizer);
 
-    Node* right = Parser_parseExpressionWithPrecedence(
-        self,
-        Token_infixLeftPrecedence(operator));
+    Node* right = Parser_parseExprWithPrec(
+      self,
+      Token_infixLeftPrecedence(operator)
+    );
 
     if(right->type == NODE_ERROR) {
       Parser_panic(self);
@@ -451,7 +452,7 @@ Node* Parser_parseExpressionWithPrecedence(Parser* self, Precedence minPrecedenc
 }
 
 Node* Parser_parseExpression(Parser* self) {
-  return Parser_parseExpressionWithPrecedence(self, PREC_ANY);
+  return Parser_parseExprWithPrec(self, PREC_ANY);
 }
 
 static inline bool Node_requiresSemicolon(Node* self) {
