@@ -733,6 +733,9 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         return;
       }
 
+    case NODE_CALL:
+      assert(false);
+
     case NODE_ERROR:
     case NODE_EOF:
       assert(false);

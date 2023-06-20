@@ -34,6 +34,7 @@ typedef enum {
   NODE_AND,
   NODE_OR,
   NODE_BREAK,
+  NODE_CALL,
 
   // Ternary Nodes
   NODE_IF,

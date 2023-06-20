@@ -77,7 +77,8 @@ inline static void BinaryNode_init(BinaryNode* self, NodeType type, size_t line,
       || type == NODE_NOT_EQUAL
       || type == NODE_AND
       || type == NODE_OR
-      || type == NODE_BREAK);
+      || type == NODE_BREAK
+      || type == NODE_CALL);
   Node_init(&(self->node), type, line);
   self->arg0 = arg0;
   self->arg1 = arg1;
@@ -232,6 +233,7 @@ void Node_free(Node* self) {
     case NODE_AND:
     case NODE_OR:
     case NODE_BREAK:
+    case NODE_CALL:
       BinaryNode_free((BinaryNode*)self);
       return;
 
