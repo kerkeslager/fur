@@ -32,6 +32,7 @@ typedef enum {
   OP_JUMP_FALSE,
   OP_SCOPE_OPEN,
   OP_SCOPE_CLOSE,
+  OP_CALL,
   OP_RETURN,
 } Instruction;
 

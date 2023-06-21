@@ -738,8 +738,24 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
       }
 
     case NODE_CALL:
-      // Not implemented yet
-      assert(false);
+      {
+        Node* functionNode = ((BinaryNode*)node)->arg0;
+        ListNode* argumentNode = (ListNode*)(((BinaryNode*)node)->arg1);
+
+        Compiler_emitNode(self, out, functionNode);
+
+        for(size_t i = 0; i < argumentNode->count; i++) {
+          Compiler_emitNode(self, out, argumentNode->items[i]);
+        }
+
+        // TODO Handle this better
+        assert(argumentNode->count < UINT8_MAX);
+
+        Compiler_emitOp(out, OP_CALL, node->line);
+        Compiler_emitUInt8(out, argumentNode->count, node->line);
+
+        return;
+      }
 
     case NODE_COMMA_SEPARATED:
     case NODE_EOF:

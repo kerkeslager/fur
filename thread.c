@@ -35,6 +35,7 @@ static const char* Instruction_toOperatorCString(uint8_t* pc) {
     case OP_JUMP_FALSE:
     case OP_SCOPE_OPEN:
     case OP_SCOPE_CLOSE:
+    case OP_CALL:
     case OP_RETURN:
       assert(false);
 
@@ -481,6 +482,30 @@ Value Thread_run(Thread* self) {
 
       case OP_SCOPE_CLOSE:
         Stack_closeScope(&(self->stack));
+        break;
+
+      case OP_CALL:
+        {
+          uint8_t argumentCount = *(pc++);
+          Value arguments[argumentCount];
+
+          for(uint8_t i = 0; i < argumentCount; i++) {
+            arguments[i] = Stack_pop(stack);
+          }
+
+          Value function = Stack_pop(stack);
+
+          // TODO Handle this better
+          assert(function.type == VALUE_NATIVE_FN);
+
+          Stack_push(
+            stack,
+            Value_asNativeFn(function)(
+              argumentCount,
+              arguments
+            )
+          );
+        }
         break;
 
       case OP_RETURN:

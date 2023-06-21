@@ -682,6 +682,8 @@ Node* Parser_parseExprWithPrec(Parser* self, Precedence minPrecedence) {
           return NULL;
         }
 
+        Tokenizer_scan(tokenizer);
+
         result = BinaryNode_new(mapPostfix(operator), result->line, result, argExpr);
       } else {
         // Currently all postfix operators are outfix as well
