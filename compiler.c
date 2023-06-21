@@ -7,6 +7,7 @@
 #include "error.h"
 #include "node.h"
 #include "parser.h"
+#include "text.h"
 
 void Compiler_init(Compiler* self) {
   SymbolTable_init(&(self->symbolTable));
@@ -187,7 +188,7 @@ inline static void Compiler_emitComparison(Compiler* self, ByteCode* out, Instru
 
       printError(
         node->node.line,
-        "Cannot chain more than 256 comparison operators."
+        MSG_TOO_MANY_CHAINED_COMPARISONS
       );
 
       return;
@@ -329,7 +330,7 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
 
           printError(
             node->line,
-            "Symbol `%.*s` referenced before assignment.",
+            FMT_UNDEFINED_SYMBOL,
             symbol->length,
             symbol->text
           );
@@ -372,7 +373,7 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
               self->hasErrors = true;
               printError(
                 node->line,
-                "Reassigning immutable variable `%.*s` after definition on line %zu.",
+                FMT_REASSIGNING_IMMUTABLE_VARIABLE,
                 symbol->length,
                 symbol->text,
                 SymbolList_definedOnLine(&(self->symbolList), index)
@@ -417,7 +418,7 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
             self->hasErrors = true;
             printError(
               node->line,
-              "Re-declaring symbol `%.*s` already declared on line %zu.",
+              FMT_REDECLARATION,
               symbol->length,
               symbol->text,
               SymbolList_definedOnLine(&(self->symbolList), index)

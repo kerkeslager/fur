@@ -5,6 +5,7 @@
 
 #include "error.h"
 #include "parser.h"
+#include "text.h"
 
 void Parser_init(Parser* self, const char* source, bool repl) {
   Tokenizer_init(&(self->tokenizer), source, repl ? 0 : 1);
@@ -245,7 +246,7 @@ Node* Parser_parseCondJumpExpr(Parser* self, NodeType nodeType) {
     self->panic = true;
     printError(
       openParen.line,
-      "Unexpected token \"%.*\". Expected \"(\".",
+      FMT_EXPECTED_OPEN_PAREN,
       openParen.length,
       openParen.lexeme
     );
@@ -268,7 +269,7 @@ Node* Parser_parseCondJumpExpr(Parser* self, NodeType nodeType) {
     self->panic = true;
     printError(
       closeParen.line,
-      "Expected \")\" to close \"(\" on line %zu.",
+      FMT_EXPECTED_CLOSE_PAREN,
       openParen.line
     );
     return NULL;
@@ -344,7 +345,7 @@ Node* Parser_parseAtom(Parser* self) {
       self->panic = true;
       printError(
         token.line,
-        "Unexpected token \"%.*s\".",
+        FMT_UNEXPECTED_TOKEN,
         token.length,
         token.lexeme
       );
@@ -373,7 +374,7 @@ Node* Parser_parseAtom(Parser* self) {
 
             case TOKEN_EOF:
               self->panic = true;
-              printError(token.line, "Unexpected end of file.");
+              printError(token.line, MSG_UNEXPECTED_EOF);
               Node_free((Node*)listNode);
               return NULL;
 
@@ -481,7 +482,7 @@ Node* Parser_parseAtom(Parser* self) {
       self->panic = true;
       printError(
         token.line,
-        "Unexpected token \"%.*s\".",
+        FMT_UNEXPECTED_TOKEN,
         token.length,
         token.lexeme
       );
@@ -492,6 +493,23 @@ Node* Parser_parseAtom(Parser* self) {
 Node* Parser_parseStatement(Parser*);
 Node* Parser_parseExpression(Parser*);
 Node* Parser_parseExprWithPrec(Parser*, Precedence minPrecedence);
+
+static inline const char* getExpectedCloseFromOpen(Token token) {
+  switch(token.type) {
+    case TOKEN_OPEN_PAREN:
+      return ")";
+
+    case TOKEN_OPEN_BRACE:
+      return "}";
+
+    default:
+      break;
+  }
+
+  // Should never happen
+  assert(false);
+  return ""; // Silence warnings
+}
 
 Node* Parser_parseOutfix(Parser* self) {
   Tokenizer* tokenizer = &(self->tokenizer);
@@ -516,7 +534,8 @@ Node* Parser_parseOutfix(Parser* self) {
      */
     printError(
       closeToken.line,
-      "Expected \")\" to close \"%.*s\" on line %zu.",
+      FMT_EXPECTED_CLOSE_OUTFIX,
+      getExpectedCloseFromOpen(openToken),
       openToken.length,
       openToken.lexeme,
       openToken.line
@@ -611,8 +630,6 @@ Node* Parser_parseExpression(Parser* self) {
   return Parser_parseExprWithPrec(self, PREC_ANY);
 }
 
-#include "debug.h"
-
 static inline bool Node_requiresSemicolon(Node* self) {
   switch(self->type) {
     case NODE_BLOCK:
@@ -662,7 +679,6 @@ static inline bool Node_requiresSemicolon(Node* self) {
     case NODE_EOF:
     case NODE_BREAK:
     case NODE_CONTINUE:
-      NodeType_println(self->type);
       assert(false);
       break;
   }
@@ -692,7 +708,7 @@ Node* Parser_parseContinueStmt(Parser* self) {
 
   if(token.type != TOKEN_SEMICOLON) {
     self->panic = true;
-    printError(token.line, "Missing \";\".");
+    printError(token.line, MSG_MISSING_SEMICOLON);
     Node_free(continueTo);
     return NULL;
   }
@@ -734,7 +750,7 @@ Node* Parser_parseBreakStmt(Parser* self) {
 
   if(token.type != TOKEN_SEMICOLON) {
     self->panic = true;
-    printError(token.line, "Missing \";\".");
+    printError(token.line, MSG_MISSING_SEMICOLON);
 
     Node_free(breakTo);
     Node_free(breakWith);
@@ -779,30 +795,16 @@ Node* Parser_parseStatement(Parser* self) {
       Tokenizer_scan(tokenizer);
       return expression;
 
+    case TOKEN_CLOSE_BRACE:
+    case TOKEN_ELSE:
+    case TOKEN_EOF:
     case TOKEN_CLOSE_PAREN:
       return expression;
-
-    case TOKEN_EOF:
-      /*
-       * We want to support eliding semicolons in the REPL, but not in files.
-       * This is to avoid ambiguity in situations like `{ 42 }` (is that a
-       * block that returns 42, or is it a set containing 42? Technically we
-       * could elide the last semicolon in a file without ambiguity, because
-       * the file is not a block, but that feels inconsistent.
-       */
-      if(self->repl) {
-        return expression;
-      } else {
-        Node_free(expression);
-        self->panic = true;
-        printError(token.line, "Missing \";\".");
-        return NULL;
-      }
 
     default:
       Node_free(expression);
       self->panic = true;
-      printError(token.line, "Missing \";\".");
+      printError(token.line, MSG_MISSING_SEMICOLON);
       return NULL;
   }
 }
