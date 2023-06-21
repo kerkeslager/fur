@@ -269,8 +269,12 @@ Node* Parser_parseCondJumpExpr(Parser* self, NodeType nodeType) {
     self->panic = true;
     printError(
       closeParen.line,
-      FMT_EXPECTED_CLOSE_PAREN,
-      openParen.line
+      FMT_EXPECTED_CLOSE_OUTFIX,
+      1,
+      "(",
+      openParen.line,
+      closeParen.length,
+      closeParen.lexeme
     );
     return NULL;
   }
