@@ -93,6 +93,8 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
 
     case ';':
       return Tokenizer_consume(self, TOKEN_SEMICOLON, 1);
+    case ',':
+      return Tokenizer_consume(self, TOKEN_COMMA, 1);
 
     case '+':
       return Tokenizer_consume(self, TOKEN_PLUS, 1);
@@ -511,6 +513,19 @@ void test_Tokenizer_scan_semicolon() {
 
   Token token = Tokenizer_scan(&tokenizer);
   assert(token.type == TOKEN_SEMICOLON);
+  assert(token.lexeme == source);
+  assert(token.length == 1);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_comma() {
+  const char* source = ",";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source, 1);
+
+  Token token = Tokenizer_scan(&tokenizer);
+  assert(token.type == TOKEN_COMMA);
   assert(token.lexeme == source);
   assert(token.length == 1);
   assert(token.line == 1);

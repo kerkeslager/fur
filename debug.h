@@ -31,6 +31,7 @@ inline static void Token_println(Token token) {
     PRINT_CASE(TOKEN_OR);
 
     PRINT_CASE(TOKEN_SEMICOLON);
+    PRINT_CASE(TOKEN_COMMA);
 
     PRINT_CASE(TOKEN_OPEN_PAREN);
     PRINT_CASE(TOKEN_CLOSE_PAREN);
@@ -87,6 +88,7 @@ inline static void TokenType_println(TokenType tokenType) {
     PRINT_CASE(TOKEN_OR);
 
     PRINT_CASE(TOKEN_SEMICOLON);
+    PRINT_CASE(TOKEN_COMMA);
 
     PRINT_CASE(TOKEN_OPEN_PAREN);
     PRINT_CASE(TOKEN_CLOSE_PAREN);

@@ -8,6 +8,7 @@ typedef enum {
 
   TOKEN_EQUALS,
   TOKEN_SEMICOLON,
+  TOKEN_COMMA,
 
   TOKEN_PLUS,
   TOKEN_MINUS,
@@ -89,6 +90,7 @@ void test_Tokenizer_scan_ignore_whitespace();
 void test_Tokenizer_scan_linebreaks_increment_line();
 void test_Tokenizer_scan_integerMathOperators();
 void test_Tokenizer_scan_semicolon();
+void test_Tokenizer_scan_comma();
 void test_Tokenizer_scan_equals();
 void test_Tokenizer_scan_after_Tokenizer_peek();
 void test_Tokenizer_scan_parentheses();
