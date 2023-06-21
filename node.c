@@ -215,6 +215,7 @@ void Node_del(Node* self) {
       return;
 
     case NODE_BLOCK:
+    case NODE_COMMA_SEPARATED:
       ListNode_del((ListNode*) self);
       return;
   }

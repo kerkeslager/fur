@@ -370,6 +370,7 @@ Node* Parser_parseAtom(Parser* self) {
               Tokenizer_scan(tokenizer);
 
               if(panic) {
+                self->panic = true;
                 Node_del((Node*)listNode);
                 return NULL;
               }
@@ -580,6 +581,54 @@ Node* Parser_parsePrefix(Parser* self, Precedence minPrecedence) {
   return UnaryNode_new(mapPrefix(token), token.line, inner);
 }
 
+Node* Parser_parseList(Parser* self) {
+  Tokenizer* tokenizer = &(self->tokenizer);
+
+  // TODO Getting the line from the tokenizer is a hack
+  ListNode* listNode = ListNode_new(NODE_COMMA_SEPARATED, tokenizer->line);
+
+  bool first = true;
+
+  for(;;) {
+    Token token = Tokenizer_peek(tokenizer);
+
+    if(first) {
+      first = false;
+    } else {
+      switch(token.type) {
+        case TOKEN_COMMA:
+          Tokenizer_scan(tokenizer);
+          token = Tokenizer_peek(tokenizer);
+          break;
+
+        case TOKEN_CLOSE_PAREN:
+          return ListNode_finish(listNode);
+
+        default:
+
+      }
+    }
+
+    switch(token.type) {
+      case TOKEN_CLOSE_PAREN:
+        return ListNode_finish(listNode);
+
+      default:
+        {
+          Node* next = Parser_parseExpression(self);
+
+          if(self->panic) {
+            assert(next == NULL);
+            Node_del((Node*)listNode);
+            return NULL;
+          }
+
+          ListNode_append(listNode, next);
+        }
+    }
+  }
+}
+
 Node* Parser_parseExprWithPrec(Parser* self, Precedence minPrecedence) {
   Tokenizer* tokenizer = &(self->tokenizer);
   Node* result = Parser_parsePrefix(self, minPrecedence);
@@ -611,7 +660,7 @@ Node* Parser_parseExprWithPrec(Parser* self, Precedence minPrecedence) {
       if(Token_opensOutfix(operator)) {
         Tokenizer_scan(tokenizer);
 
-        Node* argExpr = Parser_parseExpression(self);
+        Node* argExpr = Parser_parseList(self);
 
         Token closeToken = Tokenizer_peek(tokenizer);
 
@@ -699,6 +748,7 @@ static inline bool Node_requiresSemicolon(Node* self) {
     case NODE_EOF:
     case NODE_BREAK:
     case NODE_CONTINUE:
+    case NODE_COMMA_SEPARATED:
       assert(false);
       break;
   }

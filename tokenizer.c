@@ -411,8 +411,8 @@ void test_Tokenizer_scan_eof() {
   Token token = Tokenizer_scan(&tokenizer);
 
   assert(token.type == TOKEN_EOF);
-  assert(token.lexeme == source);
-  assert(token.length == 0);
+  assert(!strcmp(token.lexeme, "(EOF)"));
+  assert(token.length == 5);
   assert(token.line == 1);
 }
 

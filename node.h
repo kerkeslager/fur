@@ -44,6 +44,7 @@ typedef enum {
 
   // List Nodes
   NODE_BLOCK,
+  NODE_COMMA_SEPARATED,
 
   // Auxiliary nodes
   NODE_EOF,

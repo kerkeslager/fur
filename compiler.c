@@ -738,9 +738,12 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
       }
 
     case NODE_CALL:
+      // Not implemented yet
       assert(false);
 
+    case NODE_COMMA_SEPARATED:
     case NODE_EOF:
+      // This should never happen
       assert(false);
   }
 }
