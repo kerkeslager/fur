@@ -265,7 +265,7 @@ Node* Parser_parseCondJumpExpr(Parser* self, NodeType nodeType) {
   if(closeParen.type == TOKEN_CLOSE_PAREN) {
     Tokenizer_scan(tokenizer);
   } else {
-    Node_free(condition);
+    Node_del(condition);
     self->panic = true;
     printError(
       closeParen.line,
@@ -301,8 +301,8 @@ Node* Parser_parseCondJumpExpr(Parser* self, NodeType nodeType) {
 
   if(self->panic) {
     assert(elseBranch == NULL);
-    Node_free(condition);
-    Node_free(ifBranch);
+    Node_del(condition);
+    Node_del(ifBranch);
     return NULL;
   }
 
@@ -366,7 +366,7 @@ Node* Parser_parseAtom(Parser* self) {
               Tokenizer_scan(tokenizer);
 
               if(panic) {
-                Node_free((Node*)listNode);
+                Node_del((Node*)listNode);
                 return NULL;
               }
 
@@ -375,7 +375,7 @@ Node* Parser_parseAtom(Parser* self) {
             case TOKEN_EOF:
               self->panic = true;
               printError(token.line, MSG_UNEXPECTED_EOF);
-              Node_free((Node*)listNode);
+              Node_del((Node*)listNode);
               return NULL;
 
             default:
@@ -410,7 +410,7 @@ Node* Parser_parseAtom(Parser* self) {
         Node* body = Parser_parseStatement(self);
 
         if(self->panic) {
-          Node_free(body);
+          Node_del(body);
           return NULL;
         }
 
@@ -541,7 +541,7 @@ Node* Parser_parseOutfix(Parser* self) {
       openToken.line
     );
 
-    Node_free(result);
+    Node_del(result);
     return NULL;
   }
 
@@ -597,7 +597,7 @@ Node* Parser_parseExprWithPrec(Parser* self, Precedence minPrecedence) {
       );
 
       if(self->panic) {
-        Node_free(result);
+        Node_del(result);
         return NULL;
       }
 
@@ -709,7 +709,7 @@ Node* Parser_parseContinueStmt(Parser* self) {
   if(token.type != TOKEN_SEMICOLON) {
     self->panic = true;
     printError(token.line, MSG_MISSING_SEMICOLON);
-    Node_free(continueTo);
+    Node_del(continueTo);
     return NULL;
   }
 
@@ -752,8 +752,8 @@ Node* Parser_parseBreakStmt(Parser* self) {
     self->panic = true;
     printError(token.line, MSG_MISSING_SEMICOLON);
 
-    Node_free(breakTo);
-    Node_free(breakWith);
+    Node_del(breakTo);
+    Node_del(breakWith);
 
     return NULL;
   }
@@ -802,7 +802,7 @@ Node* Parser_parseStatement(Parser* self) {
       return expression;
 
     default:
-      Node_free(expression);
+      Node_del(expression);
       self->panic = true;
       printError(token.line, MSG_MISSING_SEMICOLON);
       return NULL;
@@ -826,7 +826,7 @@ void test_Parser_parseAtom_parseIntegerLiteral() {
   assert(ilExpression->length == 2);
 
   Parser_free(&parser);
-  Node_free(expression);
+  Node_del(expression);
 }
 
 /*
@@ -845,7 +845,7 @@ void test_Parser_parseAtom_errorOnUnexpectedToken() {
   assert(eNode->token.type == TOKEN_CLOSE_PAREN);
 
   Parser_free(&parser);
-  Node_free(expression);
+  Node_del(expression);
 }
 
 void test_Parser_parseAtom_errorOnUnexpectedEof() {
@@ -865,7 +865,7 @@ void test_Parser_parseAtom_errorOnUnexpectedEof() {
   assert(eNode->previous == NULL);
 
   Parser_free(&parser);
-  Node_free(expression);
+  Node_del(expression);
 }
 
 void test_Parser_parseAtom_errorOnUnexpectedTokenDoesNotConsume() {
@@ -882,7 +882,7 @@ void test_Parser_parseAtom_errorOnUnexpectedTokenDoesNotConsume() {
   assert(token.lexeme == source);
 
   Parser_free(&parser);
-  Node_free(expression);
+  Node_del(expression);
 }
 */
 
@@ -901,7 +901,7 @@ void test_Parser_parseAtom_parsesNil() {
   assert(ilExpression->length == 3);
 
   Parser_free(&parser);
-  Node_free(expression);
+  Node_del(expression);
 }
 
 void test_Parser_parseAtom_parsesTrue() {
@@ -919,7 +919,7 @@ void test_Parser_parseAtom_parsesTrue() {
   assert(ilExpression->length == 4);
 
   Parser_free(&parser);
-  Node_free(expression);
+  Node_del(expression);
 }
 
 void test_Parser_parseAtom_parsesFalse() {
@@ -937,7 +937,7 @@ void test_Parser_parseAtom_parsesFalse() {
   assert(ilExpression->length == 5);
 
   Parser_free(&parser);
-  Node_free(expression);
+  Node_del(expression);
 }
 
 /*
@@ -959,7 +959,7 @@ void test_Parser_parsePrefix_parenOpenedButNotClosed() {
   assert(eNode->previous->type == NODE_ADD);
 
   Parser_free(&parser);
-  Node_free(expression);
+  Node_del(expression);
 }
 */
 
@@ -996,7 +996,7 @@ void test_Parser_parsePrefix_notAfterComparison() {
     assert(((UnaryNode*)expression)->arg0->type == tests[i].nestedNodeType);
 
     Parser_free(&parser);
-    Node_free(expression);
+    Node_del(expression);
   }
   #undef TEST_COUNT
 }
@@ -1016,7 +1016,7 @@ void test_Parser_parseExpression_parseIntegerLiteral() {
   assert(ilExpression->length == 2);
 
   Parser_free(&parser);
-  Node_free(expression);
+  Node_del(expression);
 }
 
 void test_Parser_parseExpression_infixOperatorsBasic() {
@@ -1069,7 +1069,7 @@ void test_Parser_parseExpression_infixOperatorsBasic() {
     assert(arg1->text[0] == '2');
     assert(arg1->length == 1);
 
-    Node_free(expression);
+    Node_del(expression);
     Parser_free(&parser);
   }
 
@@ -1154,7 +1154,7 @@ void test_Parser_parseExpression_infixOperatorsLeftAssociative() {
     assert(bNode->arg1->type == NODE_INTEGER_LITERAL);
     assert(bNode->arg1->line == 1);
 
-    Node_free(expression);
+    Node_del(expression);
     Parser_free(&parser);
   }
 
@@ -1250,7 +1250,7 @@ void test_Parser_parseExpression_infixOrderOfOperations() {
     assert(bNode->arg1->type == tests[i].nodeType1);
     assert(bNode->arg1->line == 1);
 
-    Node_free(expression);
+    Node_del(expression);
     Parser_free(&parser);
   }
 }
@@ -1272,7 +1272,7 @@ void test_Parser_parseExpression_negation() {
   assert(arg0->text == source + 1);
   assert(arg0->length == 2);
 
-  Node_free(expression);
+  Node_del(expression);
   Parser_free(&parser);
 }
 
@@ -1297,7 +1297,7 @@ void test_Parser_parseExpression_nestedNegation() {
   assert(arg0->text == source + 2);
   assert(arg0->length == 2);
 
-  Node_free(expression);
+  Node_del(expression);
   Parser_free(&parser);
 }
 
@@ -1312,7 +1312,7 @@ void test_Parser_parseExpression_negationLeft() {
   assert(node->type == NODE_ADD);
   assert(((BinaryNode*)node)->arg0->type == NODE_NEGATE);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 
   source = "-42 - 1";
@@ -1321,7 +1321,7 @@ void test_Parser_parseExpression_negationLeft() {
   assert(node->type == NODE_SUBTRACT);
   assert(((BinaryNode*)node)->arg0->type == NODE_NEGATE);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 
   source = "-42 * 1";
@@ -1330,7 +1330,7 @@ void test_Parser_parseExpression_negationLeft() {
   assert(node->type == NODE_MULTIPLY);
   assert(((BinaryNode*)node)->arg0->type == NODE_NEGATE);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 
   source = "-42 // 1";
@@ -1339,7 +1339,7 @@ void test_Parser_parseExpression_negationLeft() {
   assert(node->type == NODE_INTEGER_DIVIDE);
   assert(((BinaryNode*)node)->arg0->type == NODE_NEGATE);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 
@@ -1354,7 +1354,7 @@ void test_Parser_parseExpression_negationRight() {
   assert(node->type == NODE_ADD);
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1->type == NODE_NEGATE);
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 
   source = "42 - -1";
@@ -1363,7 +1363,7 @@ void test_Parser_parseExpression_negationRight() {
   assert(node->type == NODE_SUBTRACT);
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1->type == NODE_NEGATE);
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 
   source = "42 * -1";
@@ -1372,7 +1372,7 @@ void test_Parser_parseExpression_negationRight() {
   assert(node->type == NODE_MULTIPLY);
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1->type == NODE_NEGATE);
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 
   source = "42 // -1";
@@ -1381,7 +1381,7 @@ void test_Parser_parseExpression_negationRight() {
   assert(node->type == NODE_INTEGER_DIVIDE);
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1->type == NODE_NEGATE);
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 
@@ -1394,7 +1394,7 @@ void test_Parser_parseExpression_parens() {
   assert(node->type == NODE_PARENS);
   assert(((UnaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 
@@ -1413,7 +1413,7 @@ void test_Parser_parseExpression_infixLeftError() {
   assert(eNode->type == ERROR_PAREN_OPENED_BUT_NOT_CLOSED);
   assert(eNode->token.type == TOKEN_EOF);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 
@@ -1433,7 +1433,7 @@ void test_Parser_parseExpression_infixRightError() {
   assert(eNode->auxToken.type = NO_TOKEN);
   assert(eNode->previous == NULL);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 */
@@ -1450,7 +1450,7 @@ void test_Parser_parseExpression_assignment() {
   assert(((BinaryNode*)node)->arg0->type == NODE_SYMBOL);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 
@@ -1469,7 +1469,7 @@ void test_Parser_parseExpression_mutableAssignment() {
   assert(((BinaryNode*)assignNode)->arg0->type == NODE_SYMBOL);
   assert(((BinaryNode*)assignNode)->arg1->type == NODE_INTEGER_LITERAL);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 
@@ -1499,7 +1499,7 @@ void test_Parser_parseStatement_parsesJumpStatementsWithoutElse() {
     assert(((TernaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
     assert(((TernaryNode*)node)->arg2 == NULL);
 
-    Node_free(node);
+    Node_del(node);
     Parser_free(&parser);
   }
 }
@@ -1521,7 +1521,7 @@ void test_Parser_parseStatement_requiresSemicolonsForJumpStatementsOutsideREPL()
     assert(node->type == NODE_ERROR);
     assert(((ErrorNode*)node)->type == ERROR_MISSING_SEMICOLON);
 
-    Node_free(node);
+    Node_del(node);
     Parser_free(&parser);
   }
 }
@@ -1553,7 +1553,7 @@ void test_Parser_parseStatement_parsesJumpStatementsWithoutElseOrSemicolonInREPL
     assert(((TernaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
     assert(((TernaryNode*)node)->arg2 == NULL);
 
-    Node_free(node);
+    Node_del(node);
     Parser_free(&parser);
   }
 }
@@ -1585,7 +1585,7 @@ void test_Parser_parseStatement_parsesJumpElse() {
     assert(((TernaryNode*)node)->arg2 != NULL);
     assert(((TernaryNode*)node)->arg2->type == NODE_INTEGER_LITERAL);
 
-    Node_free(node);
+    Node_del(node);
     Parser_free(&parser);
   }
 }
@@ -1620,7 +1620,7 @@ void test_Parser_parseStatement_parsesJumpInAssignment() {
     assert(((TernaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
     assert(((TernaryNode*)node)->arg2 == NULL);
 
-    Node_free(node);
+    Node_del(node);
     Parser_free(&parser);
   }
 }
@@ -1656,7 +1656,7 @@ void test_Parser_parseStatement_parsesJumpElseInAssignment() {
     assert(((TernaryNode*)node)->arg2 != NULL);
     assert(((TernaryNode*)node)->arg2->type == NODE_INTEGER_LITERAL);
 
-    Node_free(node);
+    Node_del(node);
     Parser_free(&parser);
   }
 }
@@ -1695,7 +1695,7 @@ void test_Parser_parseStatement_parsesJumpInParens() {
     assert(((TernaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
     assert(((TernaryNode*)node)->arg2 == NULL);
 
-    Node_free(assignmentNode);
+    Node_del(assignmentNode);
     Parser_free(&parser);
   }
 }
@@ -1736,7 +1736,7 @@ void test_Parser_parseStatement_parsesJumpElseInParens() {
     assert(((TernaryNode*)node)->arg2 != NULL);
     assert(((TernaryNode*)node)->arg2->type == NODE_INTEGER_LITERAL);
 
-    Node_free(assignmentNode);
+    Node_del(assignmentNode);
     Parser_free(&parser);
   }
 }
@@ -1752,7 +1752,7 @@ void test_Parser_parseStatement_continue() {
   assert(node->type == NODE_CONTINUE);
   assert(((UnaryNode*)node)->arg0 == NULL);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 
@@ -1768,7 +1768,7 @@ void test_Parser_parseStatement_continueTo() {
   assert(((UnaryNode*)node)->arg0 != NULL);
   assert(((UnaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 
@@ -1784,7 +1784,7 @@ void test_Parser_parseStatement_break() {
   assert(((BinaryNode*)node)->arg0 == NULL);
   assert(((BinaryNode*)node)->arg1 == NULL);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 
@@ -1801,7 +1801,7 @@ void test_Parser_parseStatement_breakTo() {
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1 == NULL);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 
@@ -1818,7 +1818,7 @@ void test_Parser_parseStatement_breakWith() {
   assert(((BinaryNode*)node)->arg1 != NULL);
   assert(((BinaryNode*)node)->arg1->type == NODE_BOOLEAN_LITERAL);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 
@@ -1836,7 +1836,7 @@ void test_Parser_parseStatement_breakToWith() {
   assert(((BinaryNode*)node)->arg1 != NULL);
   assert(((BinaryNode*)node)->arg1->type == NODE_BOOLEAN_LITERAL);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 
@@ -1854,7 +1854,7 @@ void test_Parser_parseStatement_terminatesAtSemicolon() {
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
   assert(nextToken.type == TOKEN_SLASH_SLASH);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 
@@ -1870,7 +1870,7 @@ void test_Parser_parseStatement_elideSemicolonAtEndInReplMode() {
   assert(((BinaryNode*)node)->arg0->type == NODE_INTEGER_LITERAL);
   assert(((BinaryNode*)node)->arg1->type == NODE_INTEGER_LITERAL);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 
@@ -1891,7 +1891,7 @@ void test_Parser_parseStatement_noElideSemicolonAtEndInModuleMode() {
 
   // TODO Assert more things
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 */
@@ -1911,7 +1911,7 @@ void test_Parser_parseStatement_noMissingSemicolon() {
   assert(eNode->type == ERROR_MISSING_SEMICOLON);
   assert(eNode->token.type == TOKEN_IF);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 */
@@ -1926,7 +1926,7 @@ void test_Parser_parseStatement_eof() {
 
   assert(node->type == NODE_EOF);
 
-  Node_free(node);
+  Node_del(node);
   Parser_free(&parser);
 }
 

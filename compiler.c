@@ -791,7 +791,7 @@ bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
     }
 
     Compiler_emitNode(self, out, statement);
-    Node_free(statement);
+    Node_del(statement);
   }
 
   if(self->hasErrors) {
@@ -809,7 +809,7 @@ bool Compiler_compile(Compiler* self, ByteCode* out, Parser* parser) {
     Compiler_emitOp(out, OP_RETURN, statement->line);
   }
 
-  Node_free(statement);
+  Node_del(statement);
   return !(self->hasErrors);
 }
 
@@ -830,7 +830,7 @@ void test_Compiler_emitNode_emitsIntegerLiteral() {
   assert(out.items[0] == OP_INTEGER);
   assert(*(int32_t*)(out.items + 1) == 42);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 }
@@ -855,7 +855,7 @@ void test_Compiler_emitNode_emitsNegate() {
   assert(*(int32_t*)(out.items + 1) == 42);
   assert(out.items[5] == OP_NEGATE);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 }
@@ -879,7 +879,7 @@ void test_Compiler_emitNode_emitsNot() {
   assert(out.items[0] == OP_TRUE);
   assert(out.items[1] == OP_NOT);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
 
   Compiler_free(&compiler);
@@ -906,7 +906,7 @@ void test_Compiler_emitNode_emitsAdd() {
   assert(out.items[5] == OP_INTEGER);
   assert(out.items[10] == OP_ADD);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 }
@@ -932,7 +932,7 @@ void test_Compiler_emitNode_emitsSubtract() {
   assert(out.items[5] == OP_INTEGER);
   assert(out.items[10] == OP_SUBTRACT);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
 
   Compiler_free(&compiler);
@@ -959,7 +959,7 @@ void test_Compiler_emitNode_emitsMultiply() {
   assert(out.items[5] == OP_INTEGER);
   assert(out.items[10] == OP_MULTIPLY);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
 
   Compiler_free(&compiler);
@@ -986,7 +986,7 @@ void test_Compiler_emitNode_emitsIntegerDivide() {
   assert(out.items[5] == OP_INTEGER);
   assert(out.items[10] == OP_IDIVIDE);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 }
@@ -1031,7 +1031,7 @@ void test_Compiler_emitNode_emitsComparisons() {
     assert(out.items[5] == OP_INTEGER);
     assert(out.items[10] == COMPARISON_INSTRUCTIONS[i]);
 
-    Node_free(node);
+    Node_del(node);
     ByteCode_free(&out);
   }
 
@@ -1078,7 +1078,7 @@ void test_Compiler_emitNode_emitsAndOr() {
     assert(*((int16_t*)(out.items + 6)) == 3);
     assert(out.items[8] == OP_FALSE);
 
-    Node_free(node);
+    Node_del(node);
     ByteCode_free(&out);
   }
 
@@ -1109,7 +1109,7 @@ void test_Compiler_emitNode_loop() {
   assert(out.items[8] == OP_JUMP);
   assert(*((int16_t*)(out.items + 9)) == -9);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 }
@@ -1144,7 +1144,7 @@ void test_Compiler_emitNode_if() {
   assert(*((int16_t*)(out.items + 12)) == 3);
   assert(out.items[14] == OP_NIL);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 }
@@ -1183,7 +1183,7 @@ void test_Compiler_emitNode_ifElse() {
   assert(*((int32_t*)(out.items + 16)) == 37);
   assert(out.items[20] == OP_SCOPE_CLOSE);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 }
@@ -1219,7 +1219,7 @@ void test_Compiler_emitNode_while() {
   assert(*((int16_t*)(out.items + 13)) == -13);
   assert(out.items[15] == OP_NIL);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 }
@@ -1259,7 +1259,7 @@ void test_Compiler_emitNode_whileElse() {
   assert(*((int32_t*)(out.items + 17)) == 37);
   assert(out.items[21] == OP_SCOPE_CLOSE);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 }
@@ -1295,7 +1295,7 @@ void test_Compiler_emitNode_until() {
   assert(*((int16_t*)(out.items + 13)) == -13);
   assert(out.items[15] == OP_NIL);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 }
@@ -1335,7 +1335,7 @@ void test_Compiler_emitNode_untilElse() {
   assert(*((int32_t*)(out.items + 17)) == 37);
   assert(out.items[21] == OP_SCOPE_CLOSE);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 }
@@ -1371,7 +1371,7 @@ void test_Compiler_emitNode_loopContinue() {
   assert(out.items[9] == OP_JUMP);
   assert(*((int16_t*)(out.items + 10)) == -10);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 }
@@ -1426,7 +1426,7 @@ void test_Compiler_emitNode_loopContinueTo() {
   assert(out.items[22] == OP_JUMP);
   assert(*((int16_t*)(out.items + 23)) == -23);
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 }
@@ -1454,7 +1454,7 @@ void test_Compiler_emitNode_whileContinue() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1496,7 +1496,7 @@ void test_Compiler_emitNode_whileContinueTo() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1526,7 +1526,7 @@ void test_Compiler_emitNode_whileElseContinue() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1568,7 +1568,7 @@ void test_Compiler_emitNode_whileElseContinueTo() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1597,7 +1597,7 @@ void test_Compiler_emitNode_loopBreak() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1634,7 +1634,7 @@ void test_Compiler_emitNode_loopBreakTo() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1663,7 +1663,7 @@ void test_Compiler_emitNode_loopBreakWith() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1700,7 +1700,7 @@ void test_Compiler_emitNode_loopBreakToWith() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1731,7 +1731,7 @@ void test_Compiler_emitNode_whileBreak() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1774,7 +1774,7 @@ void test_Compiler_emitNode_whileBreakTo() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1805,7 +1805,7 @@ void test_Compiler_emitNode_whileBreakWith() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1848,7 +1848,7 @@ void test_Compiler_emitNode_whileBreakToWith() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1879,7 +1879,7 @@ void test_Compiler_emitNode_whileElseBreak() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1922,7 +1922,7 @@ void test_Compiler_emitNode_whileElseBreakTo() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1953,7 +1953,7 @@ void test_Compiler_emitNode_whileElseBreakWith() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 
@@ -1996,7 +1996,7 @@ void test_Compiler_emitNode_whileElseBreakToWith() {
 
   // TODO Assertions here
 
-  Node_free(node);
+  Node_del(node);
   ByteCode_free(&out);
   Compiler_free(&compiler);
 

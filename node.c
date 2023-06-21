@@ -38,7 +38,7 @@ Node* AtomNode_new(NodeType type, size_t line, const char* text, size_t length) 
   return (Node*)node;
 }
 
-inline static void AtomNode_free(AtomNode* self) {
+inline static void AtomNode_del(AtomNode* self) {
   free(self);
 }
 
@@ -59,8 +59,8 @@ Node* UnaryNode_new(NodeType type, size_t line, Node* arg0) {
   return (Node*)node;
 }
 
-inline static void UnaryNode_free(UnaryNode* self) {
-  Node_free(self->arg0);
+inline static void UnaryNode_del(UnaryNode* self) {
+  Node_del(self->arg0);
   free(self);
 }
 
@@ -91,9 +91,9 @@ Node* BinaryNode_new(NodeType type, size_t line, Node* arg0, Node* arg1) {
   return (Node*)node;
 }
 
-inline static void BinaryNode_free(BinaryNode* self) {
-  Node_free(self->arg0);
-  Node_free(self->arg1);
+inline static void BinaryNode_del(BinaryNode* self) {
+  Node_del(self->arg0);
+  Node_del(self->arg1);
   free(self);
 }
 
@@ -113,10 +113,10 @@ Node* TernaryNode_new(NodeType type, size_t line, Node* arg0, Node* arg1, Node* 
   return (Node*)node;
 }
 
-inline static void TernaryNode_free(TernaryNode* self) {
-  Node_free(self->arg0);
-  Node_free(self->arg1);
-  Node_free(self->arg2);
+inline static void TernaryNode_del(TernaryNode* self) {
+  Node_del(self->arg0);
+  Node_del(self->arg1);
+  Node_del(self->arg2);
   free(self);
 }
 
@@ -134,9 +134,9 @@ ListNode* ListNode_new(NodeType type, size_t line) {
   return self;
 }
 
-inline static void ListNode_free(ListNode* self) {
+inline static void ListNode_del(ListNode* self) {
   for(size_t i = 0; i < self->count; i++) {
-    Node_free(self->items[i]);
+    Node_del(self->items[i]);
   }
 
   if(self->capacity > 0) free(self->items);
@@ -166,7 +166,7 @@ Node* ListNode_finish(ListNode* self) {
   return (Node*)self;
 }
 
-void Node_free(Node* self) {
+void Node_del(Node* self) {
   if(self == NULL) return;
 
   switch(self->type) {
@@ -178,7 +178,7 @@ void Node_free(Node* self) {
     case NODE_INTEGER_LITERAL:
     case NODE_BOOLEAN_LITERAL:
     case NODE_SYMBOL:
-      AtomNode_free((AtomNode*)self);
+      AtomNode_del((AtomNode*)self);
       return;
 
     case NODE_CONTINUE:
@@ -187,7 +187,7 @@ void Node_free(Node* self) {
     case NODE_LOGICAL_NOT:
     case NODE_LOOP:
     case NODE_MUT:
-      UnaryNode_free((UnaryNode*)self);
+      UnaryNode_del((UnaryNode*)self);
       return;
 
     case NODE_ASSIGN:
@@ -205,17 +205,17 @@ void Node_free(Node* self) {
     case NODE_OR:
     case NODE_BREAK:
     case NODE_CALL:
-      BinaryNode_free((BinaryNode*)self);
+      BinaryNode_del((BinaryNode*)self);
       return;
 
     case NODE_IF:
     case NODE_WHILE:
     case NODE_UNTIL:
-      TernaryNode_free((TernaryNode*)self);
+      TernaryNode_del((TernaryNode*)self);
       return;
 
     case NODE_BLOCK:
-      ListNode_free((ListNode*) self);
+      ListNode_del((ListNode*) self);
       return;
   }
 }
@@ -230,7 +230,7 @@ void test_Node_new_basic() {
   assert(node->type == NODE_EOF);
   assert(node->line == 5);
 
-  Node_free(node);
+  Node_del(node);
 }
 
 void test_AtomNode_new_basic() {
@@ -246,7 +246,7 @@ void test_AtomNode_new_basic() {
   assert(subNode->node.type == NODE_INTEGER_LITERAL);
   assert(subNode->node.line == 42);
 
-  Node_free(node);
+  Node_del(node);
 }
 
 void test_UnaryNode_new_basic() {
@@ -262,7 +262,7 @@ void test_UnaryNode_new_basic() {
   assert(subNode->node.line == 5);
   assert(subNode->arg0 == arg0);
 
-  Node_free(node);
+  Node_del(node);
 }
 
 void test_BinaryNode_new_basic() {
@@ -280,7 +280,7 @@ void test_BinaryNode_new_basic() {
   assert(subNode->arg0 == arg0);
   assert(subNode->arg1 == arg1);
 
-  Node_free(node);
+  Node_del(node);
 }
 
 #endif

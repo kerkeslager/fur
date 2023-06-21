@@ -25,10 +25,66 @@ Symbol* Symbol_new(const char* text, size_t length, uint32_t hash);
 void Symbol_del(Symbol*); // frees self
 ```
 
+The general concept here is that `*_init()` and `_free()` are inverse
+operations, and `*_new()` and `*_del()` are inverse operations. That is to
+say, the general pattern is either:
+
+```
+Type variable;
+Type_init(&variable /* maybe some args */);
+
+/* use variable */
+
+Type_Free(&variable);
+```
+
+...or:
+
+```
+Type* variable = Node_new(/* maybe some args*/);
+
+/* use variable */
+
+Type_del(variable);
+```
+
+A related convention is to call `*_init()` from `*_new()` and call `*_free()`
+from `*_del()`, like this:
+
+```
+typedef struct {
+  Subtype s;
+  OtherSubType o;
+} Type;
+
+void Type_init(Type* self, Subtype s) {
+  self->s = s;
+  self->o = DEFAULT_O;
+}
+
+Type* Type_new(Subtype s) {
+  Type* self = malloc(sizeof(Type));
+  Type_init(self, s);
+  return self;
+}
+
+void Type_free(Type* self) {
+  Subtype_free(&(self->s));
+}
+
+void Type_del(Type* self) {
+  Type_free(self);
+  free(self);
+}
+```
+
+#### Naming tests
+
 Tests are named `test_` or they won't be picked up by the test runner,
 are `void`, and take no arguments. `test_` is followed by the function they
-test, followed by what aspect they test. For example:
-`void test_Tokenizer_scan_scansIntegerLiteral();`.
+test, followed by what aspect they test. For example, a test that
+`Tokenizer_scan()` scans integer literals might have the type signature
+`void test_Tokenizer_scan_integerLiteral();`.
 
 ### Error handling
 #### Error handling in the parser

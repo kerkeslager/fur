@@ -99,7 +99,7 @@ ListNode* ListNode_new(NodeType type, size_t line);
 void ListNode_append(ListNode*, Node*);
 Node* ListNode_finish(ListNode*);
 
-void Node_free(Node* self);
+void Node_del(Node* self);
 
 #ifdef TEST
 
