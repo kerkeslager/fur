@@ -527,18 +527,15 @@ Node* Parser_parseOutfix(Parser* self) {
   if(!Token_closesOutfix(closeToken, openToken)) {
     self->panic = true;
 
-    /*
-     * TODO
-     * Currenly the only outfix operators are parentheses, but this will
-     * need to supply other expected close operators.
-     */
     printError(
       closeToken.line,
       FMT_EXPECTED_CLOSE_OUTFIX,
       getExpectedCloseFromOpen(openToken),
       openToken.length,
       openToken.lexeme,
-      openToken.line
+      openToken.line,
+      closeToken.length,
+      closeToken.lexeme
     );
 
     Node_del(result);
@@ -608,10 +605,29 @@ Node* Parser_parseExprWithPrec(Parser* self, Precedence minPrecedence) {
 
     if(Token_postfixPrecedence(operator) >= minPrecedence) {
       if(Token_opensOutfix(operator)) {
+        Tokenizer_scan(tokenizer);
+
         Node* argExpr = Parser_parseExpression(self);
 
-        // TODO Handle this better
-        assert(Token_closesOutfix(Tokenizer_scan(tokenizer), operator));
+        Token closeToken = Tokenizer_peek(tokenizer);
+
+        if(!Token_closesOutfix(closeToken, operator)) {
+          self->panic = true;
+
+          printError(
+            closeToken.line,
+            FMT_EXPECTED_CLOSE_OUTFIX,
+            getExpectedCloseFromOpen(operator),
+            operator.length,
+            operator.lexeme,
+            operator.line,
+            closeToken.length,
+            closeToken.lexeme
+          );
+
+          Node_del(result);
+          return NULL;
+        }
 
         result = BinaryNode_new(mapPostfix(operator), result->line, result, argExpr);
       } else {

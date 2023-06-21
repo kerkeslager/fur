@@ -84,7 +84,12 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
 
   switch(*(self->current)) {
     case '\0':
-      return Tokenizer_consume(self, TOKEN_EOF, 0);
+      return Token_create(
+        TOKEN_EOF,
+        "(EOF)",
+        strlen("(EOF)"),
+        self->line
+      );
 
     case ';':
       return Tokenizer_consume(self, TOKEN_SEMICOLON, 1);
@@ -100,7 +105,12 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
         return Tokenizer_consume(self, TOKEN_SLASH_SLASH, 2);
       } else {
         self->current++;
-        return Token_create(TOKEN_ERROR, "Not implemented", strlen("Not implemented"), self->line);
+        return Token_create(
+          TOKEN_ERROR,
+          "Not implemented",
+          strlen("Not implemented"),
+          self->line
+        );
       }
 
     case '<':
