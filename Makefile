@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Wextra -Wimplicit-fallthrough=5 -ggdb3
+CFLAGS = -Wall -Wextra -Wimplicit-fallthrough=5 -ggdb3 -I/usr/local/include -L/usr/local/lib -lunistring
 SRCS := $(shell find . -name '*.c')
 HEADERS := $(shell find . -name '*.h')
 OBJS := $(SRCS:.c=.o)
