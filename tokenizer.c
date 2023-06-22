@@ -89,10 +89,32 @@ Token Tokenizer_string(Tokenizer* self) {
     switch(*(self->current)) {
       case '\'':
       case '"':
-        if(*(self->current) == open) {
+        if(open == *(self->current)) {
           self->current++;
+
+          // Default to UTF8
+          TokenType tokenType = TOKEN_UTF8_LITERAL;
+
+          const char* encoding = self->current;
+
+          while(isSymbolChar(*(self->current))) self->current++;
+
+          if(self->current != encoding) {
+            size_t len = self->current - encoding;
+            if(!strncmp("ch", encoding, len)) {
+              tokenType = TOKEN_CODE_POINT_LITERAL;
+            } else if(!strncmp("utf8", encoding, len)) {
+              tokenType = TOKEN_UTF8_LITERAL;
+            } else if(!strncmp("utf32", encoding, len)) {
+              tokenType = TOKEN_UTF32_LITERAL;
+            } else {
+              // TODO Handle this better
+              assert(false);
+            }
+          }
+
           return Token_create(
-            TOKEN_STRING_LITERAL,
+            tokenType,
             lexeme,
             self->current - lexeme,
             self->line
@@ -100,6 +122,17 @@ Token Tokenizer_string(Tokenizer* self) {
         }
 
         self->current++;
+        break;
+
+      case '\\':
+        self->current++;
+        switch(*(self->current)) {
+          case '0':
+          case 'n':
+          case 't':
+            self->current++;
+            break;
+        }
         break;
 
       case '\0':
@@ -912,10 +945,12 @@ void test_Tokenizer_scan_singleQuoteString() {
   Tokenizer_init(&tokenizer, source, 1);
 
   Token token = Tokenizer_peek(&tokenizer);
-  assert(token.type == TOKEN_STRING_LITERAL);
+  assert(token.type == TOKEN_UTF8_LITERAL);
   assert(token.lexeme == source);
   assert(token.length == 27);
   assert(token.line == 1);
+
+  assert(tokenizer.current == token.lexeme + 27);
 }
 
 void test_Tokenizer_scan_doubleQuoteString() {
@@ -925,10 +960,102 @@ void test_Tokenizer_scan_doubleQuoteString() {
   Tokenizer_init(&tokenizer, source, 1);
 
   Token token = Tokenizer_peek(&tokenizer);
-  assert(token.type == TOKEN_STRING_LITERAL);
+  assert(token.type == TOKEN_UTF8_LITERAL);
   assert(token.lexeme == source);
   assert(token.length == 22);
   assert(token.line == 1);
+
+  assert(tokenizer.current == token.lexeme + 22);
+}
+
+void test_Tokenizer_scan_singleQuoteUTF8() {
+  const char* source = "'\"Hello, world,\" she said.'utf8";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source, 1);
+
+  Token token = Tokenizer_peek(&tokenizer);
+  assert(token.type == TOKEN_UTF8_LITERAL);
+  assert(token.lexeme == source);
+  assert(token.length == 31);
+  assert(token.line == 1);
+
+  assert(tokenizer.current == token.lexeme + 31);
+}
+
+void test_Tokenizer_scan_doubleQuoteUTF8() {
+  const char* source = "\"She didn't say that.\"utf8";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source, 1);
+
+  Token token = Tokenizer_peek(&tokenizer);
+  assert(token.type == TOKEN_UTF8_LITERAL);
+  assert(token.lexeme == source);
+  assert(token.length == 26);
+  assert(token.line == 1);
+
+  assert(tokenizer.current == token.lexeme + 26);
+}
+
+void test_Tokenizer_scan_singleQuoteUTF32() {
+  const char* source = "'\"Hello, world,\" she said.'utf32";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source, 1);
+
+  Token token = Tokenizer_peek(&tokenizer);
+  assert(token.type == TOKEN_UTF32_LITERAL);
+  assert(token.lexeme == source);
+  assert(token.length == 32);
+  assert(token.line == 1);
+
+  assert(tokenizer.current == token.lexeme + 32);
+}
+
+void test_Tokenizer_scan_doubleQuoteUTF32() {
+  const char* source = "\"She didn't say that.\"utf32";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source, 1);
+
+  Token token = Tokenizer_peek(&tokenizer);
+  assert(token.type == TOKEN_UTF32_LITERAL);
+  assert(token.lexeme == source);
+  assert(token.length == 27);
+  assert(token.line == 1);
+
+  assert(tokenizer.current == token.lexeme + 27);
+}
+
+void test_Tokenizer_scan_singleQuoteCodePoint() {
+  const char* source = "'\"'ch";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source, 1);
+
+  Token token = Tokenizer_peek(&tokenizer);
+  assert(token.type == TOKEN_CODE_POINT_LITERAL);
+  assert(token.lexeme == source);
+  assert(token.length == 5);
+  assert(token.line == 1);
+
+  assert(tokenizer.current == token.lexeme + 5);
+}
+
+void test_Tokenizer_scan_doubleQuoteCodePoint() {
+  const char* source = "\"'\"ch";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source, 1);
+
+  Token token = Tokenizer_peek(&tokenizer);
+  assert(token.type == TOKEN_CODE_POINT_LITERAL);
+  assert(token.lexeme == source);
+  assert(token.length == 5);
+  assert(token.line == 1);
+
+  assert(tokenizer.current == token.lexeme + 5);
 }
 
 void test_Tokenizer_peek_returnsScan() {
