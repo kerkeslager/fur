@@ -5,6 +5,7 @@
 
 typedef enum {
   TOKEN_INTEGER_LITERAL,
+  TOKEN_STRING_LITERAL,
 
   TOKEN_EQUALS,
   TOKEN_SEMICOLON,
@@ -105,6 +106,9 @@ void test_Tokenizer_scan_jumpKeywords();
 void test_Tokenizer_scan_mut();
 void test_Tokenizer_scan_continue();
 void test_Tokenizer_scan_breakWith();
+
+void test_Tokenizer_scan_singleQuoteString();
+void test_Tokenizer_scan_doubleQuoteString();
 
 void test_Tokenizer_peek_returnsScan();
 void test_Tokenizer_peek_doesNotProgress();

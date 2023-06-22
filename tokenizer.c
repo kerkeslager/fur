@@ -79,6 +79,44 @@ Token Tokenizer_keywordOrSymbol(Tokenizer* self, const char* lexeme, const char*
   return Tokenizer_completeSymbol(self, lexeme);
 }
 
+Token Tokenizer_string(Tokenizer* self) {
+  const char* lexeme = self->current;
+  char open = *lexeme;
+
+  self->current++;
+
+  for(;;) {
+    switch(*(self->current)) {
+      case '\'':
+      case '"':
+        if(*(self->current) == open) {
+          self->current++;
+          return Token_create(
+            TOKEN_STRING_LITERAL,
+            lexeme,
+            self->current - lexeme,
+            self->line
+          );
+        }
+
+        self->current++;
+        break;
+
+      case '\0':
+        return Token_create(
+          TOKEN_ERROR,
+          "Encountered EOF while scanning string.",
+          strlen("Encountered EOF while scanning string."),
+          self->line
+        );
+
+      default:
+        self->current++;
+        break;
+    }
+  }
+}
+
 Token Tokenizer_scanInternal(Tokenizer* self) {
   Tokenizer_handleWhitespace(self);
 
@@ -140,7 +178,12 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
       if(self->current[1] == '=') {
         return Tokenizer_consume(self, TOKEN_BANG_EQUALS, 2);
       } else {
-        return Token_create(TOKEN_ERROR, "Not implemented", strlen("Not implemented"), self->line);
+        return Token_create(
+          TOKEN_ERROR,
+          "Not implemented",
+          strlen("Not implemented"),
+          self->line
+        );
       }
 
     case '(':
@@ -184,6 +227,10 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
           }
         }
       }
+
+    case '\'':
+    case '"':
+      return Tokenizer_string(self);
 
     case 'd':
     case 'g':
@@ -355,7 +402,12 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
 
     default:
       self->current++;
-      return Token_create(TOKEN_ERROR, "Unexpected character", strlen("Unexpected character"), self->line);
+      return Token_create(
+        TOKEN_ERROR,
+        "Unexpected character",
+        strlen("Unexpected character"),
+        self->line
+      );
   }
 }
 
@@ -850,6 +902,32 @@ void test_Tokenizer_scan_breakWith() {
   assert(token.type == TOKEN_WITH);
   assert(token.lexeme == source + 6);
   assert(token.length == 4);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_singleQuoteString() {
+  const char* source = "'\"Hello, world,\" she said.'";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source, 1);
+
+  Token token = Tokenizer_peek(&tokenizer);
+  assert(token.type == TOKEN_STRING_LITERAL);
+  assert(token.lexeme == source);
+  assert(token.length == 27);
+  assert(token.line == 1);
+}
+
+void test_Tokenizer_scan_doubleQuoteString() {
+  const char* source = "\"She didn't say that.\"";
+
+  Tokenizer tokenizer;
+  Tokenizer_init(&tokenizer, source, 1);
+
+  Token token = Tokenizer_peek(&tokenizer);
+  assert(token.type == TOKEN_STRING_LITERAL);
+  assert(token.lexeme == source);
+  assert(token.length == 22);
   assert(token.line == 1);
 }
 

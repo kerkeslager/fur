@@ -12,6 +12,7 @@
 inline static void Token_println(Token token) {
   switch(token.type) {
     PRINT_CASE(TOKEN_INTEGER_LITERAL);
+    PRINT_CASE(TOKEN_STRING_LITERAL);
 
     PRINT_CASE(TOKEN_PLUS);
     PRINT_CASE(TOKEN_MINUS);
@@ -69,6 +70,7 @@ inline static void Token_println(Token token) {
 inline static void TokenType_println(TokenType tokenType) {
   switch(tokenType) {
     PRINT_CASE(TOKEN_INTEGER_LITERAL);
+    PRINT_CASE(TOKEN_STRING_LITERAL);
 
     PRINT_CASE(TOKEN_PLUS);
     PRINT_CASE(TOKEN_MINUS);
