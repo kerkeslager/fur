@@ -7,7 +7,7 @@ void Tokenizer_init(Tokenizer* self, const char* source, size_t startLine) {
   self->source = source;
   self->current = source;
   self->line = startLine;
-  self->lookaheadCount = 0;
+  self->hasLookahead = false;
 }
 
 inline static Token Token_create(TokenType type, const char* lexeme, size_t length, size_t line) {
@@ -360,33 +360,22 @@ Token Tokenizer_scanInternal(Tokenizer* self) {
 }
 
 Token Tokenizer_scan(Tokenizer* self) {
-  if(self->lookaheadCount == 0) {
-    return Tokenizer_scanInternal(self);
+  if(self->hasLookahead) {
+    Token result = self->lookahead;
+    self->hasLookahead = false;
+    return result;
   }
 
-  Token result = self->lookaheads[0];
-
-  self->lookaheadCount--;
-  for(uint8_t i = 0; i < self->lookaheadCount; i++) {
-    self->lookaheads[i] = self->lookaheads[i + 1];
-  }
-
-  return result;
-}
-
-Token Tokenizer_lookahead(Tokenizer* self, uint8_t lookahead) {
-  // This is all we allocated for
-  assert(lookahead <= 2);
-
-  while(lookahead > self->lookaheadCount) {
-    self->lookaheads[self->lookaheadCount++] = Tokenizer_scanInternal(self);
-  }
-
-  return self->lookaheads[lookahead - 1];
+  return Tokenizer_scanInternal(self);
 }
 
 Token Tokenizer_peek(Tokenizer* self) {
-  return Tokenizer_lookahead(self, 1);
+  if(!(self->hasLookahead)) {
+    self->lookahead = Tokenizer_scanInternal(self);
+    self->hasLookahead = true;
+  }
+
+  return self->lookahead;
 }
 
 void Tokenizer_appendLine(Tokenizer* self, const char* line) {
@@ -396,7 +385,7 @@ void Tokenizer_appendLine(Tokenizer* self, const char* line) {
   self->source = line;
   self->current = line;
   self->line++;
-  self->lookaheadCount = 0;
+  self->hasLookahead = false;
 }
 
 #ifdef TEST
