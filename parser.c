@@ -429,58 +429,6 @@ Node* Parser_parseAtom(Parser* self) {
     case TOKEN_UNTIL:
       return Parser_parseCondJumpExpr(self, NODE_UNTIL);
 
-    case TOKEN_CONTINUE:
-      {
-        Tokenizer_scan(tokenizer);
-        Node* continueTo = NULL;
-
-        token = Tokenizer_peek(tokenizer);
-
-        switch(token.type) {
-          case TOKEN_INTEGER_LITERAL:
-            Tokenizer_scan(tokenizer);
-            continueTo = AtomNode_new(NODE_INTEGER_LITERAL, token.line, token.lexeme, token.length);
-            break;
-
-          default:
-            break;
-        }
-
-        return UnaryNode_new(NODE_CONTINUE, token.line, continueTo);
-      }
-
-    case TOKEN_BREAK:
-      {
-        Tokenizer_scan(tokenizer);
-        Node* breakTo = NULL;
-        Node* breakWith = NULL;
-
-        token = Tokenizer_peek(tokenizer);
-
-        switch(token.type) {
-          case TOKEN_INTEGER_LITERAL:
-            Tokenizer_scan(tokenizer);
-            breakTo = AtomNode_new(NODE_INTEGER_LITERAL, token.line, token.lexeme, token.length);
-
-            token = Tokenizer_peek(tokenizer);
-            if(token.type == TOKEN_WITH) {
-              Tokenizer_scan(tokenizer);
-              breakWith = Parser_parseExpression(self);
-            }
-            break;
-
-          case TOKEN_WITH:
-            Tokenizer_scan(tokenizer);
-            breakWith = Parser_parseExpression(self);
-            break;
-
-          default:
-            break;
-        }
-
-        return BinaryNode_new(NODE_BREAK, token.line, breakTo, breakWith);
-      }
-
     default:
       // TODO More specific error
       Tokenizer_scan(tokenizer);
