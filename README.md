@@ -162,7 +162,21 @@ This syntax is also better when we start looking for a type syntax, as we can
 give things types like `(int, int) -> int` without as much confusion around
 arrow operators.
 
-However, a point in favor of arrow syntax is...
+However, a point in favor of arrow syntax is... (see "Pure for loops").
+
+UPDATE: My thoughts now are that the most similar character to a lambda on
+my keyboard is... "\". This makes a nice replacement for "fn" in the above
+example and it's tersity means hopefully people would use it more. I'm
+leaning toward the syntax:
+
+```
+\(a, b) a * b;
+
+\(f) (\(x) x(x))(\(x) f(x(x)));
+```
+
+One criticism of this is that it's used as an escape character in strings,
+which could make it confusing because it's contextual.
 
 ### Pure for loops
 Something like this?
