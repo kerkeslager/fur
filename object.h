@@ -10,10 +10,12 @@ typedef enum {
   OBJ_UTF32_CONCAT,
 } ObjType;
 
-typedef struct {
+struct Obj;
+typedef struct Obj Obj;
+struct Obj{
   ObjType type;
   Obj* next;
-} Obj;
+};
 
 typedef struct {
   Obj obj;
