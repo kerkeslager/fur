@@ -1,13 +1,14 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
-#include "string.h"
+#include <gmp.h>
 
 typedef enum {
   OBJ_UTF8_STRING,
   OBJ_UTF8_CONCAT,
   OBJ_UTF32_STRING,
   OBJ_UTF32_CONCAT,
+  OBJ_BIGINT,
 } ObjType;
 
 struct Obj;
@@ -41,6 +42,13 @@ typedef struct {
   ObjUTF32String* child0;
   ObjUTF32String* child1;
 } ObjUTF32Concat;
+
+typedef struct {
+  Obj obj;
+  mpz_t bigInt;
+} ObjBigInt;
+
+void Obj_del(Obj*);
 
 #ifdef TEST
 

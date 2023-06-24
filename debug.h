@@ -132,6 +132,7 @@ inline static void TokenType_println(TokenType tokenType) {
 inline static void NodeType_println(NodeType nodeType) {
   switch(nodeType) {
     PRINT_CASE(NODE_INTEGER_LITERAL);
+    PRINT_CASE(NODE_BIGINT_LITERAL);
     PRINT_CASE(NODE_NIL_LITERAL);
     PRINT_CASE(NODE_BOOLEAN_LITERAL);
     PRINT_CASE(NODE_SYMBOL);

@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "error.h"
 #include "node.h"
@@ -12,8 +13,7 @@ inline static void Node_init(Node* self, NodeType type, size_t line) {
 }
 
 inline static void AtomNode_init(AtomNode* self, NodeType type, size_t line, const char* text, size_t length) {
-  assert(type == NODE_INTEGER_LITERAL
-      || type == NODE_NIL_LITERAL
+  assert(type == NODE_NIL_LITERAL
       || type == NODE_BOOLEAN_LITERAL
       || type == NODE_SYMBOL);
   Node_init(&(self->node), type, line);
@@ -166,6 +166,45 @@ Node* ListNode_finish(ListNode* self) {
   return (Node*)self;
 }
 
+Node* IntegerNode_new(NodeType type, size_t line, int32_t integer) {
+  assert(type == NODE_INTEGER_LITERAL);
+  IntegerNode* self = malloc(sizeof(IntegerNode));
+  Node_init(&(self->node), type, line);
+  self->integer = integer;
+  return (Node*)self;
+}
+
+void IntegerNode_del(IntegerNode* self) {
+  free(self);
+}
+
+Node* BigIntNode_new(
+    NodeType type, size_t line, size_t length, const char* str) {
+  assert(type == NODE_BIGINT_LITERAL);
+  BigIntNode* self = malloc(sizeof(BigIntNode));
+
+  Node_init(&(self->node), type, line);
+
+  /*
+   * Convert length/characters to null-terminated,
+   */
+  /*
+   * TODO
+   * Can we add a function to do this in the mpz library?
+   */
+  char* copy = malloc(length + 1);
+  strncpy(copy, str, length);
+  copy[length] = '\0';
+  mpz_init_set_str(self->bigInt, copy, 10);
+
+  return (Node*)self;
+}
+
+void BigIntNode_del(BigIntNode* self) {
+  mpz_clear(self->bigInt);
+  free(self);
+}
+
 void Node_del(Node* self) {
   if(self == NULL) return;
 
@@ -175,7 +214,6 @@ void Node_del(Node* self) {
       return;
 
     case NODE_NIL_LITERAL:
-    case NODE_INTEGER_LITERAL:
     case NODE_BOOLEAN_LITERAL:
     case NODE_SYMBOL:
       AtomNode_del((AtomNode*)self);
@@ -216,7 +254,15 @@ void Node_del(Node* self) {
 
     case NODE_BLOCK:
     case NODE_COMMA_SEPARATED:
-      ListNode_del((ListNode*) self);
+      ListNode_del((ListNode*)self);
+      return;
+
+    case NODE_INTEGER_LITERAL:
+      IntegerNode_del((IntegerNode*)self);
+      return;
+
+    case NODE_BIGINT_LITERAL:
+      BigIntNode_del((BigIntNode*)self);
       return;
   }
 }
@@ -234,10 +280,12 @@ void test_Node_new_basic() {
   Node_del(node);
 }
 
+/*
+ * TODO This is no longer testing AtomNode, it's now testing
+ * IntegerNode.
+ */
 void test_AtomNode_new_basic() {
-  char* text = "42";
-
-  Node* node = AtomNode_new(NODE_INTEGER_LITERAL, 42, text, 2);
+  Node* node = IntegerNode_new(NODE_INTEGER_LITERAL, 42, 42);
 
   assert(node->type == NODE_INTEGER_LITERAL);
   assert(node->line == 42);
@@ -251,7 +299,7 @@ void test_AtomNode_new_basic() {
 }
 
 void test_UnaryNode_new_basic() {
-  Node* arg0 = AtomNode_new(NODE_INTEGER_LITERAL, 42, "42", 2);
+  Node* arg0 = IntegerNode_new(NODE_INTEGER_LITERAL, 42, 42);
   Node* node = UnaryNode_new(NODE_NEGATE, 5, arg0);
 
   assert(node->type == NODE_NEGATE);
@@ -267,8 +315,8 @@ void test_UnaryNode_new_basic() {
 }
 
 void test_BinaryNode_new_basic() {
-  Node* arg0 = AtomNode_new(NODE_INTEGER_LITERAL, 42, "42", 2);
-  Node* arg1 = AtomNode_new(NODE_INTEGER_LITERAL, 44, "44", 2);
+  Node* arg0 = IntegerNode_new(NODE_INTEGER_LITERAL, 42, 42);
+  Node* arg1 = IntegerNode_new(NODE_INTEGER_LITERAL, 44, 42);
   Node* node = BinaryNode_new(NODE_ADD, 5, arg0, arg1);
 
   assert(node->type == NODE_ADD);

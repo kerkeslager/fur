@@ -1,7 +1,10 @@
 #include <assert.h>
+#include <errno.h>
 #include <stdbool.h>
-
 #include <stdio.h>
+#include <string.h>
+
+#include <gmp.h>
 
 #include "error.h"
 #include "parser.h"
@@ -330,7 +333,25 @@ Node* Parser_parseAtom(Parser* self) {
   switch(token.type) {
     case TOKEN_INTEGER_LITERAL:
       Tokenizer_scan(tokenizer);
-      return AtomNode_new(NODE_INTEGER_LITERAL, token.line, token.lexeme, token.length);
+      {
+        char* _ = NULL;
+        int integer = strtol(token.lexeme, &_, 10);
+
+        if(errno != ERANGE) {
+          return IntegerNode_new(
+            NODE_INTEGER_LITERAL,
+            token.line,
+            integer
+          );
+        }
+
+        return BigIntNode_new(
+          NODE_BIGINT_LITERAL,
+          token.line,
+          token.length,
+          token.lexeme
+        );
+      }
 
     case TOKEN_NIL:
       Tokenizer_scan(tokenizer);
@@ -665,6 +686,7 @@ static inline bool Node_requiresSemicolon(Node* self) {
       return false;
 
     case NODE_INTEGER_LITERAL:
+    case NODE_BIGINT_LITERAL:
     case NODE_NIL_LITERAL:
     case NODE_BOOLEAN_LITERAL:
     case NODE_SYMBOL:
@@ -715,13 +737,14 @@ Node* Parser_parseContinueStmt(Parser* self) {
 
   token = Tokenizer_peek(tokenizer);
 
+  char* _ = NULL;
+
   if(token.type == TOKEN_INTEGER_LITERAL) {
     Tokenizer_scan(tokenizer);
-    continueTo = AtomNode_new(
+    continueTo = IntegerNode_new(
       NODE_INTEGER_LITERAL,
       token.line,
-      token.lexeme,
-      token.length
+      strtol(token.lexeme, &_, 10)
     );
     token = Tokenizer_peek(tokenizer);
   }
@@ -748,12 +771,23 @@ Node* Parser_parseBreakStmt(Parser* self) {
   switch(token.type) {
     case TOKEN_INTEGER_LITERAL:
       Tokenizer_scan(tokenizer);
-      breakTo = AtomNode_new(NODE_INTEGER_LITERAL, token.line, token.lexeme, token.length);
+      {
+        /*
+         * In thise case we can use strtol because the range is at most
+         * UINT16_MAX, which is checked at emit time.
+         */
+        char* _ = NULL;
+        breakTo = IntegerNode_new(
+          NODE_INTEGER_LITERAL,
+          token.line,
+          strtol(token.lexeme, &_, 10)
+        );
 
-      token = Tokenizer_peek(tokenizer);
-      if(token.type == TOKEN_WITH) {
-        Tokenizer_scan(tokenizer);
-        breakWith = Parser_parseExpression(self);
+        token = Tokenizer_peek(tokenizer);
+        if(token.type == TOKEN_WITH) {
+          Tokenizer_scan(tokenizer);
+          breakWith = Parser_parseExpression(self);
+        }
       }
       break;
 
@@ -841,9 +875,8 @@ void test_Parser_parseAtom_parseIntegerLiteral() {
   assert(expression->type == NODE_INTEGER_LITERAL);
   assert(expression->line == 1);
 
-  AtomNode* ilExpression = (AtomNode*)expression;
-  assert(ilExpression->text == source);
-  assert(ilExpression->length == 2);
+  IntegerNode* ilExpression = (IntegerNode*)expression;
+  assert(ilExpression->integer == 42);
 
   Parser_free(&parser);
   Node_del(expression);
@@ -1031,9 +1064,8 @@ void test_Parser_parseExpression_parseIntegerLiteral() {
   assert(expression->type == NODE_INTEGER_LITERAL);
   assert(expression->line == 1);
 
-  AtomNode* ilExpression = (AtomNode*)expression;
-  assert(ilExpression->text == source);
-  assert(ilExpression->length == 2);
+  IntegerNode* ilExpression = (IntegerNode*)expression;
+  assert(ilExpression->integer == 42);
 
   Parser_free(&parser);
   Node_del(expression);
@@ -1081,13 +1113,11 @@ void test_Parser_parseExpression_infixOperatorsBasic() {
     assert(bNode->arg1->type == NODE_INTEGER_LITERAL);
     assert(bNode->arg1->line == 1);
 
-    AtomNode* arg0 = (AtomNode*)(bNode->arg0);
-    assert(arg0->text[0] == '6');
-    assert(arg0->length == 1);
+    IntegerNode* arg0 = (IntegerNode*)(bNode->arg0);
+    assert(arg0->integer = 6);
 
-    AtomNode* arg1 = (AtomNode*)(bNode->arg1);
-    assert(arg1->text[0] == '2');
-    assert(arg1->length == 1);
+    IntegerNode* arg1 = (IntegerNode*)(bNode->arg1);
+    assert(arg1->integer = 2);
 
     Node_del(expression);
     Parser_free(&parser);
@@ -1288,9 +1318,8 @@ void test_Parser_parseExpression_negation() {
   assert(uNode->arg0->type == NODE_INTEGER_LITERAL);
   assert(uNode->arg0->line == 1);
 
-  AtomNode* arg0 = (AtomNode*)(uNode->arg0);
-  assert(arg0->text == source + 1);
-  assert(arg0->length == 2);
+  IntegerNode* arg0 = (IntegerNode*)(uNode->arg0);
+  assert(arg0->integer == 42);
 
   Node_del(expression);
   Parser_free(&parser);
@@ -1313,9 +1342,8 @@ void test_Parser_parseExpression_nestedNegation() {
   assert(uNode->arg0->type == NODE_INTEGER_LITERAL);
   assert(uNode->arg0->line == 1);
 
-  AtomNode* arg0 = (AtomNode*)(uNode->arg0);
-  assert(arg0->text == source + 2);
-  assert(arg0->length == 2);
+  IntegerNode* arg0 = (IntegerNode*)(uNode->arg0);
+  assert(arg0->integer == 42);
 
   Node_del(expression);
   Parser_free(&parser);

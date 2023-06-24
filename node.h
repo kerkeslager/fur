@@ -3,11 +3,12 @@
 
 #include <stdlib.h>
 
+#include <gmp.h>
+
 #include "tokenizer.h"
 
 typedef enum {
   // Atom Nodes
-  NODE_INTEGER_LITERAL,
   NODE_NIL_LITERAL,
   NODE_BOOLEAN_LITERAL,
   NODE_SYMBOL,
@@ -45,6 +46,10 @@ typedef enum {
   // List Nodes
   NODE_BLOCK,
   NODE_COMMA_SEPARATED,
+
+  // Special nodes
+  NODE_INTEGER_LITERAL,
+  NODE_BIGINT_LITERAL,
 
   // Auxiliary nodes
   NODE_EOF,
@@ -99,6 +104,20 @@ typedef struct {
 ListNode* ListNode_new(NodeType type, size_t line);
 void ListNode_append(ListNode*, Node*);
 Node* ListNode_finish(ListNode*);
+
+typedef struct {
+  Node node;
+  int32_t integer;
+} IntegerNode;
+
+Node* IntegerNode_new(NodeType, size_t line, int32_t);
+
+typedef struct {
+  Node node;
+  mpz_t bigInt;
+} BigIntNode;
+
+Node* BigIntNode_new(NodeType, size_t line, size_t length, const char* str);
 
 void Node_del(Node* self);
 

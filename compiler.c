@@ -92,36 +92,9 @@ inline static void Compiler_emitInt32(ByteCode* out, int32_t i, size_t line) {
   ByteCode_appendInt32(out, i, line);
 }
 
-inline static uint64_t Compiler_atomNodeToInteger(Node* node) {
-  assert(node->type == NODE_INTEGER_LITERAL);
-
-  uint64_t result = 0;
-
-  for(size_t i = 0; i < ((AtomNode*)node)->length; i++) {
-    // TODO Handle this better
-    assert(result <= UINT64_MAX / 10);
-
-    result *= 10;
-
-    uint8_t digit = ((AtomNode*)node)->text[i] - '0';
-
-    // TODO Handle this better
-    assert(result <= UINT64_MAX - digit);
-
-    result += digit;
-  }
-
-  return result;
-}
-
 inline static void Compiler_emitInteger(ByteCode* out, Node* node) {
-  int64_t result = Compiler_atomNodeToInteger(node);
-
-  // TODO Handle this better
-  assert(result <= INT32_MAX);
-
   Compiler_emitOp(out, OP_INTEGER, node->line);
-  Compiler_emitInt32(out, result, node->line);
+  Compiler_emitInt32(out, ((IntegerNode*)node)->integer, node->line);
 }
 
 inline static void Compiler_emitBoolean(ByteCode* out, AtomNode* node) {
@@ -298,6 +271,11 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
   switch(node->type) {
     case NODE_INTEGER_LITERAL:
       return Compiler_emitInteger(out, node);
+
+    case NODE_BIGINT_LITERAL:
+      // Not implemented yet
+      assert(false);
+      return;
 
     case NODE_NIL_LITERAL:
       return Compiler_emitOp(out, OP_NIL, node->line);
@@ -622,7 +600,7 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
         if(uNode->arg0 != NULL) {
           assert(uNode->arg0->type == NODE_INTEGER_LITERAL);
 
-          continueDepth = Compiler_atomNodeToInteger(uNode->arg0);
+          continueDepth = ((IntegerNode*)(uNode->arg0))->integer;
 
           // TODO Handle this better
           assert(continueDepth < 256);
@@ -692,7 +670,7 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
           // TODO Handle this better
           assert(bNode->arg0->type == NODE_INTEGER_LITERAL);
 
-          breakDepth = Compiler_atomNodeToInteger(bNode->arg0);
+          breakDepth = ((IntegerNode*)(bNode->arg0))->integer;
 
           // TODO Handle this better
           assert(breakDepth < 256);
@@ -838,8 +816,7 @@ void test_Compiler_emitNode_emitsIntegerLiteral() {
   Compiler compiler;
   Compiler_init(&compiler);
 
-  const char* text = "42";
-  Node* node = AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 2);
+  Node* node = IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42);
   ByteCode out;
   ByteCode_init(&out);
 
@@ -858,11 +835,10 @@ void test_Compiler_emitNode_emitsNegate() {
   Compiler compiler;
   Compiler_init(&compiler);
 
-  const char* text = "42";
   Node* node = UnaryNode_new(
       NODE_NEGATE,
       1,
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 2)
+      IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42)
   );
   ByteCode out;
   ByteCode_init(&out);
@@ -908,12 +884,11 @@ void test_Compiler_emitNode_emitsAdd() {
   Compiler compiler;
   Compiler_init(&compiler);
 
-  const char* text = "1";
   Node* node = BinaryNode_new(
-      NODE_ADD,
-      1,
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1),
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1)
+    NODE_ADD,
+    1,
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 1),
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 1)
   );
   ByteCode out;
   ByteCode_init(&out);
@@ -934,12 +909,11 @@ void test_Compiler_emitNode_emitsSubtract() {
   Compiler compiler;
   Compiler_init(&compiler);
 
-  const char* text = "1";
   Node* node = BinaryNode_new(
       NODE_SUBTRACT,
       1,
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1),
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1)
+      IntegerNode_new(NODE_INTEGER_LITERAL, 1, 1),
+      IntegerNode_new(NODE_INTEGER_LITERAL, 1, 1)
   );
   ByteCode out;
   ByteCode_init(&out);
@@ -961,12 +935,11 @@ void test_Compiler_emitNode_emitsMultiply() {
   Compiler compiler;
   Compiler_init(&compiler);
 
-  const char* text = "1";
   Node* node = BinaryNode_new(
       NODE_MULTIPLY,
       1,
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1),
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1)
+      IntegerNode_new(NODE_INTEGER_LITERAL, 1, 1),
+      IntegerNode_new(NODE_INTEGER_LITERAL, 1, 1)
   );
   ByteCode out;
   ByteCode_init(&out);
@@ -988,12 +961,11 @@ void test_Compiler_emitNode_emitsIntegerDivide() {
   Compiler compiler;
   Compiler_init(&compiler);
 
-  const char* text = "1";
   Node* node = BinaryNode_new(
       NODE_INTEGER_DIVIDE,
       1,
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1),
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1)
+      IntegerNode_new(NODE_INTEGER_LITERAL, 1, 1),
+      IntegerNode_new(NODE_INTEGER_LITERAL, 1, 1)
   );
   ByteCode out;
   ByteCode_init(&out);
@@ -1033,12 +1005,11 @@ void test_Compiler_emitNode_emitsComparisons() {
   };
 
   for(int i = 0; i < 6; i++) {
-    const char* text = "1";
     Node* node = BinaryNode_new(
         COMPARISON_NODE_TYPES[i],
         1,
-        AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1),
-        AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 1)
+        IntegerNode_new(NODE_INTEGER_LITERAL, 1, 1),
+        IntegerNode_new(NODE_INTEGER_LITERAL, 1, 1)
     );
     ByteCode out;
     ByteCode_init(&out);
@@ -1108,11 +1079,10 @@ void test_Compiler_emitNode_loop() {
   Compiler compiler;
   Compiler_init(&compiler);
 
-  const char* text = "42";
   Node* node = UnaryNode_new(
     NODE_LOOP,
     1,
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, text, 2)
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42)
   );
   ByteCode out;
   ByteCode_init(&out);
@@ -1138,12 +1108,11 @@ void test_Compiler_emitNode_if() {
   Compiler_init(&compiler);
 
   const char* text0 = "true";
-  const char* text1 = "42";
   Node* node = TernaryNode_new(
     NODE_IF,
     1,
     AtomNode_new(NODE_BOOLEAN_LITERAL, 1, text0, 4),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, text1, 2),
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42),
     NULL
   );
   ByteCode out;
@@ -1173,14 +1142,12 @@ void test_Compiler_emitNode_ifElse() {
   Compiler_init(&compiler);
 
   const char* text0 = "true";
-  const char* text1 = "42";
-  const char* text2 = "37";
   Node* node = TernaryNode_new(
     NODE_IF,
     1,
     AtomNode_new(NODE_BOOLEAN_LITERAL, 1, text0, 4),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, text1, 2),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, text2, 2)
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42),
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 37)
   );
   ByteCode out;
   ByteCode_init(&out);
@@ -1212,12 +1179,11 @@ void test_Compiler_emitNode_while() {
   Compiler_init(&compiler);
 
   const char* text0 = "true";
-  const char* text1 = "42";
   Node* node = TernaryNode_new(
     NODE_WHILE,
     1,
     AtomNode_new(NODE_BOOLEAN_LITERAL, 1, text0, 4),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, text1, 2),
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42),
     NULL
   );
   ByteCode out;
@@ -1248,14 +1214,12 @@ void test_Compiler_emitNode_whileElse() {
   Compiler_init(&compiler);
 
   const char* text0 = "true";
-  const char* text1 = "42";
-  const char* text2 = "37";
   Node* node = TernaryNode_new(
     NODE_WHILE,
     1,
     AtomNode_new(NODE_BOOLEAN_LITERAL, 1, text0, 4),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, text1, 2),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, text2, 2)
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42),
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 37)
   );
   ByteCode out;
   ByteCode_init(&out);
@@ -1288,12 +1252,11 @@ void test_Compiler_emitNode_until() {
   Compiler_init(&compiler);
 
   const char* text0 = "true";
-  const char* text1 = "42";
   Node* node = TernaryNode_new(
     NODE_UNTIL,
     1,
     AtomNode_new(NODE_BOOLEAN_LITERAL, 1, text0, 4),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, text1, 2),
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42),
     NULL
   );
   ByteCode out;
@@ -1324,14 +1287,12 @@ void test_Compiler_emitNode_untilElse() {
   Compiler_init(&compiler);
 
   const char* text0 = "true";
-  const char* text1 = "42";
-  const char* text2 = "37";
   Node* node = TernaryNode_new(
     NODE_UNTIL,
     1,
     AtomNode_new(NODE_BOOLEAN_LITERAL, 1, text0, 4),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, text1, 2),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, text2, 2)
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42),
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 37)
   );
   ByteCode out;
   ByteCode_init(&out);
@@ -1411,7 +1372,7 @@ void test_Compiler_emitNode_loopContinueTo() {
         UnaryNode_new(
           NODE_CONTINUE,
           1,
-          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1)
+          IntegerNode_new(NODE_INTEGER_LITERAL, 1, 2)
         )
       )
     )
@@ -1499,7 +1460,7 @@ void test_Compiler_emitNode_whileContinueTo() {
         UnaryNode_new(
           NODE_CONTINUE,
           1,
-          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1)
+          IntegerNode_new(NODE_INTEGER_LITERAL, 1, 2)
         ),
         NULL
       ),
@@ -1535,7 +1496,7 @@ void test_Compiler_emitNode_whileElseContinue() {
       1,
       NULL
     ),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42)
   );
 
   ByteCode out;
@@ -1571,13 +1532,13 @@ void test_Compiler_emitNode_whileElseContinueTo() {
         UnaryNode_new(
           NODE_CONTINUE,
           1,
-          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1)
+          IntegerNode_new(NODE_INTEGER_LITERAL, 1, 2)
         ),
-        AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+        IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42)
       ),
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, "43", 2)
+      IntegerNode_new(NODE_INTEGER_LITERAL, 1, 43)
     ),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, "44", 2)
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 44)
   );
 
   ByteCode out;
@@ -1639,7 +1600,7 @@ void test_Compiler_emitNode_loopBreakTo() {
         BinaryNode_new(
           NODE_BREAK,
           1,
-          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1),
+          IntegerNode_new(NODE_INTEGER_LITERAL, 1, 2),
           NULL
         )
       )
@@ -1671,7 +1632,7 @@ void test_Compiler_emitNode_loopBreakWith() {
       NODE_BREAK,
       1,
       NULL,
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+      IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42)
     )
   );
 
@@ -1705,8 +1666,8 @@ void test_Compiler_emitNode_loopBreakToWith() {
         BinaryNode_new(
           NODE_BREAK,
           1,
-          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1),
-          AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+          IntegerNode_new(NODE_INTEGER_LITERAL, 1, 2),
+          IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42)
         )
       )
     )
@@ -1776,7 +1737,7 @@ void test_Compiler_emitNode_whileBreakTo() {
         BinaryNode_new(
           NODE_BREAK,
           1,
-          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1),
+          IntegerNode_new(NODE_INTEGER_LITERAL, 1, 2),
           NULL
         ),
         NULL
@@ -1812,7 +1773,7 @@ void test_Compiler_emitNode_whileBreakWith() {
       NODE_BREAK,
       1,
       NULL,
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+      IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42)
     ),
     NULL
   );
@@ -1850,8 +1811,8 @@ void test_Compiler_emitNode_whileBreakToWith() {
         BinaryNode_new(
           NODE_BREAK,
           1,
-          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1),
-          AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+          IntegerNode_new(NODE_INTEGER_LITERAL, 1, 2),
+          IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42)
         ),
         NULL
       ),
@@ -1888,7 +1849,7 @@ void test_Compiler_emitNode_whileElseBreak() {
       NULL,
       NULL
     ),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42)
   );
 
   ByteCode out;
@@ -1924,14 +1885,14 @@ void test_Compiler_emitNode_whileElseBreakTo() {
         BinaryNode_new(
           NODE_BREAK,
           1,
-          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1),
+          IntegerNode_new(NODE_INTEGER_LITERAL, 1, 2),
           NULL
         ),
-        AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+        IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42)
       ),
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, "43", 2)
+      IntegerNode_new(NODE_INTEGER_LITERAL, 1, 43)
     ),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, "44", 2)
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 44)
   );
 
   ByteCode out;
@@ -1960,9 +1921,9 @@ void test_Compiler_emitNode_whileElseBreakWith() {
       NODE_BREAK,
       1,
       NULL,
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, "37", 2)
+      IntegerNode_new(NODE_INTEGER_LITERAL, 1, 37)
     ),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42)
   );
 
   ByteCode out;
@@ -1998,14 +1959,14 @@ void test_Compiler_emitNode_whileElseBreakToWith() {
         BinaryNode_new(
           NODE_BREAK,
           1,
-          AtomNode_new(NODE_INTEGER_LITERAL, 1, "2", 1),
-          AtomNode_new(NODE_INTEGER_LITERAL, 1, "37", 2)
+          IntegerNode_new(NODE_INTEGER_LITERAL, 1, 2),
+          IntegerNode_new(NODE_INTEGER_LITERAL, 1, 37)
         ),
-        AtomNode_new(NODE_INTEGER_LITERAL, 1, "42", 2)
+        IntegerNode_new(NODE_INTEGER_LITERAL, 1, 42)
       ),
-      AtomNode_new(NODE_INTEGER_LITERAL, 1, "43", 2)
+      IntegerNode_new(NODE_INTEGER_LITERAL, 1, 43)
     ),
-    AtomNode_new(NODE_INTEGER_LITERAL, 1, "44", 2)
+    IntegerNode_new(NODE_INTEGER_LITERAL, 1, 44)
   );
 
   ByteCode out;
