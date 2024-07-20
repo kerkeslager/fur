@@ -60,10 +60,6 @@ void Stack_closeScope(Stack* self) {
    */
   assert(self->currentScope <= self->top);
 
-  for(Value* v = self->currentScope; v < self->top; v++) {
-    Value_unreference(v);
-  }
-
   *(self->currentScope) = *(self->top);
   self->top = self->currentScope;
   self->scopeCount--;

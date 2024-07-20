@@ -54,14 +54,20 @@ inline static Value Stack_pop(Stack* self) {
   return *(self->top--);
 }
 
+inline static Value Stack_peek(Stack* self) {
+  assert(!Stack_isEmpty(self));
+
+  return *(self->top);
+}
+
 inline static void Stack_pushIndex(Stack* self, size_t index) {
   assert(self->items + index <= self->top);
-  Stack_push(self, Value_copy(self->items + index));
+  Stack_push(self, self->items[index]);
 }
 
 inline static void Stack_popToIndex(Stack* self, size_t index) {
   assert(self->items + index <= self->top);
-  Value_unreference(self->items + index);
+
   self->items[index] = Stack_pop(self);
 }
 

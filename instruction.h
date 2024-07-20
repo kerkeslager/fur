@@ -4,11 +4,15 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "blob.h"
+
 typedef enum {
   OP_NIL,
   OP_TRUE,
   OP_FALSE,
   OP_INTEGER,
+  OP_UTF8,
+  OP_UTF32,
   OP_BUILTIN,
   OP_GET,
   OP_SET,
@@ -48,6 +52,7 @@ typedef struct {
   size_t lineRunCount;
   size_t lineRunCapacity;
   LineRun* lineRuns;
+  BlobList blobs;
 } ByteCode;
 
 void ByteCode_init(ByteCode*);

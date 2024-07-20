@@ -345,6 +345,14 @@ Node* Parser_parseAtom(Parser* self) {
       Tokenizer_scan(tokenizer);
       return AtomNode_new(NODE_SYMBOL, token.line, token.lexeme, token.length);
 
+    case TOKEN_UTF8_LITERAL:
+      Tokenizer_scan(tokenizer);
+      return AtomNode_new(NODE_UTF8_LITERAL, token.line, token.lexeme, token.length);
+
+    case TOKEN_UTF32_LITERAL:
+      Tokenizer_scan(tokenizer);
+      return AtomNode_new(NODE_UTF32_LITERAL, token.line, token.lexeme, token.length);
+
     case TOKEN_CLOSE_PAREN:
       self->panic = true;
       printError(
@@ -669,6 +677,8 @@ static inline bool Node_requiresSemicolon(Node* self) {
     case NODE_BOOLEAN_LITERAL:
     case NODE_SYMBOL:
     case NODE_PARENS:
+    case NODE_UTF8_LITERAL:
+    case NODE_UTF32_LITERAL:
     case NODE_CALL:
       return true;
 

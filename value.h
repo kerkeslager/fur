@@ -6,11 +6,14 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "blob.h"
+
 typedef enum {
   VALUE_BOOLEAN,
   VALUE_NATIVE_FN,
   VALUE_NIL,
-  VALUE_INTEGER
+  VALUE_INTEGER,
+  VALUE_UTF8
 } ValueType;
 
 struct Value;
@@ -24,6 +27,7 @@ struct Value {
     bool boolean;
     NativeFn nativeFn;
     int32_t integer;
+    Blob* blob;
   } as;
 };
 
@@ -64,6 +68,13 @@ inline static int32_t Value_asInteger(Value v) {
   return v.as.integer;
 }
 
+inline static Value Value_fromBlob(ValueType type, Blob* b) {
+  Value result;
+  result.type = type;
+  result.as.blob = b;
+  return result;
+}
+
 inline static void Value_print(Value v) {
   switch(v.type) {
     case VALUE_BOOLEAN:
@@ -85,6 +96,29 @@ inline static void Value_print(Value v) {
     case VALUE_INTEGER:
       printf("%i", v.as.integer);
       return;
+
+    case VALUE_UTF8:
+      {
+        size_t byteCount = v.as.blob->count;
+        uint8_t* bytes = v.as.blob->bytes;
+
+        printf("'");
+
+        /*
+         * The C standard requires printf to support up to 4095 characters,
+         * but environments may have problems printing more than that in one
+         * printf() call.
+         */
+        while(byteCount > 4095) {
+          printf("%.*s", 4095, bytes);
+          byteCount -= 4095;
+          bytes += 4095;
+        }
+
+        printf("%.*s", (int)byteCount, bytes);
+        printf("'utf8");
+      }
+      return;
   }
 
   assert(false);
@@ -94,38 +128,6 @@ inline static void Value_println(Value v) {
   printf("  ");
   Value_print(v);
   printf("\n");
-}
-
-inline static Value Value_copy(Value* self) {
-  /*
-   * None of these types require updating reference counts, but future types
-   * will.
-   */
-  switch(self->type) {
-    case VALUE_BOOLEAN:
-    case VALUE_NATIVE_FN:
-    case VALUE_NIL:
-    case VALUE_INTEGER:
-      return *self;
-  }
-
-  // Should never get here
-  assert(false);
-  return NIL; // Silence warnings
-}
-
-inline static void Value_unreference(Value* self) {
-  /*
-   * None of these types require updating reference counts, but future types
-   * will.
-   */
-  switch(self->type) {
-    case VALUE_BOOLEAN:
-    case VALUE_NATIVE_FN:
-    case VALUE_NIL:
-    case VALUE_INTEGER:
-      break;
-  }
 }
 
 #ifdef TEST

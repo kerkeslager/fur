@@ -15,7 +15,9 @@ inline static void AtomNode_init(AtomNode* self, NodeType type, size_t line, con
   assert(type == NODE_INTEGER_LITERAL
       || type == NODE_NIL_LITERAL
       || type == NODE_BOOLEAN_LITERAL
-      || type == NODE_SYMBOL);
+      || type == NODE_SYMBOL
+      || type == NODE_UTF8_LITERAL
+      || type == NODE_UTF32_LITERAL);
   Node_init(&(self->node), type, line);
   self->text = text;
   self->length = length;
@@ -32,7 +34,9 @@ Node* AtomNode_new(NodeType type, size_t line, const char* text, size_t length) 
   assert(type == NODE_INTEGER_LITERAL
       || type == NODE_NIL_LITERAL
       || type == NODE_BOOLEAN_LITERAL
-      || type == NODE_SYMBOL);
+      || type == NODE_SYMBOL
+      || type == NODE_UTF8_LITERAL
+      || type == NODE_UTF32_LITERAL);
   AtomNode* node = malloc(sizeof(AtomNode));
   AtomNode_init(node, type, line, text, length);
   return (Node*)node;
@@ -178,6 +182,8 @@ void Node_del(Node* self) {
     case NODE_INTEGER_LITERAL:
     case NODE_BOOLEAN_LITERAL:
     case NODE_SYMBOL:
+    case NODE_UTF8_LITERAL:
+    case NODE_UTF32_LITERAL:
       AtomNode_del((AtomNode*)self);
       return;
 

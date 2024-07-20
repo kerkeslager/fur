@@ -26,6 +26,8 @@ static const char* Instruction_toOperatorCString(uint8_t* pc) {
     case OP_FALSE:
     case OP_BUILTIN:
     case OP_INTEGER:
+    case OP_UTF8:
+    case OP_UTF32:
     case OP_GET:
     case OP_DUP:
     case OP_DROP:
@@ -97,6 +99,9 @@ const char* ValueType_toCString(ValueType type) {
 
     case VALUE_INTEGER:
       return "Integer";
+
+    case VALUE_UTF8:
+      return "UTF8";
   }
 
   // Should never get here
@@ -179,6 +184,23 @@ Value Thread_run(Thread* self) {
         Stack_push(stack, Value_fromInteger(*((int32_t*)pc)));
         pc += sizeof(int32_t);
         break;
+
+      case OP_UTF8:
+        {
+          uint8_t blobIndex = *((uint8_t*)pc);
+          pc += sizeof(uint8_t);
+          assert(blobIndex < self->byteCode->blobs.count);
+          assert(blobIndex < self->byteCode->blobs.capacity);
+
+          Stack_push(
+            stack,
+            Value_fromBlob(VALUE_UTF8, self->byteCode->blobs.items[blobIndex])
+          );
+        }
+        break;
+
+      case OP_UTF32:
+        assert(false);
 
       case OP_GET:
         {
@@ -368,6 +390,9 @@ Value Thread_run(Thread* self) {
                 Value_fromBoolean(Value_asInteger(operand0) == Value_asInteger(operand1))
               );
               break;
+
+            case VALUE_UTF8:
+              assert(false); // TODO Add support
           }
         }
         break;
@@ -409,17 +434,17 @@ Value Thread_run(Thread* self) {
                 Value_fromBoolean(Value_asInteger(operand0) != Value_asInteger(operand1))
               );
               break;
+
+            case VALUE_UTF8:
+              assert(false); // TODO support this
           }
         }
         break;
 
       case OP_DUP:
         {
-          // TODO There's probably a way to optimize this
-          Value value = Stack_pop(stack);
-          Value copy = Value_copy(&value);
+          Value value = Stack_peek(stack);
           Stack_push(stack, value);
-          Stack_push(stack, copy);
         }
         break;
 

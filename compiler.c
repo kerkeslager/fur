@@ -124,6 +124,55 @@ inline static void Compiler_emitInteger(ByteCode* out, Node* node) {
   Compiler_emitInt32(out, result, node->line);
 }
 
+inline static void Compiler_emitUTF8(ByteCode* out, AtomNode* node) {
+  size_t prefixLength = 1;
+  size_t suffixLength = 5; // length of "'utf8"
+
+  // If final char is "'" or "\"", the utf8 encoding was elided and chosen
+  // by default.
+  char finalChar = node->text[node->length - 1];
+  if(finalChar == '\'' || finalChar == '"') {
+    suffixLength = 1;
+  }
+
+  size_t allocatedBytes = node->length - prefixLength - suffixLength;
+  Blob* blob = malloc(sizeof(Blob) + allocatedBytes);
+
+  blob->count = 0;
+
+  for(size_t i = 1; i < node->length - suffixLength; i++) {
+    // TODO Handle escape sequences
+    assert(node->text[i] != '\\');
+
+    // TODO Handle non-ASCII characters
+    assert(node->text[i] < 128);
+
+    if(blob->count == allocatedBytes) {
+      allocatedBytes *= 1.25;
+      blob = realloc(blob, sizeof(Blob) + allocatedBytes * sizeof(uint8_t));
+      assert(blob != NULL);
+    }
+
+    blob->bytes[blob->count++] = node->text[i];
+  }
+
+  blob = realloc(blob, sizeof(Blob) + blob->count * sizeof(uint8_t));
+
+  size_t index = BlobList_append(&(out->blobs), blob);
+
+  // TODO Handle this better
+  assert(index <= UINT8_MAX);
+
+  Compiler_emitOp(out, OP_UTF8, node->node.line);
+  Compiler_emitUInt8(out, (uint8_t)index, node->node.line);
+}
+
+inline static void Compiler_emitUTF32(ByteCode* out, AtomNode* node) {
+  Blob* blob = NULL;
+  size_t index = BlobList_append(&(out->blobs), blob);
+  assert(false);
+}
+
 inline static void Compiler_emitBoolean(ByteCode* out, AtomNode* node) {
   /*
    * Since there are only two possibilities which should have been matched
@@ -304,6 +353,12 @@ void Compiler_emitNode(Compiler* self, ByteCode* out, Node* node) {
 
     case NODE_BOOLEAN_LITERAL:
       return Compiler_emitBoolean(out, (AtomNode*)node);
+
+    case NODE_UTF8_LITERAL:
+      return Compiler_emitUTF8(out, (AtomNode*)node);
+
+    case NODE_UTF32_LITERAL:
+      return Compiler_emitUTF32(out, (AtomNode*)node);
 
     case NODE_PARENS:
       return Compiler_emitNode(self, out, ((UnaryNode*)node)->arg0);

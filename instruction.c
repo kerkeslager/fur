@@ -23,11 +23,14 @@ void ByteCode_init(ByteCode* self) {
   lineRun.run = 0;
 
   self->lineRuns[0] = lineRun;
+
+  BlobList_init(&(self->blobs));
 }
 
 void ByteCode_free(ByteCode* self) {
   free(self->items);
   free(self->lineRuns);
+  BlobList_free(&(self->blobs));
 }
 
 inline static bool ByteCode_canInsert(ByteCode* self, size_t i) {

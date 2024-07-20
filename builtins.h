@@ -34,6 +34,9 @@ static Value Builtin_Bool(uint8_t argc, Value* argv) {
 
     case VALUE_INTEGER:
       return Value_fromBoolean(Value_asInteger(arg0) != 0);
+
+    case VALUE_UTF8:
+      assert(false); // TODO Does this type conversion even make sense?
   }
 
   // Should never happen
@@ -60,6 +63,9 @@ static Value Builtin_Int(uint8_t argc, Value* argv) {
 
     case VALUE_INTEGER:
       return arg0;
+
+    case VALUE_UTF8:
+      assert(false); // TODO Implement
   }
 
   // Should never happen
