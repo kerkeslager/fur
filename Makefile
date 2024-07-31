@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Wextra -Wimplicit-fallthrough=5 -ggdb3 -I/usr/local/include -L/usr/local/lib
+CFLAGS = -Wall -Wextra -Wimplicit-fallthrough=5 -ggdb3 -I/usr/local/include -L/usr/local/lib -lreadline
 SRCS := $(shell find . -name '*.c')
 HEADERS := $(shell find . -name '*.h')
 OBJS := $(SRCS:.c=.o)
@@ -12,7 +12,7 @@ TEST_OBJS := $(TEST_SRCS:.c=_test.o)
 	$(CC) -c -DTEST $(CFLAGS) $< -o $@
 
 fur: $(OBJS) $(HEADERS)
-	$(CC) $(CFLAGS) -lreadline $(OBJS) -o fur
+	$(CC) $(CFLAGS) $(OBJS) -o fur
 
 unit_test.generated_c : $(HEADERS)
 	./unit_test.c.sh > unit_test.generated_c
