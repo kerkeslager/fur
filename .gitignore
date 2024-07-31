@@ -1,5 +1,3 @@
-*.o
-*.generated_c
-*.generated_co
-fur
-unit_test
+bin/
+gen/
+obj/
