@@ -1,39 +1,20 @@
 #ifndef THREAD_H
 #define THREAD_H
 
-#include <stdbool.h>
+#include "frame_stack.h"
+#include "message_queue.h"
+#include "value_stack.h"
 
-#include "instruction.h"
-#include "stack.h"
+struct Thread;
+typedef struct Thread Thread;
 
-typedef struct {
-  ByteCode* byteCode;
-  size_t pcIndex;
-  Stack stack;
-  bool panic;
-} Thread;
-
-void Thread_init(Thread*, ByteCode*);
-void Thread_free(Thread*);
-void Thread_printStack(Thread*);
-
-Value Thread_run(Thread*);
-
-inline static void Thread_clearPanic(Thread* self) {
-  assert(self->panic); // No reason to call this if not in panic
-
-  self->panic = false;
-  self->pcIndex = ByteCode_count(self->byteCode);
-}
-
-#ifdef TEST
-
-void test_Thread_run_executesIntegerMathOps();
-void test_Thread_run_integerComparison();
-
-void test_Thread_clearPanic_setsPanicFalse();
-void test_Thread_clearPanic_setsPCIndexToEnd();
-
-#endif
+struct Thread {
+  uint8_t* ip;
+  ValueStack stack;
+  Obj* heap;
+  FrameStack frames;
+  MessageQueue messages;
+  Thread* next; // for ThreadQueue
+};
 
 #endif
