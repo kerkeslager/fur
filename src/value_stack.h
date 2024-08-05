@@ -22,8 +22,24 @@ inline static void ValueStack_free(ValueStack* self) {
   Memory_free(self->items);
 }
 
+inline static void ValueStack_push(ValueStack* self, Value v) {
+  if(self->height == self->capacity) {
+    assert(false); // TODO Implement resizing
+  }
+
+  assert(self->height < self->capacity);
+
+  self->items[self->height++] = v;
+}
+
+inline static Value ValueStack_pop(ValueStack* self) {
+  assert(self->height > 0);
+  return self->items[--self->height];
+}
+
 #ifdef TEST
 void test_ValueStack_initAndFree();
+void test_ValueStack_pushPop();
 #endif
 
 #endif
