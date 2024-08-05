@@ -17,4 +17,25 @@ struct Thread {
   Thread* next; // for ThreadQueue
 };
 
+inline static void Thread_init(Thread* self, uint8_t* ip) {
+  self->ip = ip;
+  ValueStack_init(&(self->stack));
+  self->heap = NULL;
+  FrameStack_init(&(self->frames));
+  MessageQueue_init(&(self->messages));
+  self->next = NULL;
+}
+
+inline static void Thread_free(Thread* self) {
+  ValueStack_free(&(self->stack));
+  // TODO Free the heap
+  FrameStack_free(&(self->frames));
+  // TODO Free the message queue
+  self->next = NULL;
+}
+
+#ifdef TEST
+void test_Thread_initAndFree();
+#endif
+
 #endif
