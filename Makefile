@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Wextra -Wimplicit-fallthrough=5 -I/usr/local/include -L/usr/local/lib -lreadline
+CFLAGS = -Wall -Wextra -Wimplicit-fallthrough -I/usr/local/include #-L/usr/local/lib -lreadline
 SRCS := $(shell find src -name '*.c')
 HEADERS := $(shell find src -name '*.h')
 OBJS := $(patsubst src/%.c, obj/%.o, $(SRCS))
