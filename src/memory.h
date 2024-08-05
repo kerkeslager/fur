@@ -22,6 +22,20 @@
     _allocationResult = ptr;
   }
 
+  inline static size_t Test_getAllocationCount() { return _allocationCount; }
+  inline static size_t Test_getAllocation(size_t index) {
+    assert(index < _allocationCount);
+    assert(index < TEST_MAX_ALLOCATIONS);
+    return _allocationList[index];
+  }
+
+  inline static size_t Test_getFreeCount() { return _freeCount; }
+  inline static void* Test_getFree(size_t index) {
+    assert(index < _freeCount);
+    assert(index < TEST_MAX_ALLOCATIONS);
+    return _freeList[index];
+  }
+
   inline static void* Memory_allocate(size_t size) {
     assert(_allocationCount < TEST_MAX_ALLOCATIONS);
     _allocationList[_allocationCount++] = size;
