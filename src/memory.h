@@ -13,9 +13,10 @@
 
   static void* _allocationResult;
 
-  inline static void Test_initAllocationRecords() {
+  inline static void Test_init(void* allocationResult) {
     _allocationCount = 0;
     _freeCount = 0;
+    _allocationResult = allocationResult;
   }
 
   inline static void Test_setAllocationResult(void* ptr) {
