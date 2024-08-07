@@ -37,9 +37,15 @@ inline static Value ValueStack_pop(ValueStack* self) {
   return self->items[--self->height];
 }
 
+inline static Value ValueStack_peek(ValueStack* self) {
+  assert(self->height > 0);
+  return self->items[self->height - 1];
+}
+
 #ifdef TEST
 void test_ValueStack_initAndFree();
 void test_ValueStack_pushPop();
+void test_ValueStack_peek();
 #endif
 
 #endif

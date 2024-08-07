@@ -34,4 +34,19 @@ void test_ValueStack_pushPop() {
 
   ValueStack_free(&stack);
 }
+
+void test_ValueStack_peek() {
+  ValueStack stack;
+  Value stackItems[10];
+  Test_init(stackItems);
+
+  ValueStack_init(&stack);
+
+  ValueStack_push(&stack, Value_fromInt(42));
+  assert(stack.height == 1);
+  assert(Value_asInt(ValueStack_peek(&stack)) == 42);
+  assert(stack.height == 1);
+
+  ValueStack_free(&stack);
+}
 #endif
