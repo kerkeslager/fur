@@ -3,13 +3,15 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "obj.h"
 
 typedef enum {
   VALUE_BOOLEAN,
-  VALUE_INTEGER
+  VALUE_INTEGER,
+  VALUE_OBJ
 } ValueType;
 
 typedef struct {
@@ -34,7 +36,13 @@ inline static int32_t Value_asInt(Value v) {
   return v.as.integer;
 }
 
+inline static bool Value_isNil(Value v) {
+  assert(v.type == VALUE_OBJ);
+  return v.as.obj == NULL;
+}
+
 #ifdef TEST
+void test_Value_isNil();
 void test_Value_fromIntAndAsInt();
 #endif
 
