@@ -14,13 +14,11 @@ void runInstruction(Thread* thread) {
       break;
 
     case INST_TRUE:
-      // TODO Implement
-      assert(false);
+      ValueStack_push(&(thread->stack), Value_fromBool(true));
       break;
 
     case INST_FALSE:
-      // TODO Implement
-      assert(false);
+      ValueStack_push(&(thread->stack), Value_fromBool(false));
       break;
 
     case INST_NOT:
@@ -144,7 +142,7 @@ void runInstruction(Thread* thread) {
 void test_nil() {
   Value stackItems[10];
   Test_init(stackItems);
-  uint8_t instruction = (uint8_t)INST_NIL;;
+  uint8_t instruction = (uint8_t)INST_NIL;
 
   Thread thread;
   Thread_init(&thread, &instruction);
@@ -152,6 +150,34 @@ void test_nil() {
   runInstruction(&thread);
 
   assert(Value_isNil(ValueStack_peek(&(thread.stack))));
+  assert(thread.ip == (&instruction) + 1);
+}
+
+void test_true() {
+  Value stackItems[10];
+  Test_init(stackItems);
+  uint8_t instruction = (uint8_t)INST_TRUE;
+
+  Thread thread;
+  Thread_init(&thread, &instruction);
+
+  runInstruction(&thread);
+
+  assert(Value_asBool(ValueStack_peek(&(thread.stack))));
+  assert(thread.ip == (&instruction) + 1);
+}
+
+void test_false() {
+  Value stackItems[10];
+  Test_init(stackItems);
+  uint8_t instruction = (uint8_t)INST_FALSE;
+
+  Thread thread;
+  Thread_init(&thread, &instruction);
+
+  runInstruction(&thread);
+
+  assert(!Value_asBool(ValueStack_peek(&(thread.stack))));
   assert(thread.ip == (&instruction) + 1);
 }
 #endif
