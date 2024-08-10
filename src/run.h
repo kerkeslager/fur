@@ -9,6 +9,7 @@ void run(Thread*);
 void test_nil();
 void test_true();
 void test_false();
+void test_not();
 #endif
 
 #endif

@@ -22,8 +22,10 @@ void runInstruction(Thread* thread) {
       break;
 
     case INST_NOT:
-      // TODO Implement
-      assert(false);
+      ValueStack_push(
+        &(thread->stack),
+        Value_fromBool(!Value_asBool(ValueStack_pop(&(thread->stack))))
+      );
       break;
 
     case INST_INT32:
@@ -178,6 +180,28 @@ void test_false() {
   runInstruction(&thread);
 
   assert(!Value_asBool(ValueStack_peek(&(thread.stack))));
+  assert(thread.ip == (&instruction) + 1);
+}
+
+void test_not() {
+  Value stackItems[10];
+  Test_init(stackItems);
+  uint8_t instruction = (uint8_t)INST_NOT;
+
+  Thread thread;
+  Thread_init(&thread, &instruction);
+  ValueStack_push(&(thread.stack), Value_fromBool(true));
+
+  runInstruction(&thread);
+
+  assert(!Value_asBool(ValueStack_peek(&(thread.stack))));
+  assert(thread.ip == (&instruction) + 1);
+
+  thread.ip = &instruction;
+
+  runInstruction(&thread);
+
+  assert(Value_asBool(ValueStack_peek(&(thread.stack))));
   assert(thread.ip == (&instruction) + 1);
 }
 #endif
