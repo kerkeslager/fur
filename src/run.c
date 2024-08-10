@@ -2,10 +2,15 @@
 #include "run.h"
 
 void runInstruction(Thread* thread) {
-  switch((Instruction)*(thread->ip)) {
+  switch((Instruction)*(thread->ip++)) {
     case INST_NIL:
-      // TODO Implement
-      assert(false);
+      {
+        Value v = {
+          .type = VALUE_OBJ,
+          .as.obj = NULL
+        };
+        ValueStack_push(&(thread->stack), v);
+      }
       break;
 
     case INST_TRUE:
@@ -134,6 +139,22 @@ void runInstruction(Thread* thread) {
       break;
   }
 }
+
+#ifdef TEST
+void test_nil() {
+  Value stackItems[10];
+  Test_init(stackItems);
+  uint8_t instruction = (uint8_t)INST_NIL;;
+
+  Thread thread;
+  Thread_init(&thread, &instruction);
+
+  runInstruction(&thread);
+
+  assert(Value_isNil(ValueStack_peek(&(thread.stack))));
+  assert(thread.ip == (&instruction) + 1);
+}
+#endif
 
 void run(Thread* thread) {
   for(;;) {

@@ -5,4 +5,8 @@
 
 void run(Thread*);
 
+#ifdef TEST
+void test_nil();
+#endif
+
 #endif
