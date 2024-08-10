@@ -23,6 +23,19 @@ typedef struct {
   } as;
 } Value;
 
+inline static Value Value_fromBool(bool b) {
+  Value result = {
+    .type = VALUE_BOOLEAN,
+    .as.boolean = b
+  };
+  return result;
+}
+
+inline static bool Value_asBool(Value v) {
+  assert(v.type == VALUE_BOOLEAN);
+  return v.as.boolean;
+}
+
 inline static Value Value_fromInt(int32_t v) {
   Value result = {
     .type = VALUE_INTEGER,
@@ -43,6 +56,7 @@ inline static bool Value_isNil(Value v) {
 
 #ifdef TEST
 void test_Value_isNil();
+void test_Value_fromBoolAndAsBool();
 void test_Value_fromIntAndAsInt();
 #endif
 
