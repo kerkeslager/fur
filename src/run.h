@@ -10,6 +10,7 @@ void test_nil();
 void test_true();
 void test_false();
 void test_not();
+void test_int32();
 #endif
 
 #endif
