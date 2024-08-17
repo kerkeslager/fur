@@ -11,6 +11,7 @@ void test_true();
 void test_false();
 void test_not();
 void test_int32();
+void test_neg();
 #endif
 
 #endif
