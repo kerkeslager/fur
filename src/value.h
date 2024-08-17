@@ -6,22 +6,26 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "common.h"
+#include "module.h"
 #include "obj.h"
 
 typedef enum {
   VALUE_BOOLEAN,
   VALUE_INTEGER,
+  VALUE_MODULE,
   VALUE_OBJ
 } ValueType;
 
-typedef struct {
+struct Value {
   ValueType type;
   union {
     bool boolean;
     int32_t integer;
+    Mod* mod;
     Obj* obj;
   } as;
-} Value;
+};
 
 inline static Value Value_fromBool(bool b) {
   Value result = {

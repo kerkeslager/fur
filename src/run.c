@@ -68,6 +68,11 @@ void runInstruction(Thread* thread) {
       assert(false);
       break;
 
+    case INST_IMPORT:
+      // TODO Implement
+      assert(false);
+      break;
+
     case INST_SCOPE_SET:
       // TODO Implement
       assert(false);

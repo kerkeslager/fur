@@ -5,10 +5,10 @@
 #include "symbol_list.h"
 
 typedef struct {
-  char* path;
+  char* canonicalPath;
   Namespace exports;
   SymbolList symbols;
-} Module;
+} Mod;
 
 #endif
 

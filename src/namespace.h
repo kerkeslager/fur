@@ -1,7 +1,7 @@
 #ifndef NAMESPACE_H
 #define NAMESPACE_H
 
-#include "value.h"
+#include "common.h"
 
 typedef struct {
   Symbol* symbol;

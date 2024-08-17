@@ -1,6 +1,8 @@
 #ifndef OBJ_H
 #define OBJ_H
 
+#include <stdbool.h>
+
 struct Obj;
 typedef struct Obj Obj;
 

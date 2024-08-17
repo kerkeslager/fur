@@ -6,7 +6,7 @@
 typedef struct {
   size_t capacity;
   size_t load;
-  Module* items;
-} ModuleDictionary;
+  Mod* items;
+} ModDictionary;
 
 #endif

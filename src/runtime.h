@@ -5,7 +5,7 @@
 #include "thread_queue.h"
 
 typedef struct {
-  ModuleDictionary modules;
+  ModDictionary modules;
   SymbolSet symbols;
   ThreadQueue threads;
   size_t threadCount;
