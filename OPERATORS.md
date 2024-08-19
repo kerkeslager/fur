@@ -1,7 +1,7 @@
 # Operator precedence and associativity
 
 | Order | Operator(s) | Description        | Associativity |
-| ----- | ----------- | ------------------ | ------------- |
+| :---: | :---------: | ------------------ | ------------- |
 | 1     | `[]`        | Subscript          | Left          |
 |       | `()`        | Call               |               |
 |       | `.`         | Field access       |               |
@@ -38,7 +38,7 @@ precedence unless we have a good reason to do otherwise.
 
 ## Mathematical
 | Order | Operator(s) | Description       | Associativity |
-| ----- | ----------- | ----------------- | ------------- |
+| :---: | :---------: | ----------------- | ------------- |
 | 3a    | `*`         | Multiplication    | Left          |
 |       | `//`        | Integer division  |               |
 |       | `mod`       | Modular division  |               |
@@ -50,9 +50,9 @@ precedence unless we have a good reason to do otherwise.
 
 ## Bitwise
 | Order | Operator(s) | Description       | Associativity |
-| ----- | ----------- | ----------------- | ------------- |
+| :---: | :---------: | ----------------- | ------------- |
 | 3     | `<<`        | Left shift        | Left          |
 |       | `>>`        | Right shift       |               |
 |       | `&`         | Bitwise and       |               |
 |       | `\|`        | Bitwise or        |               |
-|       | `^ `        | Bitwise xor       |               |
+|       | `^`         | Bitwise xor       |               |
