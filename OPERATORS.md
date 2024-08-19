@@ -37,6 +37,8 @@ As a general rule we err on the side of left associativity with all the same
 precedence unless we have a good reason to do otherwise.
 
 ## Mathematical
+| Order | Operator(s) | Description       | Associativity |
+| ----- | ----------- | ----------------- | ------------- |
 | 3a    | *           | Multiplication    | Left          |
 |       | //          | Integer division  |               |
 |       | mod         | Modular division  |               |
