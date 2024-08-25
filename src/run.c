@@ -84,8 +84,10 @@ void runInstruction(Thread* thread) {
       break;
 
     case INST_JMP:
-      // TODO Implement
-      assert(false);
+      {
+        int16_t jmp = *((int16_t*)(thread->ip));
+        thread->ip += jmp;
+      }
       break;
 
     case INST_JMP_IF:
@@ -243,6 +245,19 @@ void test_neg() {
   runInstruction(&thread);
 
   assert(Value_asInt(ValueStack_peek(&(thread.stack))) == -42);
+}
+
+void test_jmp() {
+  uint8_t instructions[3];
+  instructions[0] = (uint8_t)INST_JMP;
+  *((int16_t*)(instructions + 1)) = -27;
+
+  Thread thread;
+  Thread_init(&thread, instructions);
+
+  runInstruction(&thread);
+
+  assert(thread.ip == instructions - 26);
 }
 #endif
 
