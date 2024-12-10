@@ -91,8 +91,16 @@ void runInstruction(Thread* thread) {
       break;
 
     case INST_JMP_IF:
-      // TODO Implement
-      assert(false);
+      {
+        bool p = Value_asBool(ValueStack_pop(&(thread->stack)));
+
+        if(p) {
+          int16_t jmp = *((int16_t*)(thread->ip));
+          thread->ip += jmp;
+        } else {
+          thread->ip += sizeof(int16_t);
+        }
+      }
       break;
 
     case INST_CALL:
@@ -258,6 +266,40 @@ void test_jmp() {
   runInstruction(&thread);
 
   assert(thread.ip == instructions - 26);
+}
+
+void test_jmpIfTrue() {
+  Value stackItems[10];
+  Test_init(stackItems);
+  uint8_t instructions[3];
+  instructions[0] = (uint8_t)INST_JMP_IF;
+  *((int16_t*)(instructions + 1)) = -27;
+
+  Thread thread;
+  Thread_init(&thread, instructions);
+  ValueStack_push(&(thread.stack), Value_fromBool(true));
+
+  runInstruction(&thread);
+
+  assert(thread.ip == instructions - 26);
+  assert(thread.stack.height == 0);
+}
+
+void test_jmpIfFalse() {
+  Value stackItems[10];
+  Test_init(stackItems);
+  uint8_t instructions[3];
+  instructions[0] = (uint8_t)INST_JMP_IF;
+  *((int16_t*)(instructions + 1)) = -27;
+
+  Thread thread;
+  Thread_init(&thread, instructions);
+  ValueStack_push(&(thread.stack), Value_fromBool(false));
+
+  runInstruction(&thread);
+
+  assert(thread.ip == instructions + 3);
+  assert(thread.stack.height == 0);
 }
 #endif
 

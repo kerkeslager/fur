@@ -13,6 +13,8 @@ void test_not();
 void test_int32();
 void test_neg();
 void test_jmp();
+void test_jmpIfTrue();
+void test_jmpIfFalse();
 #endif
 
 #endif
